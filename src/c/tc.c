@@ -15,7 +15,7 @@
    2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
     link/ether 08:00:27:70:b6:6f brd ff:ff:ff:ff:ff:ff
 */
-
+   
 #define LO_IFINDEX 1
 #define ENP0S3_IFINDEX 2
 

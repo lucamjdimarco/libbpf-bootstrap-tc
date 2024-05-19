@@ -8,30 +8,7 @@
 #include <bpf/libbpf.h>
 #include <net/if.h>  // for if_nametoindex
 #include "tc.skel.h"
-
-/* PER MODIFICARE L'INTERFACCIA IN CUI INSERIRE IL TRACING BPF BISOGNA INSERIRE IL SUO INDICE (CHE È POSSIBILE DETERMINARE CON IL COMANDO IP LINK SHOW). SUCCESSIVAMENTE MODIFICARE LA LINEA DI CODICE DECLARE_LIBBPF_OPTS. Con indice = 1 lavori sulla LO, mentre con indice 2 lavori sulla ENP0S3  */
-
-/* 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-   2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
-    link/ether 08:00:27:70:b6:6f brd ff:ff:ff:ff:ff:ff
-*/
-   
-#define LO_IFINDEX 1
-#define ENP0S3_IFINDEX 2
-
-struct packet_info {
-	__u32 src_ip;
-	__u32 dst_ip;
-	__u16 src_port;
-	__u16 dst_port;
-	__u8 protocol;
-};
-
-struct value_packet {
-    struct bpf_spin_lock lock;
-    __u32 counter;
-};
+#include "common.h"
 
 static volatile sig_atomic_t exiting = 0;
 

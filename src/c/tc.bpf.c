@@ -5,37 +5,13 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 #include <bpf/bpf_helpers.h>
-
-#define TC_ACT_OK 0
-#define ETH_P_IP  0x0800 /* Internet Protocol packet	*/
-#define IPPROTO_TCP 6   /* TCP protocol */
-#define IPPROTO_UDP 17  /* UDP protocol */
-#define IPPROTO_ICMP 1  /* ICMP protocol */
-#define MAX_ENTRIES 256
-#define MAX_COUNTER 4294967295 /* 2 ^ 32 */
-
-
-
-struct packet_info {
-	__u32 src_ip;
-	__u32 dst_ip;
-	__u16 src_port;
-	__u16 dst_port;
-	__u8 protocol;
-};
-
-struct value_packet {
-
-    //sizeof(bpf_spin_lock) = 4 byte
-    struct bpf_spin_lock lock;
-    __u32 counter; 
-};
+#include "common.h"
 
 struct {
-	 __uint(type, BPF_MAP_TYPE_HASH);
-	 __uint(max_entries, MAX_ENTRIES);
-	 __type(key, struct packet_info);
-	 __type(value, struct value_packet);
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_ENTRIES);
+    __type(key, struct packet_info);
+    __type(value, struct value_packet);
 } my_map SEC(".maps");
 
 

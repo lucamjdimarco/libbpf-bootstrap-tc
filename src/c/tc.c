@@ -6,6 +6,7 @@
 #include <bpf/bpf.h>
 #include <bpf/bpf_endian.h>
 #include <bpf/libbpf.h>
+#include <net/if.h>  // for if_nametoindex
 #include "tc.skel.h"
 
 /* PER MODIFICARE L'INTERFACCIA IN CUI INSERIRE IL TRACING BPF BISOGNA INSERIRE IL SUO INDICE (CHE È POSSIBILE DETERMINARE CON IL COMANDO IP LINK SHOW). SUCCESSIVAMENTE MODIFICARE LA LINEA DI CODICE DECLARE_LIBBPF_OPTS. Con indice = 1 lavori sulla LO, mentre con indice 2 lavori sulla ENP0S3  */
@@ -46,9 +47,20 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 
 int main(int argc, char **argv)
 {
+	if (argc != 2) {
+		fprintf(stderr, "Usage: %s <interface>\n", argv[0]);
+		return 1;
+	}
+
+	const char *interface_name = argv[1];
+	int index = if_nametoindex(interface_name);
+	if (index == 0) {
+		perror("if_nametoindex");
+		return 1;
+	}
 	//DECLARE_LIBBPF_OPTS(bpf_tc_hook, tc_hook, .ifindex = LO_IFINDEX,
 			    //.attach_point = BPF_TC_INGRESS);
-	DECLARE_LIBBPF_OPTS(bpf_tc_hook, tc_hook, .ifindex = ENP0S3_IFINDEX,
+	DECLARE_LIBBPF_OPTS(bpf_tc_hook, tc_hook, .ifindex = index,
 			    .attach_point = BPF_TC_INGRESS);
 	DECLARE_LIBBPF_OPTS(bpf_tc_opts, tc_opts, .handle = 1, .priority = 1);
 	bool hook_created = false;

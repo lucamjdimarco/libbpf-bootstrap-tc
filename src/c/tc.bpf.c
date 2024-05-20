@@ -20,8 +20,9 @@ int tc_ingress(struct __sk_buff *ctx)
 {
 	void *data_end = (void *)(__u64)ctx->data_end;
 	void *data = (void *)(__u64)ctx->data;
-	struct ethhdr *l2;
-	struct iphdr *l3;
+	struct ethhdr *eth;
+	struct iphdr *ip;
+    struct vlan_hdr *vlan;
 
     struct packet_info new_info = {};
 
@@ -32,25 +33,39 @@ int tc_ingress(struct __sk_buff *ctx)
 	if (ctx->protocol != bpf_htons(ETH_P_IP))
 		return TC_ACT_OK;
 
-	l2 = data;
-	if ((void *)(l2 + 1) > data_end)
+	eth = data;
+	if ((void *)(eth + 1) > data_end)
 		return TC_ACT_OK;
 
-	l3 = (struct iphdr *)(l2 + 1);
-	if ((void *)(l3 + 1) > data_end)
+    __u16 eth_proto = eth->h_proto;
+    if (eth_proto == bpf_htons(ETH_P_8021Q) || eth_proto == bpf_htons(ETH_P_8021AD)) {
+        vlan = (struct vlan_hdr *)(eth + 1);
+        if ((void *)(vlan + 1) > data_end)
+            return TC_ACT_OK;
+
+        eth_proto = vlan->h_vlan_encapsulated_proto;
+        data = vlan + 1;
+
+        bpf_printk("VLAN tag detected, running in access mode\n");
+    } else {
+        data = eth + 1;
+    }
+
+	ip = (struct iphdr *)data;
+	if ((void *)(ip + 1) > data_end)
 		return TC_ACT_OK;
 
-    __u8 protocol = l3->protocol;
+    __u8 protocol = ip->protocol;
     
-    new_info.src_ip = l3->saddr,
-    new_info.dst_ip = l3->daddr,
+    new_info.src_ip = ip->saddr,
+    new_info.dst_ip = ip->daddr,
     new_info.src_port = 0,
     new_info.dst_port = 0,
-    new_info.protocol = l3->protocol;
+    new_info.protocol = ip->protocol;
 	
 
     if (protocol == IPPROTO_TCP) {
-        struct tcphdr *tcph = (struct tcphdr *)(l3 + 1);
+        struct tcphdr *tcph = (struct tcphdr *)(ip + 1);
         if ((void *)(tcph + 1) > data_end)
             return TC_ACT_OK;
 
@@ -58,7 +73,7 @@ int tc_ingress(struct __sk_buff *ctx)
         new_info.dst_port = bpf_ntohs(tcph->dest);
 
     } else if (protocol == IPPROTO_UDP) {
-        struct udphdr *udph = (struct udphdr *)(l3 + 1);
+        struct udphdr *udph = (struct udphdr *)(ip + 1);
         if ((void *)(udph + 1) > data_end)
             return TC_ACT_OK;
 
@@ -67,7 +82,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
     }
     if(protocol == IPPROTO_ICMP) {
-        struct icmphdr *icmph = (struct icmphdr *)(l3 + 1);
+        struct icmphdr *icmph = (struct icmphdr *)(ip + 1);
         if ((void *)(icmph + 1) > data_end)
             return TC_ACT_OK;
 

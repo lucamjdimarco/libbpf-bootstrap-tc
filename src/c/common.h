@@ -4,6 +4,9 @@
 
 #define TC_ACT_OK 0
 #define ETH_P_IP  0x0800 /* Internet Protocol packet	*/
+#define ETH_P_IPV6 0x86DD /* IPv6 */
+#define ETH_P_8021Q 0x8100 /* 802.1Q VLAN Extended Header */
+#define ETH_P_8021AD 0x88A8 /* Q-in-Q */
 #define IPPROTO_TCP 6   /* TCP protocol */
 #define IPPROTO_UDP 17  /* UDP protocol */
 #define IPPROTO_ICMP 1  /* ICMP protocol */

@@ -101,16 +101,16 @@ int main(int argc, char **argv)
 		memset(&key, 0, sizeof(key));
 		
         
-        while (bpf_map_get_next_key(map_fd, &key, &key) == 0) {
+		while (bpf_map_get_next_key(map_fd, &key, &key) == 0) {
 
 			counter++;
+
 			
-            
-            int ret = bpf_map_lookup_elem(map_fd, &key, &value);
-            if (ret) {
-                fprintf(stderr, "Failed to lookup map element\n");
-                return 1;
-            }
+			int ret = bpf_map_lookup_elem(map_fd, &key, &value);
+			if (ret) {
+					fprintf(stderr, "Failed to lookup map element\n");
+					return 1;
+			}
 
 			__u8 byte1 = key.src_ip & 0xFF;
 			__u8 byte2 = (key.src_ip >> 8) & 0xFF;
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 			__u8 byte4 = (key.src_ip >> 24) & 0xFF;
 
 			printf("---------------\n");
-            printf("Key: Source IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
+						printf("Key: Source IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
 
 			byte1 = key.dst_ip & 0xFF;
 			byte2 = (key.dst_ip >> 8) & 0xFF;
@@ -129,16 +129,16 @@ int main(int argc, char **argv)
 			printf("Key: Source Port: %u\n", key.src_port);
 			printf("Key: Destination Port: %u\n", key.dst_port);
 			printf("Key: Protocol: %u\n", key.protocol);
-            printf("Value: Counter: %u\n", value.counter);
+						printf("Value: Counter: %u\n", value.counter);
 			printf("---------------\n");
-        }
+		}
 
 		printf("The map has %d elements\n", counter);
 		printf("******************************************************************************\n");
         
-        sleep(3);
+		sleep(3);
 
-        memset(&key, 0, sizeof(key));
+		memset(&key, 0, sizeof(key));
     
 
 	}

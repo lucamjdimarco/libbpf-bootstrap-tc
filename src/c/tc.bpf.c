@@ -5,6 +5,7 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 #include <bpf/bpf_helpers.h>
+#include <string.h>
 #include "common.h"
 
 struct {
@@ -13,6 +14,13 @@ struct {
     __type(key, struct packet_info);
     __type(value, struct value_packet);
 } my_map SEC(".maps");
+
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_ENTRIES);
+    __type(key, struct packet_info_ipv6);
+    __type(value, struct value_packet);
+} my_map_ipv6 SEC(".maps");
 
 
 SEC("tc")
@@ -23,25 +31,36 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct ethhdr *eth;
 	struct iphdr *ip;
     struct vlan_hdr *vlan;
+    struct ipv6hdr *ip6;
 
     struct packet_info new_info = {};
+    struct packet_info_ipv6 new_info_ipv6 = {};
 
     struct value_packet *packet;
     int ret, cpu;
 
 
-	if (ctx->protocol != bpf_htons(ETH_P_IP))
-		return TC_ACT_OK;
+	if (ctx->protocol != bpf_htons(ETH_P_IP) && ctx->protocol != bpf_htons(ETH_P_IPV6)) {
+        bpf_printk("Not an IP packet\n");
+        return TC_ACT_OK;
+    }
+		
 
 	eth = data;
-	if ((void *)(eth + 1) > data_end)
-		return TC_ACT_OK;
+	if ((void *)(eth + 1) > data_end) {
+        bpf_printk("Ethernet header is not complete\n");
+        return TC_ACT_OK;
+    }
+		
 
     __u16 eth_proto = eth->h_proto;
     if (eth_proto == bpf_htons(ETH_P_8021Q) || eth_proto == bpf_htons(ETH_P_8021AD)) {
         vlan = (struct vlan_hdr *)(eth + 1);
-        if ((void *)(vlan + 1) > data_end)
+        if ((void *)(vlan + 1) > data_end) {
+            bpf_printk("VLAN header is not complete\n");
             return TC_ACT_OK;
+        }
+            
 
         eth_proto = vlan->h_vlan_encapsulated_proto;
         data = vlan + 1;
@@ -51,81 +70,200 @@ int tc_ingress(struct __sk_buff *ctx)
         data = eth + 1;
     }
 
-	ip = (struct iphdr *)data;
-	if ((void *)(ip + 1) > data_end)
-		return TC_ACT_OK;
-
-    __u8 protocol = ip->protocol;
     
-    new_info.src_ip = ip->saddr,
-    new_info.dst_ip = ip->daddr,
-    new_info.src_port = 0,
-    new_info.dst_port = 0,
-    new_info.protocol = ip->protocol;
-	
 
-    if (protocol == IPPROTO_TCP) {
-        struct tcphdr *tcph = (struct tcphdr *)(ip + 1);
-        if ((void *)(tcph + 1) > data_end)
+    if(eth_proto == bpf_htons(ETH_P_IP)) {
+        bpf_printk("IPv4 packet\n");
+        ip = (struct iphdr *)data;
+        if ((void *)(ip + 1) > data_end)
             return TC_ACT_OK;
 
-        new_info.src_port = bpf_ntohs(tcph->source);
-        new_info.dst_port = bpf_ntohs(tcph->dest);
+        __u8 protocol = ip->protocol;
+        
+        new_info.src_ip = ip->saddr,
+        new_info.dst_ip = ip->daddr,
+        new_info.src_port = 0,
+        new_info.dst_port = 0,
+        new_info.protocol = ip->protocol;
 
-    } else if (protocol == IPPROTO_UDP) {
-        struct udphdr *udph = (struct udphdr *)(ip + 1);
-        if ((void *)(udph + 1) > data_end)
-            return TC_ACT_OK;
+        switch(protocol) {
+            case IPPROTO_TCP: {
+                struct tcphdr *tcph = (struct tcphdr *)(ip + 1);
+                if ((void *)(tcph + 1) > data_end){
+                    bpf_printk("TCP header is not complete\n");
+                    return TC_ACT_OK;
+                }
 
-        new_info.src_port = bpf_ntohs(udph->source);
-        new_info.dst_port = bpf_ntohs(udph->dest);
+                new_info.src_port = bpf_ntohs(tcph->source);
+                new_info.dst_port = bpf_ntohs(tcph->dest);
+                break;
+            }
+            case IPPROTO_UDP: {
+                struct udphdr *udph = (struct udphdr *)(ip + 1);
+                if ((void *)(udph + 1) > data_end) {
+                    bpf_printk("UDP header is not complete\n");
+                    return TC_ACT_OK;
+                }
 
-    }
-    if(protocol == IPPROTO_ICMP) {
-        struct icmphdr *icmph = (struct icmphdr *)(ip + 1);
-        if ((void *)(icmph + 1) > data_end)
-            return TC_ACT_OK;
-
-    }
-
-    /* --- IMPLEMENTAZIONE DELLA HASH MAP ---*/
-
-    
-	cpu = bpf_get_smp_processor_id();
-    bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
-	packet = bpf_map_lookup_elem(&my_map, &new_info);
-
-	if(!packet) {
-		struct value_packet new_value = {
-			.counter = 1
-		};
-
-        bpf_printk("Create new item with counter 1\n");
-
-
-		bpf_printk("-----------------------------------------------------");
-		ret = bpf_map_update_elem(&my_map, &new_info, &new_value, BPF_ANY);
-        if (ret) {
-			bpf_printk("Failed to insert new item\n");
-			return TC_ACT_OK;
-		}
-	} else {
-
-        bpf_printk("Found item\n");
-
-        if (packet->counter < MAX_COUNTER) {
-            bpf_spin_lock(&packet->lock);
-            packet->counter += 1;
-            bpf_spin_unlock(&packet->lock);
-        } else {
-            bpf_printk("Counter is at maximum value\n");
+                new_info.src_port = bpf_ntohs(udph->source);
+                new_info.dst_port = bpf_ntohs(udph->dest);
+                break;
+            }
+            case IPPROTO_ICMP: {
+                struct icmphdr *icmph = (struct icmphdr *)(ip + 1);
+                if ((void *)(icmph + 1) > data_end) {
+                    bpf_printk("ICMP header is not complete\n");
+                    return TC_ACT_OK;
+                }
+                break;
+            }
+            default: {
+                bpf_printk("Unknown protocol\n");
+                return TC_ACT_OK;
+            }
+            
         }
 
-        bpf_printk("Counter: %u\n", packet->counter);
+    }
 
-        bpf_printk("-----------------------------------------------------");
+    else if(eth_proto == bpf_htons(ETH_P_IPV6)) {
+        bpf_printk("IPv6 packet\n");
+        ip6 = (struct ipv6hdr *)data;
+        if ((void *)(ip6 + 1) > data_end)
+            return TC_ACT_OK;
 
-	}
+        //new_info_ipv6.src_ip = ip6->saddr;
+        memcpy(&new_info_ipv6.src_ip, ip6->saddr.in6_u.u6_addr8, 16);
+        memcpy(&new_info_ipv6.dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
+        new_info_ipv6.protocol = ip6->nexthdr;
+
+        __u8 protocol = ip6->nexthdr;
+
+        switch(protocol) {
+            case IPPROTO_TCP: {
+                struct tcphdr *tcph = (struct tcphdr *)(ip6 + 1);
+                if ((void *)(tcph + 1) > data_end) {
+                    bpf_printk("TCP header is not complete\n");
+                    return TC_ACT_OK;
+                }
+
+                new_info_ipv6.src_port = bpf_ntohs(tcph->source);
+                new_info_ipv6.dst_port = bpf_ntohs(tcph->dest);
+                break;
+            }
+            case IPPROTO_UDP: {
+                struct udphdr *udph = (struct udphdr *)(ip6 + 1);
+                if ((void *)(udph + 1) > data_end) {
+                    bpf_printk("UDP header is not complete\n");
+                    return TC_ACT_OK;
+                }
+
+                new_info_ipv6.src_port = bpf_ntohs(udph->source);
+                new_info_ipv6.dst_port = bpf_ntohs(udph->dest);
+                break;
+            }
+            case IPPROTO_ICMP: {
+                struct icmphdr *icmph = (struct icmphdr *)(ip6 + 1);
+                if ((void *)(icmph + 1) > data_end) {
+                    bpf_printk("ICMP header is not complete\n");
+                    return TC_ACT_OK;
+                }
+                break;
+            }
+            default: {
+                bpf_printk("Unknown protocol\n");
+                return TC_ACT_OK;
+            }
+        }
+    }
+
+    else {
+        bpf_printk("Unknown protocol\n");
+        return TC_ACT_OK;
+    }
+
+    cpu = bpf_get_smp_processor_id();
+    bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
+
+    switch(eth_proto) {
+        case bpf_htons(ETH_P_IP): {
+            packet = bpf_map_lookup_elem(&my_map, &new_info);
+            bpf_printk("IPv4 packet\n");
+            if(!packet) {
+                struct value_packet new_value = {
+                    .counter = 1
+                };
+
+                bpf_printk("Create new item in IPv4 maps with counter 1\n");
+
+
+                bpf_printk("-----------------------------------------------------");
+                ret = bpf_map_update_elem(&my_map, &new_info, &new_value, BPF_ANY);
+                if (ret) {
+                    bpf_printk("Failed to insert new item in IPv4 maps\n");
+                    return TC_ACT_OK;
+                }
+	        } else {
+
+                bpf_printk("Found item in IPv4 maps\n");
+
+                if (packet->counter < MAX_COUNTER) {
+                    bpf_spin_lock(&packet->lock);
+                    packet->counter += 1;
+                    bpf_spin_unlock(&packet->lock);
+                } else {
+                    bpf_printk("Counter is at maximum value\n");
+                }
+
+                bpf_printk("Counter: %u\n", packet->counter);
+
+                bpf_printk("-----------------------------------------------------");
+
+	        }
+            break;
+        }
+    
+        case bpf_htons(ETH_P_IPV6): {
+            packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
+            bpf_printk("IPv6 packet\n");
+            if(!packet) {
+                struct value_packet new_value = {
+                    .counter = 1
+                };
+
+                bpf_printk("Create new item in IPv6 maps with counter 1\n");
+
+
+                bpf_printk("-----------------------------------------------------");
+                ret = bpf_map_update_elem(&my_map_ipv6, &new_info_ipv6, &new_value, BPF_ANY);
+                if (ret) {
+                    bpf_printk("Failed to insert new item in IPv4 maps\n");
+                    return TC_ACT_OK;
+                }
+	        } else {
+
+                bpf_printk("Found item in IPv6 maps\n");
+
+                if (packet->counter < MAX_COUNTER) {
+                    bpf_spin_lock(&packet->lock);
+                    packet->counter += 1;
+                    bpf_spin_unlock(&packet->lock);
+                } else {
+                    bpf_printk("Counter is at maximum value\n");
+                }
+
+                bpf_printk("Counter: %u\n", packet->counter);
+
+                bpf_printk("-----------------------------------------------------");
+
+	        }
+            break;
+        }
+        default: {
+            bpf_printk("Unknown packet\n");
+            return TC_ACT_OK;
+        }
+    }
 
 	return TC_ACT_OK;
 }

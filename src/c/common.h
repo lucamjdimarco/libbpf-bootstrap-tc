@@ -10,6 +10,7 @@
 #define IPPROTO_TCP 6   /* TCP protocol */
 #define IPPROTO_UDP 17  /* UDP protocol */
 #define IPPROTO_ICMP 1  /* ICMP protocol */
+#define IPPROTO_ICMPV6 0x3A /* ICMPv6 protocol */
 #define MAX_ENTRIES 256
 #define MAX_COUNTER 4294967295 /* 2 ^ 32 */
 

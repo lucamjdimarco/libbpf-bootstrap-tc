@@ -129,8 +129,11 @@ int tc_ingress(struct __sk_buff *ctx)
     else if(eth_proto == bpf_htons(ETH_P_IPV6)) {
         bpf_printk("IPv6 packet\n");
         ip6 = (struct ipv6hdr *)data;
-        if ((void *)(ip6 + 1) > data_end)
+        if ((void *)(ip6 + 1) > data_end){
+            bpf_printk("IPv6 header is not complete\n");
             return TC_ACT_OK;
+        }
+            //return TC_ACT_OK;
 
         //new_info_ipv6.src_ip = ip6->saddr;
         memcpy(&new_info_ipv6.src_ip, ip6->saddr.in6_u.u6_addr8, 16);
@@ -162,12 +165,13 @@ int tc_ingress(struct __sk_buff *ctx)
                 new_info_ipv6.dst_port = bpf_ntohs(udph->dest);
                 break;
             }
-            case IPPROTO_ICMP: {
-                struct icmphdr *icmph = (struct icmphdr *)(ip6 + 1);
+            case IPPROTO_ICMPV6: {
+                struct icmp6hdr *icmph = (struct icmp6hdr *)(ip6 + 1);
                 if ((void *)(icmph + 1) > data_end) {
                     bpf_printk("ICMP header is not complete\n");
                     return TC_ACT_OK;
                 }
+                bpf_printk("ICMPv6 packet\n");
                 break;
             }
             default: {

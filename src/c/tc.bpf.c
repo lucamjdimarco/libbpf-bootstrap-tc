@@ -60,17 +60,20 @@ int tc_ingress(struct __sk_buff *ctx)
             bpf_printk("VLAN header is not complete\n");
             return TC_ACT_OK;
         }
-            
 
         eth_proto = vlan->h_vlan_encapsulated_proto;
-        data = vlan + 1;
+        data = (void *)vlan + 1;
+
+        if ((void *)(data + 1) > data_end) {
+            bpf_printk("Packet data is not complete after VLAN header\n");
+            return TC_ACT_OK;
+        }
 
         bpf_printk("VLAN tag detected, running in access mode\n");
     } else {
-        data = eth + 1;
+        data = (void *)(eth + 1);
     }
 
-    
 
     if(eth_proto == bpf_htons(ETH_P_IP)) {
         bpf_printk("IPv4 packet\n");

@@ -1,6 +1,7 @@
 {
   "files.associations": {
     "unistd.h": "c",
-    "vmlinux.h": "c"
+    "vmlinux.h": "c",
+    "common.h": "c"
   }
 }

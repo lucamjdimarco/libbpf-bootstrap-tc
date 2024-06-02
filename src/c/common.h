@@ -30,12 +30,22 @@ struct packet_info {
 };
 
 struct packet_info_ipv6 {
-    __u8 src_ip[16];   // IPv6 source address
-    __u8 dst_ip[16];   // IPv6 destination address
-    __u16 src_port;  // Source port
-    __u16 dst_port;  // Destination port
-    __u8 protocol;   // Protocol
-    __u8 padding[3]; // Padding to align the structure size to a multiple of 8 bytes
+	__u8 src_ip[16];   // IPv6 source address
+	__u8 dst_ip[16];   // IPv6 destination address
+	__u16 src_port;  // Source port
+	__u16 dst_port;  // Destination port
+	__u8 protocol;   // Protocol
+	__u8 padding[3]; // Padding to align the structure size to a multiple of 8 bytes
+};
+
+struct only_addr_ipv4 {
+	__u32 src_ip; //IPv4 source address
+	__u32 dst_ip; //IPv4 destination address
+};
+
+struct only_addr_ipv6 {
+	__u8 src_ip[16];   // IPv6 source address
+	__u8 dst_ip[16];   // IPv6 destination address
 };
 
 

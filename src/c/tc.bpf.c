@@ -22,6 +22,140 @@ struct {
     __type(value, struct value_packet);
 } my_map_ipv6 SEC(".maps");
 
+static __always_inline int classify_ipv4_packet(struct packet_info *info, struct __sk_buff *ctx, void *data_end, void *data) {
+    struct iphdr *ip = (struct iphdr *)data;
+    if ((void *)(ip + 1) > data_end) {
+        bpf_printk("IPv4 header is not complete\n");
+        return TC_ACT_OK;
+    }
+
+    __u8 protocol = ip->protocol;
+
+    info->src_ip = ip->saddr;
+    info->dst_ip = ip->daddr;
+    info->src_port = 0;
+    info->dst_port = 0;
+    info->protocol = ip->protocol;
+
+    switch (protocol) {
+        case IPPROTO_TCP: {
+            struct tcphdr *tcph = (struct tcphdr *)(ip + 1);
+            if ((void *)(tcph + 1) > data_end) {
+                bpf_printk("TCP header is not complete\n");
+                return TC_ACT_OK;
+            }
+
+            info->src_port = bpf_ntohs(tcph->source);
+            info->dst_port = bpf_ntohs(tcph->dest);
+            break;
+        }
+        case IPPROTO_UDP: {
+            struct udphdr *udph = (struct udphdr *)(ip + 1);
+            if ((void *)(udph + 1) > data_end) {
+                bpf_printk("UDP header is not complete\n");
+                return TC_ACT_OK;
+            }
+
+            info->src_port = bpf_ntohs(udph->source);
+            info->dst_port = bpf_ntohs(udph->dest);
+            break;
+        }
+        case IPPROTO_ICMP: {
+            struct icmphdr *icmph = (struct icmphdr *)(ip + 1);
+            if ((void *)(icmph + 1) > data_end) {
+                bpf_printk("ICMP header is not complete\n");
+                return TC_ACT_OK;
+            }
+            break;
+        }
+        default: {
+            bpf_printk("Unknown protocol\n");
+            return TC_ACT_OK;
+        }
+    }
+
+    return TC_ACT_OK;
+}
+
+static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, struct __sk_buff *ctx, void *data_end, void *data) {
+    struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
+    if ((void *)(ip6 + 1) > data_end) {
+        bpf_printk("IPv6 header is not complete\n");
+        return TC_ACT_OK;
+    }
+
+    memcpy(&info->src_ip, ip6->saddr.in6_u.u6_addr8, 16);
+    memcpy(&info->dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
+    info->protocol = ip6->nexthdr;
+
+    __u8 protocol = ip6->nexthdr;
+
+    switch (protocol) {
+        case IPPROTO_TCP: {
+            struct tcphdr *tcph = (struct tcphdr *)(ip6 + 1);
+            if ((void *)(tcph + 1) > data_end) {
+                bpf_printk("TCP header is not complete\n");
+                return TC_ACT_OK;
+            }
+
+            info->src_port = bpf_ntohs(tcph->source);
+            info->dst_port = bpf_ntohs(tcph->dest);
+            break;
+        }
+        case IPPROTO_UDP: {
+            struct udphdr *udph = (struct udphdr *)(ip6 + 1);
+            if ((void *)(udph + 1) > data_end) {
+                bpf_printk("UDP header is not complete\n");
+                return TC_ACT_OK;
+            }
+
+            info->src_port = bpf_ntohs(udph->source);
+            info->dst_port = bpf_ntohs(udph->dest);
+            break;
+        }
+        case IPPROTO_ICMPV6: {
+            struct icmp6hdr *icmph = (struct icmp6hdr *)(ip6 + 1);
+            if ((void *)(icmph + 1) > data_end) {
+                bpf_printk("ICMPv6 header is not complete\n");
+                return TC_ACT_OK;
+            }
+            bpf_printk("ICMPv6 packet\n");
+            break;
+        }
+        default: {
+            bpf_printk("Unknown protocol\n");
+            return TC_ACT_OK;
+        }
+    }
+
+    return TC_ACT_OK;
+}
+
+static __always_inline int classify_only_address_ipv4_packet(struct only_addr_ipv4 *info, struct __sk_buff *ctx, void *data_end, void *data) {
+    struct iphdr *ip = (struct iphdr *)data;
+    if ((void *)(ip + 1) > data_end) {
+        bpf_printk("IPv4 header is not complete\n");
+        return TC_ACT_OK;
+    }
+
+    info->src_ip = ip->saddr;
+    info->dst_ip = ip->daddr;
+
+    return TC_ACT_OK;
+}
+
+static __always_inline int classify_only_address_ipv6_packet(struct only_addr_ipv6 *info, struct __sk_buff *ctx, void *data_end, void *data) {
+    struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
+    if ((void *)(ip6 + 1) > data_end) {
+        bpf_printk("IPv6 header is not complete\n");
+        return TC_ACT_OK;
+    }
+
+    memcpy(&info->src_ip, ip6->saddr.in6_u.u6_addr8, 16);
+    memcpy(&info->dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
+
+    return TC_ACT_OK;
+}
 
 SEC("tc")
 int tc_ingress(struct __sk_buff *ctx)

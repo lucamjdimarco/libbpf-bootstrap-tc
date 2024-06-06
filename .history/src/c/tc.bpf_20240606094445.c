@@ -8,70 +8,54 @@
 #include <string.h>
 #include "common.h"
 
-#ifdef CLASSIFY_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, struct packet_info);
     __type(value, struct value_packet);
 } my_map SEC(".maps");
-#endif
 
-#ifdef CLASSIFY_IPV6
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, struct packet_info_ipv6);
     __type(value, struct value_packet);
 } my_map_ipv6 SEC(".maps");
-#endif
 
-#ifdef CLASSIFY_ONLY_ADDRESS_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, struct only_addr_ipv4);
     __type(value, struct value_packet);
 } map_only_addr_ipv4 SEC(".maps");
-#endif
 
-#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, struct only_addr_ipv6);
     __type(value, struct value_packet);
 } map_only_addr_ipv6 SEC(".maps");
-#endif
 
-#ifdef CLASSIFY_IPV4
-#ifdef CLASSIFY_ONLY_ADDRESS_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, __u64);
     __type(value, struct packet_info);
 } ipv4_flow SEC(".maps");
-#endif
-#endif
 
-#ifdef CLASSIFY_IPV6
-#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, __u64);
     __type(value, struct packet_info_ipv6);
 } ipv6_flow SEC(".maps");
-#endif
-#endif
 
 static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
     return ((__u64)first_byte << 56) | (counter & 0x00FFFFFFFFFFFFFF);
 }
 
 #ifdef CLASSIFY_IPV4
-static __always_inline int classify_ipv4_packet(struct packet_info *info, void *data_end, void *data) {
+static __always_inline int classify_ipv4_packet(struct packet_info *info, struct __sk_buff *ctx, void *data_end, void *data) {
     struct iphdr *ip = (struct iphdr *)data;
     if ((void *)(ip + 1) > data_end) {
         bpf_printk("IPv4 header is not complete\n");
@@ -128,7 +112,7 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 #endif
 
 #ifdef CLASSIFY_IPV6
-static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, void *data_end, void *data) {
+static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, struct __sk_buff *ctx, void *data_end, void *data) {
     struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
     if ((void *)(ip6 + 1) > data_end) {
         bpf_printk("IPv6 header is not complete\n");
@@ -184,7 +168,7 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 #endif
 
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
-static __always_inline int classify_only_address_ipv4_packet(struct only_addr_ipv4 *info, void *data_end, void *data) {
+static __always_inline int classify_only_address_ipv4_packet(struct only_addr_ipv4 *info, struct __sk_buff *ctx, void *data_end, void *data) {
     struct iphdr *ip = (struct iphdr *)data;
     if ((void *)(ip + 1) > data_end) {
         bpf_printk("IPv4 header is not complete\n");
@@ -199,7 +183,7 @@ static __always_inline int classify_only_address_ipv4_packet(struct only_addr_ip
 #endif
 
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
-static __always_inline int classify_only_address_ipv6_packet(struct only_addr_ipv6 *info, void *data_end, void *data) {
+static __always_inline int classify_only_address_ipv6_packet(struct only_addr_ipv6 *info, struct __sk_buff *ctx, void *data_end, void *data) {
     struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
     if ((void *)(ip6 + 1) > data_end) {
         bpf_printk("IPv6 header is not complete\n");
@@ -223,21 +207,8 @@ int tc_ingress(struct __sk_buff *ctx)
     struct vlan_hdr *vlan;
     struct ipv6hdr *ip6;
 
-    #ifdef CLASSIFY_IPV4
     struct packet_info new_info = {};
-    #endif
-
-    #ifdef CLASSIFY_IPV6
     struct packet_info_ipv6 new_info_ipv6 = {};
-    #endif
-
-    #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
-    struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
-    #endif
-
-    #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
-    struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
-    #endif
 
     struct value_packet *packet;
     int ret, cpu;
@@ -279,7 +250,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
 
     if(eth_proto == bpf_htons(ETH_P_IP)) {
-        /*bpf_printk("IPv4 packet\n");
+        bpf_printk("IPv4 packet\n");
         ip = (struct iphdr *)data;
         if ((void *)(ip + 1) > data_end)
             return TC_ACT_OK;
@@ -328,21 +299,12 @@ int tc_ingress(struct __sk_buff *ctx)
                 return TC_ACT_OK;
             }
             
-        }*/
-
-        #ifdef CLASSIFY_IPV4
-        classify_ipv4_packet(&new_info, data_end, data);
-        #endif
-
-        #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
-        classify_only_address_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
-        #endif
-        
+        }
 
     }
 
     else if(eth_proto == bpf_htons(ETH_P_IPV6)) {
-        /*bpf_printk("IPv6 packet\n");
+        bpf_printk("IPv6 packet\n");
         ip6 = (struct ipv6hdr *)data;
         if ((void *)(ip6 + 1) > data_end){
             bpf_printk("IPv6 header is not complete\n");
@@ -393,15 +355,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 bpf_printk("Unknown protocol\n");
                 return TC_ACT_OK;
             }
-        }*/
-
-        #ifdef CLASSIFY_IPV6
-        classify_ipv6_packet(&new_info_ipv6, data_end, data);
-        #endif
-
-        #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
-        classify_only_address_ipv6_packet(&new_info_only_addr_ipv6, data_end, data);
-        #endif
+        }
     }
 
     else {
@@ -413,8 +367,6 @@ int tc_ingress(struct __sk_buff *ctx)
     bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
 
     switch(eth_proto) {
-        #ifdef CLASSIFY_IPV4
-        #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
         case bpf_htons(ETH_P_IP): {
             packet = bpf_map_lookup_elem(&my_map, &new_info);
             bpf_printk("IPv4 packet\n");
@@ -451,11 +403,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	        }
             break;
         }
-        #endif
-        #endif
     
-        #ifdef CLASSIFY_IPV6
-        #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
         case bpf_htons(ETH_P_IPV6): {
             packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
             bpf_printk("IPv6 packet\n");
@@ -492,8 +440,6 @@ int tc_ingress(struct __sk_buff *ctx)
 	        }
             break;
         }
-        #endif
-        #endif
         default: {
             bpf_printk("Unknown packet\n");
             return TC_ACT_OK;

@@ -56,6 +56,8 @@ int main(int argc, char **argv)
 	struct tc_bpf *skel;
 	int err;
 
+	int map_fd = NULL;
+
 	//struct packet_info key;
   	//struct value_packet value;
 
@@ -98,7 +100,6 @@ int main(int argc, char **argv)
 	       "to see output of the BPF program.\n");
 
 	#ifdef CLASSIFY_IPV4
-	int map_fd;
 	if(strcmp(map_type, "ipv4") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map);
 		if (map_fd < 0) {
@@ -112,8 +113,6 @@ int main(int argc, char **argv)
 	#endif
 
 	#ifdef CLASSIFY_IPV6
-	printf("Recupero mappa\n");
-	int map_fd;
 	if(strcmp(map_type, "ipv6") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
 		if (map_fd < 0) {
@@ -136,6 +135,7 @@ int main(int argc, char **argv)
 		sleep(1);*/
 
 		int counter = 0;
+
 		#ifdef CLASSIFY_IPV4
         if (strcmp(map_type, "ipv4") == 0) {
             struct packet_info key;
@@ -175,7 +175,6 @@ int main(int argc, char **argv)
 		#endif
 
 		#ifdef CLASSIFY_IPV6
-		printf("IPv6\n");
 		if (strcmp(map_type, "ipv6") == 0) {
 			struct packet_info_ipv6 key;
 			struct value_packet value;

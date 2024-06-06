@@ -57,7 +57,8 @@ int main(int argc, char **argv)
 	int err;
 
 	//struct packet_info key;
-  	//struct value_packet value;
+  //struct value_packet value;
+	int map_fd;
 
 	libbpf_set_print(libbpf_print_fn);
 
@@ -97,24 +98,13 @@ int main(int argc, char **argv)
 	printf("Successfully started! Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` "
 	       "to see output of the BPF program.\n");
 
-	#ifdef CLASSIFY_IPV4
-	int map_fd;
 	if(strcmp(map_type, "ipv4") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
 			return 1;
 		}
-	} else {
-		fprintf(stderr, "Invalid map type\n");
-		return 1;
-	}
-	#endif
-
-	#ifdef CLASSIFY_IPV6
-	printf("Recupero mappa\n");
-	int map_fd;
-	if(strcmp(map_type, "ipv6") == 0) {
+	} else if(strcmp(map_type, "ipv6") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
@@ -124,7 +114,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Invalid map type\n");
 		return 1;
 	}
-	#endif
+
 	/*map_fd = bpf_map__fd(skel->maps.my_map);
 	if (map_fd < 0) {
 		fprintf(stderr, "Failed to get map file descriptor\n");
@@ -136,7 +126,7 @@ int main(int argc, char **argv)
 		sleep(1);*/
 
 		int counter = 0;
-		#ifdef CLASSIFY_IPV4
+
         if (strcmp(map_type, "ipv4") == 0) {
             struct packet_info key;
             struct value_packet value;
@@ -171,38 +161,32 @@ int main(int argc, char **argv)
                 printf("Value: Counter: %u\n", value.counter);
                 printf("---------------\n");
             }
+        } else if (strcmp(map_type, "ipv6") == 0) {
+            struct packet_info_ipv6 key;
+            struct value_packet value;
+            memset(&key, 0, sizeof(key));
+
+            while (bpf_map_get_next_key(map_fd, &key, &key) == 0) {
+                counter++;
+
+                int ret = bpf_map_lookup_elem(map_fd, &key, &value);
+                if (ret) {
+                    fprintf(stderr, "Failed to lookup map element\n");
+                    return 1;
+                }
+
+                printf("---------------\n");
+								printf("Key: Source IP: ");
+								print_ipv6_address(key.src_ip);
+								printf("Key: Destination IP: ");
+								print_ipv6_address(key.dst_ip);
+								printf("Key: Source Port: %u\n", key.src_port);
+								printf("Key: Destination Port: %u\n", key.dst_port);
+								printf("Key: Protocol: %u\n", key.protocol);
+								printf("Value: Counter: %u\n", value.counter);
+								printf("---------------\n");
+						}
         }
-		#endif
-
-		#ifdef CLASSIFY_IPV6
-		printf("IPv6\n");
-		if (strcmp(map_type, "ipv6") == 0) {
-			struct packet_info_ipv6 key;
-			struct value_packet value;
-			memset(&key, 0, sizeof(key));
-
-			while (bpf_map_get_next_key(map_fd, &key, &key) == 0) {
-				counter++;
-
-				int ret = bpf_map_lookup_elem(map_fd, &key, &value);
-				if (ret) {
-					fprintf(stderr, "Failed to lookup map element\n");
-					return 1;
-				}
-
-				printf("---------------\n");
-				printf("Key: Source IP: ");
-				print_ipv6_address(key.src_ip);
-				printf("Key: Destination IP: ");
-				print_ipv6_address(key.dst_ip);
-				printf("Key: Source Port: %u\n", key.src_port);
-				printf("Key: Destination Port: %u\n", key.dst_port);
-				printf("Key: Protocol: %u\n", key.protocol);
-				printf("Value: Counter: %u\n", value.counter);
-				printf("---------------\n");
-			}
-        }
-		#endif
 
         printf("The map has %d elements\n", counter);
         printf("******************************************************************************\n");

@@ -335,14 +335,12 @@ int tc_ingress(struct __sk_buff *ctx)
         #endif
 
         #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
-        classify_only_address_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
-        #endif
         
 
     }
 
     else if(eth_proto == bpf_htons(ETH_P_IPV6)) {
-        /*bpf_printk("IPv6 packet\n");
+        bpf_printk("IPv6 packet\n");
         ip6 = (struct ipv6hdr *)data;
         if ((void *)(ip6 + 1) > data_end){
             bpf_printk("IPv6 header is not complete\n");
@@ -393,15 +391,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 bpf_printk("Unknown protocol\n");
                 return TC_ACT_OK;
             }
-        }*/
-
-        #ifdef CLASSIFY_IPV6
-        classify_ipv6_packet(&new_info_ipv6, data_end, data);
-        #endif
-
-        #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
-        classify_only_address_ipv6_packet(&new_info_only_addr_ipv6, data_end, data);
-        #endif
+        }
     }
 
     else {
@@ -413,8 +403,6 @@ int tc_ingress(struct __sk_buff *ctx)
     bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
 
     switch(eth_proto) {
-        #ifdef CLASSIFY_IPV4
-        #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
         case bpf_htons(ETH_P_IP): {
             packet = bpf_map_lookup_elem(&my_map, &new_info);
             bpf_printk("IPv4 packet\n");
@@ -451,11 +439,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	        }
             break;
         }
-        #endif
-        #endif
     
-        #ifdef CLASSIFY_IPV6
-        #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
         case bpf_htons(ETH_P_IPV6): {
             packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
             bpf_printk("IPv6 packet\n");
@@ -492,8 +476,6 @@ int tc_ingress(struct __sk_buff *ctx)
 	        }
             break;
         }
-        #endif
-        #endif
         default: {
             bpf_printk("Unknown packet\n");
             return TC_ACT_OK;

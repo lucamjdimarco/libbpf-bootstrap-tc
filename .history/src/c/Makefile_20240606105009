@@ -24,7 +24,7 @@ ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 APPS = tc
 
 ifdef CLASSIFY_IPV4
-CFLAGS += -DCLASSIFY_IPV4
+	CFLAGS += -DCLASSIFY_IPV4
 endif
 
 .PHONY: classify_ipv4
@@ -32,7 +32,7 @@ classify_ipv4: CLASSIFY_IPV4=1
 classify_ipv4: all
 
 ifdef CLASSIFY_IPV6
-CFLAGS += -DCLASSIFY_IPV6
+	CFLAGS += -DCLASSIFY_IPV6
 endif
 
 .PHONY: classify_ipv6
@@ -40,7 +40,7 @@ classify_ipv6: CLASSIFY_IPV6=1
 classify_ipv6: all
 
 ifdef CLASSIFY_ONLY_ADDRESS_IPV4
-CFLAGS += -DCLASSIFY_ONLY_ADDRESS_IPV4
+	CFLAGS += -DCLASSIFY_ONLY_ADDRESS_IPV4
 endif
 
 .PHONY: classify_only_address_ipv4
@@ -48,7 +48,7 @@ classify_only_address_ipv4: CLASSIFY_ONLY_ADDRESS_IPV4=1
 classify_only_address_ipv4: all
 
 ifdef CLASSIFY_ONLY_ADDRESS_IPV6
-CFLAGS += -DCLASSIFY_ONLY_ADDRESS_IPV6
+	CFLAGS += -DCLASSIFY_ONLY_ADDRESS_IPV6
 endif
 
 .PHONY: classify_only_address_ipv6

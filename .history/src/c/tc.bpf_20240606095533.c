@@ -413,8 +413,6 @@ int tc_ingress(struct __sk_buff *ctx)
     bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
 
     switch(eth_proto) {
-        #ifdef CLASSIFY_IPV4
-        #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
         case bpf_htons(ETH_P_IP): {
             packet = bpf_map_lookup_elem(&my_map, &new_info);
             bpf_printk("IPv4 packet\n");
@@ -451,11 +449,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	        }
             break;
         }
-        #endif
-        #endif
     
-        #ifdef CLASSIFY_IPV6
-        #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
         case bpf_htons(ETH_P_IPV6): {
             packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
             bpf_printk("IPv6 packet\n");
@@ -492,8 +486,6 @@ int tc_ingress(struct __sk_buff *ctx)
 	        }
             break;
         }
-        #endif
-        #endif
         default: {
             bpf_printk("Unknown packet\n");
             return TC_ACT_OK;

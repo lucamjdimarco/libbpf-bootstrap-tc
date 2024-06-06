@@ -174,6 +174,7 @@ int main(int argc, char **argv)
 		#endif
 
 		#ifdef CLASSIFY_IPV6
+		printf("IPv6\n");
 		if (strcmp(map_type, "ipv6") == 0) {
 			struct packet_info_ipv6 key;
 			struct value_packet value;

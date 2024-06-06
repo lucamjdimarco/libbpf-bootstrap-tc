@@ -486,6 +486,7 @@ int tc_ingress(struct __sk_buff *ctx)
             break;
         }
         #endif
+        #endif
         default: {
             bpf_printk("Unknown packet\n");
             return TC_ACT_OK;

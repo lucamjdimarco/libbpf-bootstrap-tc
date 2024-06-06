@@ -44,7 +44,8 @@ struct {
 } map_only_addr_ipv6 SEC(".maps");
 #endif
 
-#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4)
+#ifdef CLASSIFY_IPV4
+#ifdef CLASSIFY_ONLY_ADDRESS_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
@@ -52,14 +53,17 @@ struct {
     __type(value, struct packet_info);
 } ipv4_flow SEC(".maps");
 #endif
+#endif
 
-#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6)
+#ifdef CLASSIFY_IPV6
+#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, __u64);
     __type(value, struct packet_info_ipv6);
 } ipv6_flow SEC(".maps");
+#endif
 #endif
 
 static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
@@ -215,9 +219,9 @@ int tc_ingress(struct __sk_buff *ctx)
 	void *data_end = (void *)(__u64)ctx->data_end;
 	void *data = (void *)(__u64)ctx->data;
 	struct ethhdr *eth;
-	//struct iphdr *ip;
+	struct iphdr *ip;
     struct vlan_hdr *vlan;
-    //struct ipv6hdr *ip6;
+    struct ipv6hdr *ip6;
 
     #ifdef CLASSIFY_IPV4
     struct packet_info new_info = {};
@@ -409,7 +413,8 @@ int tc_ingress(struct __sk_buff *ctx)
     bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
 
     switch(eth_proto) {
-        #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4)
+        #ifdef CLASSIFY_IPV4
+        #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
         case bpf_htons(ETH_P_IP): {
             packet = bpf_map_lookup_elem(&my_map, &new_info);
             bpf_printk("IPv4 packet\n");
@@ -447,8 +452,10 @@ int tc_ingress(struct __sk_buff *ctx)
             break;
         }
         #endif
+        #endif
     
-        #if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6)
+        #ifdef CLASSIFY_IPV6
+        #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
         case bpf_htons(ETH_P_IPV6): {
             packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
             bpf_printk("IPv6 packet\n");
@@ -485,6 +492,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	        }
             break;
         }
+        #endif
         #endif
         default: {
             bpf_printk("Unknown packet\n");

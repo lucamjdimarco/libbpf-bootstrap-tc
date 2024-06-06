@@ -48,7 +48,6 @@ struct only_addr_ipv6 {
 	__u8 dst_ip[16];   // IPv6 destination address
 };
 
-
 struct value_packet {
 	//sizeof(bpf_spin_lock) = 4 byte
 	struct bpf_spin_lock lock;

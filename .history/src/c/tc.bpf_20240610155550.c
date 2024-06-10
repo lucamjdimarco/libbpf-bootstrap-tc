@@ -268,6 +268,8 @@ int tc_ingress(struct __sk_buff *ctx)
 
     if(eth_proto == bpf_htons(ETH_P_IP)) {
 
+        bpf_printk("IPv4 packet\n");
+
         #ifdef CLASSIFY_IPV4
         classify_ipv4_packet(&new_info, data_end, data);
         #endif

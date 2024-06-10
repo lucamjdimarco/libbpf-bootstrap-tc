@@ -40,15 +40,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	const char *MY_VALUE;
-	if (strcmp(MY_DIRECTIVE, "CLASSIFY_IPV4") == 0) {
-		MY_VALUE = "CLASSIFY_IPV4";
-		printf("MY_VALUE: %s\n", MY_VALUE);
-	} else {
-		MY_VALUE = "valore_predefinito";
-		printf("MY_VALUE: %s\n", MY_VALUE);
-	}
-
 	const char *interface_name = argv[1];
 	const char *map_type = argv[2];
 	int index = if_nametoindex(interface_name);
@@ -67,7 +58,6 @@ int main(int argc, char **argv)
 
 	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV6)
 	int map_fd;
-	#endif
 	//struct packet_info key;
   	//struct value_packet value;
 

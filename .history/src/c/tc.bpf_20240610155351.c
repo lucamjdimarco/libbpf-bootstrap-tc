@@ -275,6 +275,8 @@ int tc_ingress(struct __sk_buff *ctx)
         #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
         classify_only_address_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
         #endif
+        
+
     }
 
     else if(eth_proto == bpf_htons(ETH_P_IPV6)) {
@@ -297,7 +299,7 @@ int tc_ingress(struct __sk_buff *ctx)
     bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
 
     switch(eth_proto) {
-        #ifdef CLASSIFY_IPV4
+        #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4)
         case bpf_htons(ETH_P_IP): {
             packet = bpf_map_lookup_elem(&my_map, &new_info);
             bpf_printk("IPv4 packet\n");

@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 		printf("MY_VALUE: %s\n", MY_VALUE);
 	} else {
 		MY_VALUE = "valore_predefinito";
-		printf("MY_VALUE: %s\n", MY_VALUE);
+		
 	}
 
 	const char *interface_name = argv[1];

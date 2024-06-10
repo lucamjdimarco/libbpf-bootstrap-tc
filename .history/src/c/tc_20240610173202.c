@@ -10,6 +10,12 @@
 #include "tc.skel.h"
 #include "common.h"
 
+#ifdef MY_DIRECTIVE
+    #define MY_VALUE MY_DIRECTIVE
+#else
+    #define MY_VALUE "valore_predefinito"
+#endif
+
 static volatile sig_atomic_t exiting = 0;
 
 static void sig_int(int signo)
@@ -38,15 +44,6 @@ int main(int argc, char **argv)
 	if (argc != 3) {
 		fprintf(stderr, "Usage: %s <interface> <ipv4|ipv6>\n", argv[0]);
 		return 1;
-	}
-
-	const char *MY_VALUE;
-	if (strcmp(MY_DIRECTIVE, "CLASSIFY_IPV4") == 0) {
-		MY_VALUE = "CLASSIFY_IPV4";
-		printf("MY_VALUE: %s\n", MY_VALUE);
-	} else {
-		MY_VALUE = "valore_predefinito";
-		printf("MY_VALUE: %s\n", MY_VALUE);
 	}
 
 	const char *interface_name = argv[1];

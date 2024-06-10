@@ -40,15 +40,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	const char *MY_VALUE;
-	if (strcmp(MY_DIRECTIVE, "CLASSIFY_IPV4") == 0) {
-		MY_VALUE = "CLASSIFY_IPV4";
-		printf("MY_VALUE: %s\n", MY_VALUE);
-	} else {
-		MY_VALUE = "valore_predefinito";
-		printf("MY_VALUE: %s\n", MY_VALUE);
-	}
-
 	const char *interface_name = argv[1];
 	const char *map_type = argv[2];
 	int index = if_nametoindex(interface_name);

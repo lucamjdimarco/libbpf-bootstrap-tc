@@ -8,6 +8,14 @@
 #include <string.h>
 #include "common.h"
 
+#ifdef ARG 
+#define MODE ARG
+#else
+#define MODE 0
+#endif
+
+
+
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);

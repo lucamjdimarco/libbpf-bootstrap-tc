@@ -21,8 +21,9 @@ INCLUDES := -I$(OUTPUT) -I../../libbpf/include/uapi -I$(dir $(VMLINUX))
 CFLAGS := -g -Wall
 ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 
-ifdef MY_DIRECTIVE
-CFLAGS += -DMY_DIRECTIVE=$(MY_DIRECTIVE)
+ifdef CLASSIFY_IPV4
+	@echo "CLASSIFY_IPV4 is set"
+	CFLAGS += -DCLASSIFY_IPV4=$(CLASSIFY_IPV4)
 endif
 
 APPS = tc

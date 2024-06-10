@@ -197,6 +197,12 @@ static __always_inline int classify_only_address_ipv6_packet(struct only_addr_ip
 }
 #endif
 
+#ifdef MY_DIRECTIVE
+    #define MY_VALUE MY_DIRECTIVE
+#else
+    #define MY_VALUE "valore_predefinito"
+#endif
+
 SEC("tc")
 int tc_ingress(struct __sk_buff *ctx)
 {
@@ -229,6 +235,12 @@ int tc_ingress(struct __sk_buff *ctx)
 
     struct value_packet *packet;
     int ret, cpu;
+
+    if(strcmp(MY_VALUE, "valore_predefinito") == 0) {
+        bpf_printk("MY_DIRECTIVE is not defined\n");
+    } else {
+        bpf_printk("MY_DIRECTIVE is defined\n");
+    }
 
 
 	if (ctx->protocol != bpf_htons(ETH_P_IP) && ctx->protocol != bpf_htons(ETH_P_IPV6)) {

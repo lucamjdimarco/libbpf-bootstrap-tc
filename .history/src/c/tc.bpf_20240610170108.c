@@ -230,6 +230,14 @@ int tc_ingress(struct __sk_buff *ctx)
     struct value_packet *packet;
     int ret, cpu;
 
+    if(strcmp(MODE, "ipv4") == 0) {
+        bpf_printk("Running in IPv4 mode\n");
+    } else if(strcmp(MODE, "ipv6") == 0) {
+        bpf_printk("Running in IPv6 mode\n");
+    } else {
+        bpf_printk("Running in mixed mode\n");
+    }
+
 
 	if (ctx->protocol != bpf_htons(ETH_P_IP) && ctx->protocol != bpf_htons(ETH_P_IPV6)) {
         bpf_printk("Not an IP packet\n");

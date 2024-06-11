@@ -50,6 +50,13 @@ struct {
     __type(value, struct packet_info_ipv6);
 } ipv6_flow SEC(".maps");
 
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 1);
+    __type(key, sizeof(int));
+    __type(value, sizeof(int));
+} classifier SEC(".maps");
+
 static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
     return ((__u64)first_byte << 56) | (counter & 0x00FFFFFFFFFFFFFF);
 }
@@ -207,12 +214,7 @@ int tc_ingress(struct __sk_buff *ctx)
     struct vlan_hdr *vlan;
     //struct ipv6hdr *ip6;
 
-
-    #ifdef CLASSIFY_IPV4
-    bpf_printk("CLASSIFY_IPV4 is defined\n");
-    #else 
-    bpf_printk("CLASSIFY_IPV4 is not defined\n");
-    #endif
+    int classifier = bpf_map_lookup_elem(&classifier, 0);
 
 
     #ifdef CLASSIFY_IPV4

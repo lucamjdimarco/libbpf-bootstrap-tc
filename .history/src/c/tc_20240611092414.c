@@ -11,9 +11,8 @@
 #include "common.h"
 
 // Usa macro del preprocessore per convertire MY_DIRECTIVE in una stringa
-//#define STRINGIFY(x) #x
-//#define TOSTRING(x) STRINGIFY(x)
-
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
 
 static volatile sig_atomic_t exiting = 0;
 
@@ -46,8 +45,10 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	#ifdef CLASSIFY_IPV4
-	printf("CLASSIFY_IPV4 is defined\n");
+	#ifdef MY_DIRECTIVE
+	printf("CLASSIFY_IPV4\n");
+	#else
+	printf("NO CLASSIFY_IPV4\n");
 	#endif
 
 	const char *interface_name = argv[1];
@@ -124,6 +125,7 @@ int main(int argc, char **argv)
 	#endif
 
 	#ifdef CLASSIFY_IPV6
+	printf("Recupero mappa\n");
 	if(strcmp(map_type, "ipv6") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
 		if (map_fd < 0) {

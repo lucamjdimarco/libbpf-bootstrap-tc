@@ -207,14 +207,6 @@ int tc_ingress(struct __sk_buff *ctx)
     struct vlan_hdr *vlan;
     //struct ipv6hdr *ip6;
 
-
-    #ifdef CLASSIFY_IPV4
-    bpf_printk("CLASSIFY_IPV4 is defined\n");
-    #else 
-    bpf_printk("CLASSIFY_IPV4 is not defined\n");
-    #endif
-
-
     #ifdef CLASSIFY_IPV4
     bpf_printk("CLASSIFY_IPV4 is defined\n");
     struct packet_info new_info = {};

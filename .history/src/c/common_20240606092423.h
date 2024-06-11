@@ -14,25 +14,6 @@
 #define MAX_ENTRIES 256
 #define MAX_COUNTER 4294967295 /* 2 ^ 32 */
 
-// Definizione di un'enumerazione per le possibili direttive
-enum Directive {
-    DIRECTIVE_NONE,
-    DIRECTIVE_CLASSIFY_IPV4,
-    DIRECTIVE_CLASSIFY_IPV6,
-	DIRECTIVE_CLASSIFY_ONLY_ADDRESS_IPV4,
-	DIRECTIVE_CLASSIFY_ONLY_ADDRESS_IPV6
-};
-
-#if MY_DIRECTIVE == 1
-#define CLASSIFY_IPV4
-#elif MY_DIRECTIVE == 2
-#define CLASSIFY_IPV6
-#elif MY_DIRECTIVE == 3
-#define CLASSIFY_ONLY_ADDRESS_IPV4
-#elif MY_DIRECTIVE == 4
-#define CLASSIFY_ONLY_ADDRESS_IPV6
-#endif
-
 struct event {
 	__u64 ts;
 	__u64 flowid;

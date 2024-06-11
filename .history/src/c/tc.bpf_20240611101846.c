@@ -50,6 +50,13 @@ struct {
     __type(value, struct packet_info_ipv6);
 } ipv6_flow SEC(".maps");
 
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 1);
+    __type(key, __u8);
+    __type(value, __u8);
+} classifier SEC(".maps");
+
 static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
     return ((__u64)first_byte << 56) | (counter & 0x00FFFFFFFFFFFFFF);
 }
@@ -207,12 +214,39 @@ int tc_ingress(struct __sk_buff *ctx)
     struct vlan_hdr *vlan;
     //struct ipv6hdr *ip6;
 
+    int *classifier_ptr;
+    __u8 keyC = 0;
+    classifier_ptr = bpf_map_lookup_elem(&classifier, &keyC);
+    if (!classifier_ptr) {
+        bpf_printk("Failed to get classifier\n");
+        return TC_ACT_OK;
+    }
 
-    #ifdef CLASSIFY_IPV4
-    bpf_printk("CLASSIFY_IPV4 is defined\n");
-    #else 
-    bpf_printk("CLASSIFY_IPV4 is not defined\n");
-    #endif
+    int value_classifier = *classifier_ptr;
+
+    if (value_classifier == 0) {
+        bpf_printk("Classifier is not enabled\n");
+        return TC_ACT_OK;
+    }
+
+    switch (value_classifier) {
+        case 1: {
+            bpf_printk("Classifier is enabled for IPv4\n");
+            break;
+        }
+        case 2: {
+            bpf_printk("Classifier is enabled for IPv6\n");
+            break;
+        }
+        case 3: {
+            bpf_printk("Classifier is enabled for IPv4 and IPv6\n");
+            break;
+        }
+        default: {
+            bpf_printk("Unknown classifier\n");
+            return TC_ACT_OK;
+        }
+    }
 
 
     #ifdef CLASSIFY_IPV4

@@ -8,6 +8,10 @@
 #include <string.h>
 #include "common.h"
 
+// Usa macro del preprocessore per convertire MY_DIRECTIVE in una stringa
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
@@ -206,14 +210,6 @@ int tc_ingress(struct __sk_buff *ctx)
 	//struct iphdr *ip;
     struct vlan_hdr *vlan;
     //struct ipv6hdr *ip6;
-
-
-    #ifdef CLASSIFY_IPV4
-    bpf_printk("CLASSIFY_IPV4 is defined\n");
-    #else 
-    bpf_printk("CLASSIFY_IPV4 is not defined\n");
-    #endif
-
 
     #ifdef CLASSIFY_IPV4
     bpf_printk("CLASSIFY_IPV4 is defined\n");

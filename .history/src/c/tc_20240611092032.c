@@ -10,11 +10,6 @@
 #include "tc.skel.h"
 #include "common.h"
 
-// Usa macro del preprocessore per convertire MY_DIRECTIVE in una stringa
-//#define STRINGIFY(x) #x
-//#define TOSTRING(x) STRINGIFY(x)
-
-
 static volatile sig_atomic_t exiting = 0;
 
 static void sig_int(int signo)
@@ -40,15 +35,20 @@ void print_ipv6_address(uint8_t *addr) {
 
 int main(int argc, char **argv)
 {
-
 	if (argc != 3) {
 		fprintf(stderr, "Usage: %s <interface> <ipv4|ipv6>\n", argv[0]);
 		return 1;
 	}
 
-	#ifdef CLASSIFY_IPV4
-	printf("CLASSIFY_IPV4 is defined\n");
+	printf("Debug: Reached before #ifdef MY_DIRECTIVE\n");
+
+	#ifdef MY_DIRECTIVE
+	printf("CLASSIFY_IPV4\n");
+	#else
+	printf("NO CLASSIFY_IPV4\n");
 	#endif
+	
+	printf("Debug: Reached after #ifdef MY_DIRECTIVE\n");
 
 	const char *interface_name = argv[1];
 	const char *map_type = argv[2];
@@ -124,6 +124,7 @@ int main(int argc, char **argv)
 	#endif
 
 	#ifdef CLASSIFY_IPV6
+	printf("Recupero mappa\n");
 	if(strcmp(map_type, "ipv6") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
 		if (map_fd < 0) {

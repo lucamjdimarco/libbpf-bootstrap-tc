@@ -46,6 +46,12 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	/*#ifdef MY_DIRECTIVE
+    printf("MY_DIRECTIVE is defined with value: %s\n", TOSTRING(MY_DIRECTIVE));
+    #else
+    printf("MY_DIRECTIVE is not defined\n");
+    #endif*/
+
 	#ifdef CLASSIFY_IPV4
 	printf("CLASSIFY_IPV4 is defined\n");
 	#endif
@@ -111,6 +117,22 @@ int main(int argc, char **argv)
 	       "to see output of the BPF program.\n");
 
 	#ifdef CLASSIFY_IPV4
+	map_fd = bpf_map__fd(skel->maps.classifier);
+	if (map_fd < 0) {
+		fprintf(stderr, "Failed to get map file descriptor\n");
+		return 1;
+	}
+
+	int key = 0;
+	int value = 1;
+
+	// Inserire la coppia chiave-valore nella mappa
+    int ret = bpf_map_update_elem(map_fd, &key, &value, BPF_ANY);
+    if (ret) {
+        fprintf(stderr, "Failed to update map element\n");
+        return 1;
+    }
+
 	if(strcmp(map_type, "ipv4") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map);
 		if (map_fd < 0) {
@@ -124,6 +146,22 @@ int main(int argc, char **argv)
 	#endif
 
 	#ifdef CLASSIFY_IPV6
+	map_fd = bpf_map__fd(skel->maps.classifier_ipv6);
+	if (map_fd < 0) {
+		fprintf(stderr, "Failed to get map file descriptor\n");
+		return 1;
+	}
+
+	int key = 0;
+	int value = 2;
+
+	// Inserire la coppia chiave-valore nella mappa
+	int ret = bpf_map_update_elem(map_fd, &key, &value, BPF_ANY);
+	if (ret) {
+		fprintf(stderr, "Failed to update map element\n");
+		return 1;
+	}
+
 	if(strcmp(map_type, "ipv6") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
 		if (map_fd < 0) {

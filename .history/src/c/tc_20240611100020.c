@@ -14,6 +14,25 @@
 //#define STRINGIFY(x) #x
 //#define TOSTRING(x) STRINGIFY(x)
 
+// Definizione di un'enumerazione per le possibili direttive
+enum Directive {
+    DIRECTIVE_NONE,
+    DIRECTIVE_CLASSIFY_IPV4,
+    DIRECTIVE_CLASSIFY_IPV6,
+	DIRECTIVE_CLASSIFY_ONLY_ADDRESS_IPV4,
+	DIRECTIVE_CLASSIFY_ONLY_ADDRESS_IPV6
+};
+
+#if MY_DIRECTIVE == 1
+#define CLASSIFY_IPV4
+#elif MY_DIRECTIVE == 2
+#define CLASSIFY_IPV6
+#elif MY_DIRECTIVE == 3
+#define CLASSIFY_ONLY_ADDRESS_IPV4
+#elif MY_DIRECTIVE == 4
+#define CLASSIFY_ONLY_ADDRESS_IPV6
+#endif
+
 
 static volatile sig_atomic_t exiting = 0;
 
@@ -45,6 +64,12 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Usage: %s <interface> <ipv4|ipv6>\n", argv[0]);
 		return 1;
 	}
+
+	/*#ifdef MY_DIRECTIVE
+    printf("MY_DIRECTIVE is defined with value: %s\n", TOSTRING(MY_DIRECTIVE));
+    #else
+    printf("MY_DIRECTIVE is not defined\n");
+    #endif*/
 
 	#ifdef CLASSIFY_IPV4
 	printf("CLASSIFY_IPV4 is defined\n");
@@ -111,6 +136,22 @@ int main(int argc, char **argv)
 	       "to see output of the BPF program.\n");
 
 	#ifdef CLASSIFY_IPV4
+	map_fd = bpf_map__fd(skel->maps.classifier);
+	if (map_fd < 0) {
+		fprintf(stderr, "Failed to get map file descriptor\n");
+		return 1;
+	}
+
+	int key = 0;
+	int value = 1;
+
+	// Inserire la coppia chiave-valore nella mappa
+    int ret = bpf_map_update_elem(map_fd, &key, &value, BPF_ANY);
+    if (ret) {
+        fprintf(stderr, "Failed to update map element\n");
+        return 1;
+    }
+
 	if(strcmp(map_type, "ipv4") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map);
 		if (map_fd < 0) {
@@ -124,6 +165,22 @@ int main(int argc, char **argv)
 	#endif
 
 	#ifdef CLASSIFY_IPV6
+	map_fd = bpf_map__fd(skel->maps.classifier_ipv6);
+	if (map_fd < 0) {
+		fprintf(stderr, "Failed to get map file descriptor\n");
+		return 1;
+	}
+
+	int key = 0;
+	int value = 2;
+
+	// Inserire la coppia chiave-valore nella mappa
+	int ret = bpf_map_update_elem(map_fd, &key, &value, BPF_ANY);
+	if (ret) {
+		fprintf(stderr, "Failed to update map element\n");
+		return 1;
+	}
+
 	if(strcmp(map_type, "ipv6") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
 		if (map_fd < 0) {

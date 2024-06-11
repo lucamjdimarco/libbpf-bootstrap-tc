@@ -14,6 +14,12 @@
 //#define STRINGIFY(x) #x
 //#define TOSTRING(x) STRINGIFY(x)
 
+#define STR_EQ(x, y) (strcmp(x, y) == 0)
+// Se MY_DIRECTIVE è uguale a "CLASSIFY_IPV4", definisci la macro CLASSIFY_IPV4_DEFINED
+#if STR_EQ(MY_DIRECTIVE, "CLASSIFY_IPV4")
+#define CLASSIFY_IPV4
+#endif
+
 
 static volatile sig_atomic_t exiting = 0;
 
@@ -45,6 +51,12 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Usage: %s <interface> <ipv4|ipv6>\n", argv[0]);
 		return 1;
 	}
+
+	/*#ifdef MY_DIRECTIVE
+    printf("MY_DIRECTIVE is defined with value: %s\n", TOSTRING(MY_DIRECTIVE));
+    #else
+    printf("MY_DIRECTIVE is not defined\n");
+    #endif*/
 
 	#ifdef CLASSIFY_IPV4
 	printf("CLASSIFY_IPV4 is defined\n");
@@ -124,6 +136,7 @@ int main(int argc, char **argv)
 	#endif
 
 	#ifdef CLASSIFY_IPV6
+	printf("Recupero mappa\n");
 	if(strcmp(map_type, "ipv6") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
 		if (map_fd < 0) {

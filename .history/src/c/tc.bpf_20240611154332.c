@@ -8,59 +8,47 @@
 #include <string.h>
 #include "common.h"
 
-#ifdef CLASSIFY_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, struct packet_info);
     __type(value, struct value_packet);
 } my_map SEC(".maps");
-#endif
 
-#ifdef CLASSIFY_IPV6
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, struct packet_info_ipv6);
     __type(value, struct value_packet);
 } my_map_ipv6 SEC(".maps");
-#endif
 
-#ifdef CLASSIFY_ONLY_ADDRESS_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, struct only_addr_ipv4);
     __type(value, struct value_packet);
 } map_only_addr_ipv4 SEC(".maps");
-#endif
 
-#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, struct only_addr_ipv6);
     __type(value, struct value_packet);
 } map_only_addr_ipv6 SEC(".maps");
-#endif
 
-#if define(CLASSIFY_IPV4) || define(CLASSIFY_ONLY_ADDRESS_IPV4)
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, __u64);
     __type(value, struct packet_info);
 } ipv4_flow SEC(".maps");
-#endif
 
-#if define(CLASSIFY_IPV6) || define(CLASSIFY_ONLY_ADDRESS_IPV6)
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, __u64);
     __type(value, struct packet_info_ipv6);
 } ipv6_flow SEC(".maps");
-#endif
 
 static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
     return ((__u64)first_byte << 56) | (counter & 0x00FFFFFFFFFFFFFF);

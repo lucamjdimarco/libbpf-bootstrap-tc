@@ -237,12 +237,7 @@ int main(int argc, char **argv)
 			return 1;
 		}
 
-		printf("Flow: %llu\n", key_flow);
-
-		__u8 byte1 = packet.src_ip & 0xFF;
-		__u8 byte2 = (packet.src_ip >> 8) & 0xFF;
-		__u8 byte3 = (packet.src_ip >> 16) & 0xFF;
-		__u8 byte4 = (packet.src_ip >> 24) & 0xFF;
+		printf("Flow: %u\n", key_flow);
 
 		printf("---------------\n");
 		printf("Key: Source IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
@@ -256,6 +251,7 @@ int main(int argc, char **argv)
 		printf("Key: Source Port: %u\n", packet.src_port);
 		printf("Key: Destination Port: %u\n", packet.dst_port);
 		printf("Key: Protocol: %u\n", packet.protocol);
+		printf("Value: Counter: %u\n", value.counter);
 		printf("---------------\n");
 	}
 	#endif
@@ -276,7 +272,7 @@ int main(int argc, char **argv)
 			return 1;
 		}
 
-		printf("Flow: %llu\n", key_flow);
+		printf("Flow: %u\n", key_flow);
 
 		printf("---------------\n");
 		printf("Key: Source IP: ");
@@ -286,6 +282,7 @@ int main(int argc, char **argv)
 		printf("Key: Source Port: %u\n", packet.src_port);
 		printf("Key: Destination Port: %u\n", packet.dst_port);
 		printf("Key: Protocol: %u\n", packet.protocol);
+		printf("Value: Counter: %u\n", value.counter);
 		printf("---------------\n");
 	}
 	#endif

@@ -256,6 +256,7 @@ int main(int argc, char **argv)
 		printf("Key: Source Port: %u\n", packet.src_port);
 		printf("Key: Destination Port: %u\n", packet.dst_port);
 		printf("Key: Protocol: %u\n", packet.protocol);
+		printf("Value: Counter: %u\n", packet.counter);
 		printf("---------------\n");
 	}
 	#endif

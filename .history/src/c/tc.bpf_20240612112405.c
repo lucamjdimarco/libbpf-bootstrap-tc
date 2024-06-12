@@ -44,6 +44,7 @@ struct {
 } map_only_addr_ipv6 SEC(".maps");
 #endif
 
+#if define(CLASSIFY_IPV4) || define(CLASSIFY_ONLY_ADDRESS_IPV4)
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);

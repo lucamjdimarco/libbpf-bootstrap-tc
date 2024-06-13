@@ -319,8 +319,12 @@ int tc_ingress(struct __sk_buff *ctx)
         #ifdef CLASSIFY_IPV6
         classify_ipv6_packet(&new_info_ipv6, data_end, data);
         packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
+        if(packet != NULL) {
+            bpf_printk("%u\n", counter);
+            bpf_printk("%u\n", packet->counter);
+        }
+        
         if(!packet) {
-            bpf_printk("YEEEEEE\n");
             flow_id = build_flowid(0, counter++);
             ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_ipv6, BPF_ANY);
             if (ret) {

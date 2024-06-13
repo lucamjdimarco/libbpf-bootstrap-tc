@@ -246,7 +246,7 @@ int tc_ingress(struct __sk_buff *ctx)
     struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
     #endif
 
-    struct value_packet *packet = NULL;
+    struct value_packet *packet;
     int ret, cpu;
 
 
@@ -320,11 +320,10 @@ int tc_ingress(struct __sk_buff *ctx)
         classify_ipv6_packet(&new_info_ipv6, data_end, data);
         packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
         if(!packet) {
-            bpf_printk("YEEEEEE\n");
             flow_id = build_flowid(0, counter++);
             ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_ipv6, BPF_ANY);
             if (ret) {
-                bpf_printk("Failed to insert new item in IPv6 flow maps\n");
+                bpf_printk("Failed to insert new item in IPv4 flow maps\n");
                 return TC_ACT_OK;
             }
         }
@@ -337,7 +336,7 @@ int tc_ingress(struct __sk_buff *ctx)
             flow_id = build_flowid(1, counter++);
             ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_addr_ipv6, BPF_ANY);
             if (ret) {
-                bpf_printk("Failed to insert new item in IPv6 flow maps\n");
+                bpf_printk("Failed to insert new item in IPv4 flow maps\n");
                 return TC_ACT_OK;
             }
         }
@@ -353,7 +352,7 @@ int tc_ingress(struct __sk_buff *ctx)
     bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
 
     switch(eth_proto) {
-        #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4)
+        #ifdef CLASSIFY_IPV4
         case bpf_htons(ETH_P_IP): {
             packet = bpf_map_lookup_elem(&my_map, &new_info);
             bpf_printk("IPv4 packet\n");

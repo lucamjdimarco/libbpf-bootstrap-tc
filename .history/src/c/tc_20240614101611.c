@@ -211,12 +211,10 @@ int main(int argc, char **argv)
         }
 		#endif
 
-		printf("The map has %d elements\n", counter);
+        printf("The map has %d elements\n", counter);
         printf("******************************************************************************\n");
-        sleep(3);
-	}
 
-	printf("Printing the flow map: \n");
+		printf("Printing the flow map: \n");
 	#ifdef CLASSIFY_IPV4
 	map_fd = bpf_map__fd(skel->maps.ipv4_flow);
 	if (map_fd < 0) {
@@ -285,6 +283,12 @@ int main(int argc, char **argv)
 		printf("---------------\n");
 	}
 	#endif
+
+
+        sleep(3);
+    
+
+	}
 
 	
 

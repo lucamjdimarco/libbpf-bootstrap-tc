@@ -488,19 +488,14 @@ int tc_ingress(struct __sk_buff *ctx)
         }
         #endif
     
-        #if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+        #if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6)
         case bpf_htons(ETH_P_IPV6): {
-
             #ifdef CLASSIFY_IPV6
             packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
             #endif
             #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
             packet = bpf_map_lookup_elem(&map_only_addr_ipv6, &new_info_only_addr_ipv6);
             #endif
-            #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
-            packet = bpf_map_lookup_elem(&map_only_dest_ipv6, &new_info_only_dest_ipv6);
-            #endif
-
             bpf_printk("IPv6 packet\n");
             if(!packet) {
                 struct value_packet new_value = {
@@ -512,17 +507,12 @@ int tc_ingress(struct __sk_buff *ctx)
 
 
                 bpf_printk("-----------------------------------------------------");
-                
                 #ifdef CLASSIFY_IPV6
                 ret = bpf_map_update_elem(&my_map_ipv6, &new_info_ipv6, &new_value, BPF_ANY);
                 #endif
                 #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
                 ret = bpf_map_update_elem(&map_only_addr_ipv6, &new_info_only_addr_ipv6, &new_value, BPF_ANY);
                 #endif
-                #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
-                ret = bpf_map_update_elem(&map_only_dest_ipv6, &new_info_only_dest_ipv6, &new_value, BPF_ANY);
-                #endif
-
                 if (ret) {
                     bpf_printk("Failed to insert new item in IPv4 maps\n");
                     return TC_ACT_OK;

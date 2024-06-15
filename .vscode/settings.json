@@ -2,6 +2,13 @@
   "files.associations": {
     "unistd.h": "c",
     "vmlinux.h": "c",
-    "common.h": "c"
+    "common.h": "c",
+    "__bit_reference": "c",
+    "bitset": "c",
+    "__memory": "c",
+    "limits": "c",
+    "locale": "c",
+    "ratio": "c",
+    "tuple": "c"
   }
 }

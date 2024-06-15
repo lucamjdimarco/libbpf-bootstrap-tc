@@ -62,15 +62,6 @@ struct only_addr_ipv6 {
 	__u8 dst_ip[16];   // IPv6 destination address
 };
 
-struct only_dest_ipv4 {
-	__u32 dst_ip; //IPv4 destination address
-};
-
-struct only_dest_ipv6 {
-	__u8 dst_ip[16];   // IPv6 destination address
-};
-
-
 struct value_packet {
 	//sizeof(bpf_spin_lock) = 4 byte
 	struct bpf_spin_lock lock;

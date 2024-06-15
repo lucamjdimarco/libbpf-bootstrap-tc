@@ -216,16 +216,12 @@ int main(int argc, char **argv)
                     fprintf(stderr, "Failed to lookup map element\n");
                     goto detach;
                 }
-				__u8 byte1;
-				__u8 byte2;
-				__u8 byte3;
-				__u8 byte4;
 
 				#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4)
-                byte1 = key.src_ip & 0xFF;
-                byte2 = (key.src_ip >> 8) & 0xFF;
-                byte3 = (key.src_ip >> 16) & 0xFF;
-                byte4 = (key.src_ip >> 24) & 0xFF;
+                __u8 byte1 = key.src_ip & 0xFF;
+                __u8 byte2 = (key.src_ip >> 8) & 0xFF;
+                __u8 byte3 = (key.src_ip >> 16) & 0xFF;
+                __u8 byte4 = (key.src_ip >> 24) & 0xFF;
 
                 printf("---------------\n");
                 printf("Key: Source IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);

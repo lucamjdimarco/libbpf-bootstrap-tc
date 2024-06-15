@@ -246,12 +246,6 @@ int tc_ingress(struct __sk_buff *ctx)
     struct value_packet *packet = NULL;
     int ret, cpu;
 
-    /*__u64 packet_length = ctx->data_end - ctx->data;*/
-    __u64 packet_length = ctx->len;
-
-    /*bpf_printk("Packet length: %u\n", packet_length);
-    bpf_printk("Packet length sizeof: %u\n", packet_length_sizeof);*/
-
 
 	if (ctx->protocol != bpf_htons(ETH_P_IP) && ctx->protocol != bpf_htons(ETH_P_IPV6)) {
         bpf_printk("Not an IP packet\n");
@@ -367,8 +361,7 @@ int tc_ingress(struct __sk_buff *ctx)
             bpf_printk("IPv4 packet\n");
             if(!packet) {
                 struct value_packet new_value = {
-                    .counter = 1,
-                    .bytes_counter = packet_length
+                    .counter = 1
                 };
 
                 bpf_printk("Create new item in IPv4 maps with counter 1\n");
@@ -392,7 +385,6 @@ int tc_ingress(struct __sk_buff *ctx)
                 if (packet->counter < MAX_COUNTER) {
                     bpf_spin_lock(&packet->lock);
                     packet->counter += 1;
-                    packet->bytes_counter += packet_length;
                     bpf_spin_unlock(&packet->lock);
                 } else {
                     bpf_printk("Counter is at maximum value\n");
@@ -418,20 +410,14 @@ int tc_ingress(struct __sk_buff *ctx)
             bpf_printk("IPv6 packet\n");
             if(!packet) {
                 struct value_packet new_value = {
-                    .counter = 1,
-                    .bytes_counter = packet_length
+                    .counter = 1
                 };
 
                 bpf_printk("Create new item in IPv6 maps with counter 1\n");
 
 
                 bpf_printk("-----------------------------------------------------");
-                #ifdef CLASSIFY_IPV6
                 ret = bpf_map_update_elem(&my_map_ipv6, &new_info_ipv6, &new_value, BPF_ANY);
-                #endif
-                #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
-                ret = bpf_map_update_elem(&map_only_addr_ipv6, &new_info_only_addr_ipv6, &new_value, BPF_ANY);
-                #endif
                 if (ret) {
                     bpf_printk("Failed to insert new item in IPv4 maps\n");
                     return TC_ACT_OK;
@@ -443,7 +429,6 @@ int tc_ingress(struct __sk_buff *ctx)
                 if (packet->counter < MAX_COUNTER) {
                     bpf_spin_lock(&packet->lock);
                     packet->counter += 1;
-                    packet->bytes_counter += packet_length;
                     bpf_spin_unlock(&packet->lock);
                 } else {
                     bpf_printk("Counter is at maximum value\n");

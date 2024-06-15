@@ -367,7 +367,7 @@ int tc_ingress(struct __sk_buff *ctx)
             bpf_printk("IPv4 packet\n");
             if(!packet) {
                 struct value_packet new_value = {
-                    .counter = 1,
+                    .counter = 1
                     .bytes_counter = packet_length
                 };
 
@@ -418,7 +418,7 @@ int tc_ingress(struct __sk_buff *ctx)
             bpf_printk("IPv6 packet\n");
             if(!packet) {
                 struct value_packet new_value = {
-                    .counter = 1,
+                    .counter = 1
                     .bytes_counter = packet_length
                 };
 
@@ -443,7 +443,6 @@ int tc_ingress(struct __sk_buff *ctx)
                 if (packet->counter < MAX_COUNTER) {
                     bpf_spin_lock(&packet->lock);
                     packet->counter += 1;
-                    packet->bytes_counter += packet_length;
                     bpf_spin_unlock(&packet->lock);
                 } else {
                     bpf_printk("Counter is at maximum value\n");

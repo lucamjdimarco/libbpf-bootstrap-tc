@@ -113,11 +113,11 @@ int main(int argc, char **argv)
 		map_fd = bpf_map__fd(skel->maps.my_map);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 
@@ -126,11 +126,11 @@ int main(int argc, char **argv)
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 
@@ -139,11 +139,11 @@ int main(int argc, char **argv)
 		map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv4);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 
@@ -152,11 +152,11 @@ int main(int argc, char **argv)
 		map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv6);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 	
@@ -209,7 +209,6 @@ int main(int argc, char **argv)
 				#endif
 
                 printf("Value: Counter: %u\n", value.counter);
-				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
                 printf("---------------\n");
             }
         }
@@ -250,7 +249,6 @@ int main(int argc, char **argv)
 				#endif
 
 				printf("Value: Counter: %u\n", value.counter);
-				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
 				printf("---------------\n");
 			}
         }

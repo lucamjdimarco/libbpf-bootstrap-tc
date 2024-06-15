@@ -209,7 +209,6 @@ int main(int argc, char **argv)
 				#endif
 
                 printf("Value: Counter: %u\n", value.counter);
-				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
                 printf("---------------\n");
             }
         }
@@ -250,7 +249,6 @@ int main(int argc, char **argv)
 				#endif
 
 				printf("Value: Counter: %u\n", value.counter);
-				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
 				printf("---------------\n");
 			}
         }

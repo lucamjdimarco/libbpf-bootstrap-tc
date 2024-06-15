@@ -367,7 +367,7 @@ int tc_ingress(struct __sk_buff *ctx)
             bpf_printk("IPv4 packet\n");
             if(!packet) {
                 struct value_packet new_value = {
-                    .counter = 1,
+                    .counter = 1
                     .bytes_counter = packet_length
                 };
 

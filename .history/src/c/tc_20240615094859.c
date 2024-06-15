@@ -113,11 +113,11 @@ int main(int argc, char **argv)
 		map_fd = bpf_map__fd(skel->maps.my_map);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 
@@ -126,11 +126,11 @@ int main(int argc, char **argv)
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 
@@ -139,11 +139,11 @@ int main(int argc, char **argv)
 		map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv4);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 
@@ -152,11 +152,11 @@ int main(int argc, char **argv)
 		map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv6);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 	
@@ -183,9 +183,9 @@ int main(int argc, char **argv)
                 counter++;
 
                 int ret = bpf_map_lookup_elem(map_fd, &key, &value);
-                if (ret == -1) {
+                if (ret) {
                     fprintf(stderr, "Failed to lookup map element\n");
-                    goto detach;
+                    return 1;
                 }
 
                 __u8 byte1 = key.src_ip & 0xFF;
@@ -209,7 +209,6 @@ int main(int argc, char **argv)
 				#endif
 
                 printf("Value: Counter: %u\n", value.counter);
-				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
                 printf("---------------\n");
             }
         }
@@ -232,9 +231,9 @@ int main(int argc, char **argv)
 				counter++;
 
 				int ret = bpf_map_lookup_elem(map_fd, &key, &value);
-				if (ret == -1) {
+				if (ret) {
 					fprintf(stderr, "Failed to lookup map element\n");
-					goto detach;
+					return 1;
 				}
 
 				printf("---------------\n");
@@ -250,7 +249,6 @@ int main(int argc, char **argv)
 				#endif
 
 				printf("Value: Counter: %u\n", value.counter);
-				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
 				printf("---------------\n");
 			}
         }
@@ -260,8 +258,6 @@ int main(int argc, char **argv)
         printf("******************************************************************************\n");
         sleep(3);
 	}
-
-	goto detach;
 
 	/*printf("Printing the flow map: \n");
 	#ifdef CLASSIFY_IPV4
@@ -342,9 +338,10 @@ int main(int argc, char **argv)
 	#endif*/
 
 	
-detach:
+
 	tc_opts.flags = tc_opts.prog_fd = tc_opts.prog_id = 0;
 	err = bpf_tc_detach(&tc_hook, &tc_opts);
+    printf("Detaching the program\n");
 	if (err) {
 		fprintf(stderr, "Failed to detach TC: %d\n", err);
 		goto cleanup;

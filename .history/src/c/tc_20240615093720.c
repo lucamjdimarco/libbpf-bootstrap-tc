@@ -113,11 +113,11 @@ int main(int argc, char **argv)
 		map_fd = bpf_map__fd(skel->maps.my_map);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 
@@ -126,37 +126,37 @@ int main(int argc, char **argv)
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 
 	#ifdef CLASSIFY_ONLY_ADDRESS_IPV4
 	if(strcmp(map_type, "ipv4") == 0) {
-		map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv4);
+		map_fd = bpf_map__fd(skel->maps.only_address_ipv4);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 
 	#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
 	if(strcmp(map_type, "ipv6") == 0) {
-		map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv6);
+		map_fd = bpf_map__fd(skel->maps.only_address_ipv6);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
-			goto detach;
+			return 1;
 		}
 	} else {
 		fprintf(stderr, "Invalid map type\n");
-		goto detach;
+		return 1;
 	}
 	#endif
 	
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
 		sleep(1);*/
 
 		int counter = 0;
-		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4)
+		#if define(CLASSIFY_IPV4) || define(CLASSIFY_ONLY_ADDRESS_IPV4)
         if (strcmp(map_type, "ipv4") == 0) {
 
 			#ifdef CLASSIFY_IPV4
@@ -183,9 +183,9 @@ int main(int argc, char **argv)
                 counter++;
 
                 int ret = bpf_map_lookup_elem(map_fd, &key, &value);
-                if (ret == -1) {
+                if (ret) {
                     fprintf(stderr, "Failed to lookup map element\n");
-                    goto detach;
+                    return 1;
                 }
 
                 __u8 byte1 = key.src_ip & 0xFF;
@@ -209,22 +209,14 @@ int main(int argc, char **argv)
 				#endif
 
                 printf("Value: Counter: %u\n", value.counter);
-				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
                 printf("---------------\n");
             }
         }
 		#endif
 
-		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6)
+		#if define(CLASSIFY_IPV6) || define(CLASSIFY_ONLY_ADDRESS_IPV6)
 		if (strcmp(map_type, "ipv6") == 0) {
-			
-			#ifdef CLASSIFY_IPV6
 			struct packet_info_ipv6 key;
-			#endif
-			#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
-			struct only_addr_ipv6 key;
-			#endif
-
 			struct value_packet value;
 			memset(&key, 0, sizeof(key));
 
@@ -232,9 +224,9 @@ int main(int argc, char **argv)
 				counter++;
 
 				int ret = bpf_map_lookup_elem(map_fd, &key, &value);
-				if (ret == -1) {
+				if (ret) {
 					fprintf(stderr, "Failed to lookup map element\n");
-					goto detach;
+					return 1;
 				}
 
 				printf("---------------\n");
@@ -242,15 +234,10 @@ int main(int argc, char **argv)
 				print_ipv6_address(key.src_ip);
 				printf("Key: Destination IP: ");
 				print_ipv6_address(key.dst_ip);
-
-				#ifdef CLASSIFY_IPV6
 				printf("Key: Source Port: %u\n", key.src_port);
 				printf("Key: Destination Port: %u\n", key.dst_port);
 				printf("Key: Protocol: %u\n", key.protocol);
-				#endif
-
 				printf("Value: Counter: %u\n", value.counter);
-				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
 				printf("---------------\n");
 			}
         }
@@ -260,8 +247,6 @@ int main(int argc, char **argv)
         printf("******************************************************************************\n");
         sleep(3);
 	}
-
-	goto detach;
 
 	/*printf("Printing the flow map: \n");
 	#ifdef CLASSIFY_IPV4
@@ -342,9 +327,10 @@ int main(int argc, char **argv)
 	#endif*/
 
 	
-detach:
+
 	tc_opts.flags = tc_opts.prog_fd = tc_opts.prog_id = 0;
 	err = bpf_tc_detach(&tc_hook, &tc_opts);
+    printf("Detaching the program\n");
 	if (err) {
 		fprintf(stderr, "Failed to detach TC: %d\n", err);
 		goto cleanup;

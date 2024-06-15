@@ -44,9 +44,9 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/*#ifdef CLASSIFY_IPV4
-	printf("CLASSIFY_IPV4 is defined\n");
-	#endif*/
+	// #ifdef CLASSIFY_IPV4
+	// printf("CLASSIFY_IPV4 is defined\n");
+	// #endif
 
 	const char *interface_name = argv[1];
 	const char *map_type = argv[2];
@@ -223,10 +223,13 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to get map file descriptor\n");
 		return 1;
 	}
+    printf("map_fd: %d\n", map_fd);  // Debug: stampa il valore di map_fd
 	__u64 key_flow = 0;
 	struct packet_info packet;
+    printf("key_flow: %llu\n", key_flow);  // Debug: stampa il valore di key_flow
 
-	while (bpf_map_get_next_key(map_fd, &key_flow, &key_flow) == 0) {
+    int ret;
+	while ((ret = bpf_map_get_next_key(map_fd, &key_flow, &key_flow)) == 0) {
 		int ret = bpf_map_lookup_elem(map_fd, &key_flow, &packet);
 		if (ret) {
 			fprintf(stderr, "Failed to lookup map element\n");
@@ -254,6 +257,11 @@ int main(int argc, char **argv)
 		printf("Key: Protocol: %u\n", packet.protocol);
 		printf("---------------\n");
 	}
+
+    if (ret != 0) {
+        fprintf(stderr, "bpf_map_get_next_key returned: %d, errno: %d (%s)\n", ret, errno, strerror(errno));
+    }
+
 	#endif
 
 	#ifdef CLASSIFY_IPV6
@@ -290,6 +298,7 @@ int main(int argc, char **argv)
 
 	tc_opts.flags = tc_opts.prog_fd = tc_opts.prog_id = 0;
 	err = bpf_tc_detach(&tc_hook, &tc_opts);
+    printf("Detaching the program\n");
 	if (err) {
 		fprintf(stderr, "Failed to detach TC: %d\n", err);
 		goto cleanup;

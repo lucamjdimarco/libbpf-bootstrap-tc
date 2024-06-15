@@ -297,7 +297,8 @@ int tc_ingress(struct __sk_buff *ctx)
         if(!packet) {
             flow_id = build_flowid(0, counter++);
             ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info, BPF_ANY);
-            if (ret) {
+            bpf_printk("ret: %d\n", ret);
+            if (ret == -1) {
                 bpf_printk("Failed to insert new item in IPv4 flow maps\n");
                 return TC_ACT_OK;
             }

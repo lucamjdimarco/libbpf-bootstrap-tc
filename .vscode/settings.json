@@ -9,6 +9,7 @@
     "limits": "c",
     "locale": "c",
     "ratio": "c",
-    "tuple": "c"
+    "tuple": "c",
+    "influxdb_wrapper_int.h": "c"
   }
 }

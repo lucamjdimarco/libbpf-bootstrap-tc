@@ -45,24 +45,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/*-----------------------*/
-
-	MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
-	if (!h) {
-		printf("Cannot create MHandler\n");
-		return -EINVAL;
-	}
-
-	show_databases_influxdb(h);
-	write_temp_influxdb(h, "Rome", 14.1);
-
-	destroy_influxdb(h);
-	h = NULL;
-
-	printf(" *** Done ***\n");
-
-	/*-----------------------*/
-
 	// #ifdef CLASSIFY_IPV4
 	// printf("CLASSIFY_IPV4 is defined\n");
 	// #endif

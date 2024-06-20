@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.12.0)
+project(c-influxdb-example)
+find_package(InfluxDB)
+add_executable(example-influx-c mainc.c influxdb_wrapper.cpp influxdb_wrapper_int.cpp)
+target_link_libraries(example-influx-c PRIVATE InfluxData::InfluxDB)

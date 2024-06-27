@@ -84,6 +84,8 @@ static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
     return ((__u64)first_byte << 56) | (counter & 0x00FFFFFFFFFFFFFF);
 }
 
+
+
 #ifdef CLASSIFY_IPV4
 static __always_inline int classify_ipv4_packet(struct packet_info *info, void *data_end, void *data) {
     struct iphdr *ip = (struct iphdr *)data;
@@ -268,6 +270,12 @@ int tc_ingress(struct __sk_buff *ctx)
     static __u64 counter = 0;
     __u64 flow_id;
 
+    enum FlowIdType {
+        quintupla = 0,
+        only_address = 1,
+        only_dest_address = 2
+    };
+
 
     #ifdef CLASSIFY_IPV4
     struct packet_info new_info = {};
@@ -341,7 +349,7 @@ int tc_ingress(struct __sk_buff *ctx)
         classify_ipv4_packet(&new_info, data_end, data);
         packet = bpf_map_lookup_elem(&my_map, &new_info);
         if(!packet) {
-            flow_id = build_flowid(0, counter++);
+            flow_id = build_flowid(quintupla, counter++);
             ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info, BPF_ANY);
             bpf_printk("ret: %d\n", ret);
             if (ret == -1) {
@@ -355,7 +363,7 @@ int tc_ingress(struct __sk_buff *ctx)
         classify_only_address_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
         packet = bpf_map_lookup_elem(&map_only_addr_ipv4, &new_info_only_addr_ipv4);
         if(!packet) {
-            flow_id = build_flowid(1, counter++);
+            flow_id = build_flowid(only_address, counter++);
             ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info_only_addr_ipv4, BPF_ANY);
             if (ret) {
                 bpf_printk("Failed to insert new item in IPv4 flow maps\n");
@@ -368,7 +376,7 @@ int tc_ingress(struct __sk_buff *ctx)
         classify_only_dest_address_ipv4_packet(&new_info_only_dest_ipv4, data_end, data);
         packet = bpf_map_lookup_elem(&map_only_dest_ipv4, &new_info_only_dest_ipv4);
         if(!packet) {
-            flow_id = build_flowid(2, counter++);
+            flow_id = build_flowid(only_dest_address, counter++);
             ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info_only_dest_ipv4, BPF_ANY);
             if (ret) {
                 bpf_printk("Failed to insert new item in IPv4 flow maps\n");
@@ -384,7 +392,7 @@ int tc_ingress(struct __sk_buff *ctx)
         classify_ipv6_packet(&new_info_ipv6, data_end, data);
         packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
         if(!packet) {
-            flow_id = build_flowid(0, counter++);
+            flow_id = build_flowid(quintupla, counter++);
             ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_ipv6, BPF_ANY);
             if (ret) {
                 bpf_printk("Failed to insert new item in IPv6 flow maps\n");
@@ -397,7 +405,7 @@ int tc_ingress(struct __sk_buff *ctx)
         classify_only_address_ipv6_packet(&new_info_only_addr_ipv6, data_end, data);
         packet = bpf_map_lookup_elem(&map_only_addr_ipv6, &new_info_only_addr_ipv6);
         if(!packet) {
-            flow_id = build_flowid(1, counter++);
+            flow_id = build_flowid(only_address, counter++);
             ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_addr_ipv6, BPF_ANY);
             if (ret) {
                 bpf_printk("Failed to insert new item in IPv6 flow maps\n");
@@ -410,7 +418,7 @@ int tc_ingress(struct __sk_buff *ctx)
         classify_only_dest_address_ipv6_packet(&new_info_only_dest_ipv6, data_end, data);
         packet = bpf_map_lookup_elem(&map_only_dest_ipv6, &new_info_only_dest_ipv6);
         if(!packet) {
-            flow_id = build_flowid(2, counter++);
+            flow_id = build_flowid(only_dest_address, counter++);
             ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_dest_ipv6, BPF_ANY);
             if (ret) {
                 bpf_printk("Failed to insert new item in IPv6 flow maps\n");

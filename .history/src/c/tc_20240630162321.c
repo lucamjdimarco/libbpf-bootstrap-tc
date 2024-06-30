@@ -9,7 +9,7 @@
 #include <net/if.h>  // for if_nametoindex
 #include "tc.skel.h"
 #include "common.h"
-//#include "../../influxdb-connector/influxdb_wrapper_int.h"
+#include "../../influxdb-connector/influxdb_wrapper_int.h"
 
 //make CFLAGS_EXTRA="-DCLASS=1"
 
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 
 	/*-----------------------*/
 
-	/*MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
+	MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
 	if (!h) {
 		printf("Cannot create MHandler\n");
 		return -EINVAL;
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 	destroy_influxdb(h);
 	h = NULL;
 
-	printf(" *** Done ***\n");*/
+	printf(" *** Done ***\n");
 
 	/*-----------------------*/
 

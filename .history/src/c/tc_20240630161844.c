@@ -9,7 +9,7 @@
 #include <net/if.h>  // for if_nametoindex
 #include "tc.skel.h"
 #include "common.h"
-//#include "../../influxdb-connector/influxdb_wrapper_int.h"
+#include "../../influxdb-connector/influxdb_wrapper_int.h"
 
 //make CFLAGS_EXTRA="-DCLASS=1"
 
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 
 	/*-----------------------*/
 
-	/*MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
+	MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
 	if (!h) {
 		printf("Cannot create MHandler\n");
 		return -EINVAL;
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 	destroy_influxdb(h);
 	h = NULL;
 
-	printf(" *** Done ***\n");*/
+	printf(" *** Done ***\n");
 
 	/*-----------------------*/
 
@@ -135,7 +135,6 @@ int main(int argc, char **argv)
 	#endif
 	//struct packet_info key;
   	//struct value_packet value;
-	struct bpf_object *obj;
 
 	libbpf_set_print(libbpf_print_fn);
 
@@ -370,14 +369,6 @@ int main(int argc, char **argv)
         printf("******************************************************************************\n");
         sleep(3);
 	}
-
-	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-	print_ipv4_flow(map_fd_flow);
-	#endif
-
-	#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-	print_ipv6_flow(map_fd_flow);
-	#endif
 
 	goto detach;
 

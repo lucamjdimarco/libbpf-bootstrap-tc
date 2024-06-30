@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 	#endif
 	//struct packet_info key;
   	//struct value_packet value;
-
+	
 	libbpf_set_print(libbpf_print_fn);
 
 	skel = tc_bpf__open_and_load();
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
 	#ifdef CLASSIFY_IPV4
 	if(strcmp(map_type, "ipv4") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map);
-		map_fd_flow = bpf_map__fd(skel->maps.ipv4_flow);
+		map_fd_flow = bpf_object__find_map_fd_by_name(obj, "ipv4_flow");
 		if (map_fd < 0 || map_fd_flow < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
 			goto detach;
@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 	#ifdef CLASSIFY_IPV6
 	if(strcmp(map_type, "ipv6") == 0) {
 		map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
-		map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
+		map_fd_flow = bpf_object__find_map_fd_by_name(obj, "ipv6_flow");
 		if (map_fd < 0 || map_fd_flow < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
 			goto detach;
@@ -205,7 +205,6 @@ int main(int argc, char **argv)
 	#ifdef CLASSIFY_ONLY_ADDRESS_IPV4
 	if(strcmp(map_type, "ipv4") == 0) {
 		map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv4);
-		map_fd_flow = bpf_map__fd(skel->maps.ipv4_flow);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
 			goto detach;
@@ -219,7 +218,6 @@ int main(int argc, char **argv)
 	#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
 	if(strcmp(map_type, "ipv6") == 0) {
 		map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv6);
-		map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
 			goto detach;
@@ -233,7 +231,6 @@ int main(int argc, char **argv)
 	#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
 	if(strcmp(map_type, "ipv4") == 0) {
 		map_fd = bpf_map__fd(skel->maps.map_only_dest_ipv4);
-		map_fd_flow = bpf_map__fd(skel->maps.ipv4_flow);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
 			goto detach;
@@ -247,7 +244,6 @@ int main(int argc, char **argv)
 	#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 	if(strcmp(map_type, "ipv6") == 0) {
 		map_fd = bpf_map__fd(skel->maps.map_only_dest_ipv6);
-		map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
 		if (map_fd < 0) {
 			fprintf(stderr, "Failed to get map file descriptor\n");
 			goto detach;

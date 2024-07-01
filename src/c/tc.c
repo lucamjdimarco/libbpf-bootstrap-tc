@@ -280,7 +280,7 @@ int main(int argc, char **argv)
 
 		int counter = 0;
 		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-        if (strcmp(map_type, "ipv4") == 0) {
+        /*if (strcmp(map_type, "ipv4") == 0) {
 
 			#ifdef CLASSIFY_IPV4
             struct packet_info key;
@@ -334,7 +334,7 @@ int main(int argc, char **argv)
 				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
                 printf("---------------\n");
             }
-        }
+        }*/
 		#endif
 
 		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)

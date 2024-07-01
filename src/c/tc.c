@@ -371,16 +371,17 @@ int main(int argc, char **argv)
 
 		printf("The map has %d elements\n", counter);
         printf("******************************************************************************\n");
+		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+		print_ipv4_flow(map_fd_flow);
+		#endif
+
+		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+		print_ipv6_flow(map_fd_flow);
+		#endif
         sleep(3);
 	}
 
-	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-	print_ipv4_flow(map_fd_flow);
-	#endif
-
-	#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-	print_ipv6_flow(map_fd_flow);
-	#endif
+	
 
 	goto detach;
 

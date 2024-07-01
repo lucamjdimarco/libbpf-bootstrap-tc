@@ -51,6 +51,7 @@ void print_ipv4_flow(int map_fd) {
     }
 
     while (bpf_map_get_next_key(map_fd, &key, &next_key) == 0) {
+		printf("key trovata: %llu\n", key);
         if (bpf_map_lookup_elem(map_fd, &next_key, &value) == 0) {
             printf("Key: %llu\n", next_key);
             printf("  src_ip: %u, dst_ip: %u, src_port: %u, dst_port: %u, protocol: %u\n",
@@ -386,6 +387,7 @@ int main(int argc, char **argv)
 		printf("The map has %d elements\n", counter);
         printf("******************************************************************************\n");
 		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+		printf("Printing the flow map fd: %u\n", map_fd_flow);
 		print_ipv4_flow(map_fd_flow);
 		#endif
 

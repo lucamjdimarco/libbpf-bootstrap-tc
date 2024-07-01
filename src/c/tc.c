@@ -44,11 +44,11 @@ void print_ipv4_flow(int map_fd) {
 
     printf("IPv4 Flow Map:\n");
 
-	int ret = bpf_map_get_next_key(map_fd, NULL, &next_key);
+	/*int ret = bpf_map_get_next_key(map_fd, NULL, &next_key);
     if (ret) {
         printf("No keys found in the map.\n");
         return;
-    }
+    }*/
 
     while (bpf_map_get_next_key(map_fd, &key, &next_key) == 0) {
 		printf("key trovata: %llu\n", key);

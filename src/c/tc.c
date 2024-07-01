@@ -43,6 +43,13 @@ void print_ipv4_flow(int map_fd) {
     struct packet_info value;
 
     printf("IPv4 Flow Map:\n");
+
+	int ret = bpf_map_get_next_key(map_fd, NULL, &next_key);
+    if (ret) {
+        printf("No keys found in the map.\n");
+        return;
+    }
+
     while (bpf_map_get_next_key(map_fd, &key, &next_key) == 0) {
         if (bpf_map_lookup_elem(map_fd, &next_key, &value) == 0) {
             printf("Key: %llu\n", next_key);
@@ -59,6 +66,13 @@ void print_ipv6_flow(int map_fd) {
     struct packet_info_ipv6 value;
 
     printf("IPv6 Flow Map:\n");
+
+	int ret = bpf_map_get_next_key(map_fd, NULL, &next_key);
+    if (ret) {
+        printf("No keys found in the map.\n");
+        return;
+    }
+
     while (bpf_map_get_next_key(map_fd, &key, &next_key) == 0) {
         if (bpf_map_lookup_elem(map_fd, &next_key, &value) == 0) {
             printf("Key: %llu\n", next_key);

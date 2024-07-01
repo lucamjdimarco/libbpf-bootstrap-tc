@@ -386,7 +386,12 @@ int main(int argc, char **argv)
 
 		printf("The map has %d elements\n", counter);
         printf("******************************************************************************\n");
-		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+		
+        sleep(3);
+	}
+
+	printf("Printing the flow map: \n");
+	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 		printf("Printing the flow map fd: %u\n", map_fd_flow);
 		print_ipv4_flow(map_fd_flow);
 		#endif
@@ -394,10 +399,6 @@ int main(int argc, char **argv)
 		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 		print_ipv6_flow(map_fd_flow);
 		#endif
-        sleep(3);
-	}
-
-	
 
 	goto detach;
 

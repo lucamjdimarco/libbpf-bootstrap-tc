@@ -44,11 +44,11 @@ void print_ipv4_flow(int map_fd) {
 
     printf("IPv4 Flow Map:\n");
 
-	/*int ret = bpf_map_get_next_key(map_fd, NULL, &next_key);
+	int ret = bpf_map_get_next_key(map_fd, NULL, &next_key);
     if (ret) {
         printf("No keys found in the map.\n");
         return;
-    }*/
+    }
 
     while (bpf_map_get_next_key(map_fd, &key, &next_key) == 0) {
 		printf("key trovata: %llu\n", key);
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
 
 		int counter = 0;
 		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-        /*if (strcmp(map_type, "ipv4") == 0) {
+        if (strcmp(map_type, "ipv4") == 0) {
 
 			#ifdef CLASSIFY_IPV4
             struct packet_info key;
@@ -334,7 +334,7 @@ int main(int argc, char **argv)
 				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
                 printf("---------------\n");
             }
-        }*/
+        }
 		#endif
 
 		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)

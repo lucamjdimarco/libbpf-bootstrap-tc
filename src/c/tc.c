@@ -79,6 +79,9 @@ void print_ipv4_flow(int fd) {
 		}
 		if (!bpf_map_lookup_elem(fd, key, value)) {
 			printf("Valore trovato\n");
+			printf("Key: %llu\n", next_key);
+            printf("src_ip: %u, dst_ip: %u, src_port: %u, dst_port: %u, protocol: %u\n",
+                   value.src_ip, value.dst_ip, value.src_port, value.dst_port, value.protocol);
 		} else {
 			printf("Valore non trovato\n");
 		}

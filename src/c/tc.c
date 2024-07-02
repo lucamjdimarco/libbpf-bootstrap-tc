@@ -70,6 +70,12 @@ void print_ipv4_flow(int fd) {
         key = next_key;
     }*/
 
+
+   	__u8 byte1;
+	__u8 byte2;
+	__u8 byte3;
+	__u8 byte4;
+
 	while(true) {
 		err = bpf_map_get_next_key(fd, prev_key, key);
 		if (err) {
@@ -77,11 +83,30 @@ void print_ipv4_flow(int fd) {
 				err = 0;
 			break;
 		}
+		
 		if (!bpf_map_lookup_elem(fd, key, value)) {
-			printf("Valore trovato\n");
-			 printf("Key: %llu\n", *key);
-            printf("  src_ip: %u, dst_ip: %u, src_port: %u, dst_port: %u, protocol: %u\n",
-                   value->src_ip, value->dst_ip, value->src_port, value->dst_port, value->protocol);
+			printf("Flow: %llu\n", *key)
+			byte1 = value->src_ip & 0xFF;
+			byte2 = (value->src_ip >> 8) & 0xFF;
+			byte3 = (value->src_ip >> 16) & 0xFF;
+			byte4 = (value->src_ip >> 24) & 0xFF;
+
+			printf("---------------\n");
+			printf("Key: Source IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
+			
+
+			byte1 = value->dst_ip & 0xFF;
+			byte2 = (value->dst_ip >> 8) & 0xFF;
+			byte3 = (value->dst_ip >> 16) & 0xFF;
+			byte4 = (value->dst_ip >> 24) & 0xFF;
+			printf("Key: Destination IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
+
+			
+			printf("Key: Source Port: %u\n", value->src_port);
+			printf("Key: Destination Port: %u\n", value->dst_port);
+			printf("Key: Protocol: %u\n", value->protocol);
+			
+			printf("---------------\n");
 		} else {
 			printf("Valore non trovato\n");
 		}

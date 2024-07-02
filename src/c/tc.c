@@ -43,7 +43,7 @@ void print_ipv4_flow(int fd) {
     struct packet_info value;*/
 
 	__u64 *key, *prev_key;
-	struct packet_info value;
+	struct packet_info *value;
 	unsigned int num_elems = 0;
 	int err;
 
@@ -80,12 +80,13 @@ void print_ipv4_flow(int fd) {
 		if (!bpf_map_lookup_elem(fd, key, value)) {
 			printf("Valore trovato\n");
 		} else {
-			printf("Valore non trovato");
+			printf("Valore non trovato\n");
 		}
 		prev_key = key;
 	}
 
-	printf
+	free(key);
+	free(value);
 
 
 }

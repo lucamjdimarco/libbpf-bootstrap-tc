@@ -85,7 +85,7 @@ void print_ipv4_flow(int fd) {
 		}
 		
 		if (!bpf_map_lookup_elem(fd, key, value)) {
-			printf("Flow: %llu\n", *key)
+			printf("Flow: %llu\n", *key);
 			byte1 = value->src_ip & 0xFF;
 			byte2 = (value->src_ip >> 8) & 0xFF;
 			byte3 = (value->src_ip >> 16) & 0xFF;

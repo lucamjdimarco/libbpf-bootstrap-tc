@@ -38,9 +38,19 @@ void print_ipv6_address(uint8_t *addr) {
 }
 
 // Funzione per stampare il contenuto della mappa ipv4_flow
-void print_ipv4_flow(int map_fd) {
-    __u64 key = 0, next_key;
-    struct packet_info value;
+void print_ipv4_flow(int fd) {
+    /*__u64 key = 0, next_key;
+    struct packet_info value;*/
+
+	__u64 *key, *prev_key
+	struct packet_info value;
+	unsigned int num_elems = 0;
+	int err;
+
+	key = malloc(sizeof(__u64));
+	prev_key = NULL;
+	value = malloc(sizeof(struct packet_info));
+
 
     printf("IPv4 Flow Map:\n");
 
@@ -50,7 +60,7 @@ void print_ipv4_flow(int map_fd) {
         return;
     }*/
 
-    while (bpf_map_get_next_key(map_fd, &key, &next_key) == 0) {
+    /*while (bpf_map_get_next_key(map_fd, &key, &next_key) == 0) {
 		printf("key trovata: %llu\n", key);
         if (bpf_map_lookup_elem(map_fd, &next_key, &value) == 0) {
             printf("Key: %llu\n", next_key);
@@ -58,7 +68,26 @@ void print_ipv4_flow(int map_fd) {
                    value.src_ip, value.dst_ip, value.src_port, value.dst_port, value.protocol);
         }
         key = next_key;
-    }
+    }*/
+
+	while(true) {
+		err = bpf_map_get_next_key(fd, prev_key, key);
+		if (err) {
+			if (errno == ENOENT)
+				err = 0;
+			break;
+		}
+		if (!bpf_map_lookup_elem(fd, key, value)) {
+			printf("Valore trovato\n");
+		} else {
+			printf("Valore non trovato");
+		}
+		prev_key = key;
+	}
+
+	printf
+
+
 }
 
 // Funzione per stampare il contenuto della mappa ipv6_flow

@@ -121,39 +121,73 @@ void print_ipv4_flow(int fd) {
 
 // Funzione per stampare il contenuto della mappa ipv6_flow
 void print_ipv6_flow(int map_fd) {
-    __u64 key = 0, next_key;
-    struct packet_info_ipv6 value;
+    __u64 *key, *prev_key;
+
+    struct packet_info_ipv6 *value;
+
+	unsigned int num_elems = 0;
+	int err;
+
+	key = malloc(sizeof(__u64));
+	prev_key = NULL;
+	value = malloc(sizeof(struct packet_info_ipv6));
+
 
     printf("IPv6 Flow Map:\n");
 
-	int ret = bpf_map_get_next_key(map_fd, NULL, &next_key);
-    if (ret) {
-        printf("No keys found in the map.\n");
-        return;
-    }
+	while(true) {
+		err = bpf_map_get_next_key(map_fd, prev_key, key);
+		if (err) {
+			if (errno == ENOENT)
+				err = 0;
+			break;
+		}
+		
+		if (!bpf_map_lookup_elem(map_fd, key, value)) {
+			printf("Flow: %llu\n", *key);
+			printf("---------------\n");
+			printf("Key: Source IP: ");
+			print_ipv6_address(value->src_ip);
+			printf("Key: Destination IP: ");
+			print_ipv6_address(value->dst_ip);
+			printf("Key: Source Port: %u\n", value->src_port);
+			printf("Key: Destination Port: %u\n", value->dst_port);
+			printf("Key: Protocol: %u\n", value->protocol);
+			printf("---------------\n");
+		} else {
+			printf("Valore non trovato\n");
+		}
+		prev_key = key;
+	}
 
-    while (bpf_map_get_next_key(map_fd, &key, &next_key) == 0) {
-        if (bpf_map_lookup_elem(map_fd, &next_key, &value) == 0) {
-            printf("Key: %llu\n", next_key);
-            printf("  src_ip: ");
-            for (int i = 0; i < 16; i++) {
-                printf("%02x", value.src_ip[i]);
-                if (i % 2 == 1 && i < 15) {
-                    printf(":");
-                }
-            }
-            printf(", dst_ip: ");
-            for (int i = 0; i < 16; i++) {
-                printf("%02x", value.dst_ip[i]);
-                if (i % 2 == 1 && i < 15) {
-                    printf(":");
-                }
-            }
-            printf(", src_port: %u, dst_port: %u, protocol: %u\n",
-                   value.src_port, value.dst_port, value.protocol);
-        }
-        key = next_key;
-    }
+	// int ret = bpf_map_get_next_key(map_fd, NULL, &next_key);
+    // if (ret) {
+    //     printf("No keys found in the map.\n");
+    //     return;
+    // }
+
+    // while (bpf_map_get_next_key(map_fd, &key, &next_key) == 0) {
+    //     if (bpf_map_lookup_elem(map_fd, &next_key, &value) == 0) {
+    //         printf("Key: %llu\n", next_key);
+    //         printf("  src_ip: ");
+    //         for (int i = 0; i < 16; i++) {
+    //             printf("%02x", value.src_ip[i]);
+    //             if (i % 2 == 1 && i < 15) {
+    //                 printf(":");
+    //             }
+    //         }
+    //         printf(", dst_ip: ");
+    //         for (int i = 0; i < 16; i++) {
+    //             printf("%02x", value.dst_ip[i]);
+    //             if (i % 2 == 1 && i < 15) {
+    //                 printf(":");
+    //             }
+    //         }
+    //         printf(", src_port: %u, dst_port: %u, protocol: %u\n",
+    //                value.src_port, value.dst_port, value.protocol);
+    //     }
+    //     key = next_key;
+    // }
 }
 
 int main(int argc, char **argv)

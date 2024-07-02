@@ -42,7 +42,7 @@ void print_ipv4_flow(int fd) {
     /*__u64 key = 0, next_key;
     struct packet_info value;*/
 
-	__u64 *key, *prev_key
+	__u64 *key, *prev_key;
 	struct packet_info value;
 	unsigned int num_elems = 0;
 	int err;

@@ -13,7 +13,7 @@
 
 //make CFLAGS_EXTRA="-DCLASS=1"
 
-#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4
+#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 void print_ipv4_address(__u32 ip) {
     __u8 byte1 = ip & 0xFF;
     __u8 byte2 = (ip >> 8) & 0xFF;

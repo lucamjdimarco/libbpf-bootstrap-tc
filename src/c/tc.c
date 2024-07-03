@@ -484,7 +484,6 @@ int main(int argc, char **argv)
 
 	printf("Printing the flow map: \n");
 	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-		printf("Printing the flow map fd: %u\n", map_fd_flow);
 		print_ipv4_flow(map_fd_flow);
 		#endif
 
@@ -493,84 +492,6 @@ int main(int argc, char **argv)
 		#endif
 
 	goto detach;
-
-	/*printf("Printing the flow map: \n");
-	#ifdef CLASSIFY_IPV4
-	map_fd = bpf_map__fd(skel->maps.ipv4_flow);
-	if (map_fd < 0) {
-		fprintf(stderr, "Failed to get map file descriptor\n");
-		return 1;
-	}
-    printf("map_fd: %d\n", map_fd);  // Debug: stampa il valore di map_fd
-	__u64 key_flow = 0;
-	struct packet_info packet;
-    printf("key_flow: %llu\n", key_flow);  // Debug: stampa il valore di key_flow
-
-    int ret;
-	while ((ret = bpf_map_get_next_key(map_fd, &key_flow, &key_flow)) == 0) {
-		ret = bpf_map_lookup_elem(map_fd, &key_flow, &packet);
-		if (ret) {
-			fprintf(stderr, "Failed to lookup map element\n");
-			return 1;
-		}
-
-		printf("Flow: %llu\n", key_flow);
-
-		__u8 byte1 = packet.src_ip & 0xFF;
-		__u8 byte2 = (packet.src_ip >> 8) & 0xFF;
-		__u8 byte3 = (packet.src_ip >> 16) & 0xFF;
-		__u8 byte4 = (packet.src_ip >> 24) & 0xFF;
-
-		printf("---------------\n");
-		printf("Key: Source IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
-
-		byte1 = packet.dst_ip & 0xFF;
-		byte2 = (packet.dst_ip >> 8) & 0xFF;
-		byte3 = (packet.dst_ip >> 16) & 0xFF;
-		byte4 = (packet.dst_ip >> 24) & 0xFF;
-		printf("Key: Destination IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
-
-		printf("Key: Source Port: %u\n", packet.src_port);
-		printf("Key: Destination Port: %u\n", packet.dst_port);
-		printf("Key: Protocol: %u\n", packet.protocol);
-		printf("---------------\n");
-	}
-
-    if (ret != 0) {
-        fprintf(stderr, "bpf_map_get_next_key returned: %d, errno: %d (%s)\n", ret, errno, strerror(errno));
-    }
-
-	#endif
-
-	#ifdef CLASSIFY_IPV6
-	map_fd = bpf_map__fd(skel->maps.ipv6_flow);
-	if (map_fd < 0) {
-		fprintf(stderr, "Failed to get map file descriptor\n");
-		return 1;
-	}
-	__u64 key_flow = 0;
-	struct packet_info_ipv6 packet;
-
-	while (bpf_map_get_next_key(map_fd, &key_flow, &key_flow) == 0) {
-		int ret = bpf_map_lookup_elem(map_fd, &key_flow, &packet);
-		if (ret) {
-			fprintf(stderr, "Failed to lookup map element\n");
-			return 1;
-		}
-
-		printf("Flow: %llu\n", key_flow);
-
-		printf("---------------\n");
-		printf("Key: Source IP: ");
-		print_ipv6_address(packet.src_ip);
-		printf("Key: Destination IP: ");
-		print_ipv6_address(packet.dst_ip);
-		printf("Key: Source Port: %u\n", packet.src_port);
-		printf("Key: Destination Port: %u\n", packet.dst_port);
-		printf("Key: Protocol: %u\n", packet.protocol);
-		printf("---------------\n");
-	}
-	#endif*/
 
 	
 detach:

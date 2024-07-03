@@ -13,6 +13,19 @@
 
 //make CFLAGS_EXTRA="-DCLASS=1"
 
+
+static volatile sig_atomic_t exiting = 0;
+
+static void sig_int(int signo)
+{
+	exiting = 1;
+}
+
+static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
+{
+	return vfprintf(stderr, format, args);
+}
+
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4
 void print_ipv4_address(__u32 ip) {
     __u8 byte1 = ip & 0xFF;
@@ -263,18 +276,6 @@ int initialize_map_fd(const char* map_type, struct tc_bpf *skel, int* map_fd, in
 	return 0;
 }
 
-static volatile sig_atomic_t exiting = 0;
-
-static void sig_int(int signo)
-{
-	exiting = 1;
-}
-
-static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
-{
-	return vfprintf(stderr, format, args);
-}
-
 
 int main(int argc, char **argv)
 {
@@ -318,8 +319,10 @@ int main(int argc, char **argv)
 	struct tc_bpf *skel;
 	int err;
 
+	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 	int map_fd;
 	int map_fd_flow;
+	#endif
 
 	libbpf_set_print(libbpf_print_fn);
 
@@ -363,18 +366,128 @@ int main(int argc, char **argv)
 		goto detach;
 	}
 
+
+
+	/*while (!exiting) {
+
+		int counter = 0;
+		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+        if (strcmp(map_type, "ipv4") == 0) {
+
+			#ifdef CLASSIFY_IPV4
+            struct packet_info key;
+			#endif
+			#ifdef CLASSIFY_ONLY_ADDRESS_IPV4
+			struct only_addr_ipv4 key;
+			#endif
+			#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
+			struct only_dest_ipv4 key;
+			#endif
+
+            struct value_packet value;
+            memset(&key, 0, sizeof(key));
+
+            while (bpf_map_get_next_key(map_fd, &key, &key) == 0) {
+                counter++;
+
+                int ret = bpf_map_lookup_elem(map_fd, &key, &value);
+                if (ret == -1) {
+                    fprintf(stderr, "Failed to lookup map element\n");
+                    goto detach;
+                }
+				__u8 byte1;
+				__u8 byte2;
+				__u8 byte3;
+				__u8 byte4;
+
+				#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4)
+                byte1 = key.src_ip & 0xFF;
+                byte2 = (key.src_ip >> 8) & 0xFF;
+                byte3 = (key.src_ip >> 16) & 0xFF;
+                byte4 = (key.src_ip >> 24) & 0xFF;
+
+                printf("---------------\n");
+                printf("Key: Source IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
+				#endif
+
+                byte1 = key.dst_ip & 0xFF;
+                byte2 = (key.dst_ip >> 8) & 0xFF;
+                byte3 = (key.dst_ip >> 16) & 0xFF;
+                byte4 = (key.dst_ip >> 24) & 0xFF;
+                printf("Key: Destination IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
+
+				#ifdef CLASSIFY_IPV4
+                printf("Key: Source Port: %u\n", key.src_port);
+                printf("Key: Destination Port: %u\n", key.dst_port);
+                printf("Key: Protocol: %u\n", key.protocol);
+				#endif
+
+                printf("Value: Counter: %u\n", value.counter);
+				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
+                printf("---------------\n");
+            }
+        }
+		#endif
+
+		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+		if (strcmp(map_type, "ipv6") == 0) {
+			
+			#ifdef CLASSIFY_IPV6
+			struct packet_info_ipv6 key;
+			#endif
+			#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
+			struct only_addr_ipv6 key;
+			#endif
+			#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
+			struct only_dest_ipv6 key;
+			#endif
+
+			struct value_packet value;
+			memset(&key, 0, sizeof(key));
+
+			while (bpf_map_get_next_key(map_fd, &key, &key) == 0) {
+				counter++;
+
+				int ret = bpf_map_lookup_elem(map_fd, &key, &value);
+				if (ret == -1) {
+					fprintf(stderr, "Failed to lookup map element\n");
+					goto detach;
+				}
+
+				printf("---------------\n");
+				#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6)
+				printf("Key: Source IP: ");
+				print_ipv6_address(key.src_ip);
+				#endif
+
+				printf("Key: Destination IP: ");
+				print_ipv6_address(key.dst_ip);
+
+				#ifdef CLASSIFY_IPV6
+				printf("Key: Source Port: %u\n", key.src_port);
+				printf("Key: Destination Port: %u\n", key.dst_port);
+				printf("Key: Protocol: %u\n", key.protocol);
+				#endif
+
+				printf("Value: Counter: %u\n", value.counter);
+				printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
+				printf("---------------\n");
+			}
+        }
+		#endif
+
+		printf("The map has %d elements\n", counter);
+        printf("******************************************************************************\n");
+		
+		
+        sleep(3);
+	}*/
+
 	while (!exiting) {
 		if (strcmp(map_type, "ipv4") == 0) {
-			#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 			process_ipv4_map(map_fd, map_type);
-			#endif
 		} else if (strcmp(map_type, "ipv6") == 0) {
-			#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 			process_ipv6_map(map_fd, map_type);
-			#endif
-		} else {
-			fprintf(stderr, "Invalid map type\n");
-			goto detach;
 		}
 
 		sleep(3);
@@ -382,17 +495,24 @@ int main(int argc, char **argv)
 
 	printf("Printing the flow map: \n");
 	if (strcmp(map_type, "ipv4") == 0) {
-		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+		print_ipv4_flow(map_fd_flow);
+	} else if (strcmp(map_type, "ipv6") == 0) {
+		print_ipv6_flow(map_fd_flow);
+	}
+
+
+
+	/*printf("Printing the flow map: \n");
+	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 		print_ipv4_flow(map_fd_flow);
 		#endif
-	} else if (strcmp(map_type, "ipv6") == 0) {
+
 		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 		print_ipv6_flow(map_fd_flow);
 		#endif
-	} else {
-		fprintf(stderr, "Invalid map type\n");
-		goto detach;
-	}
+
+	goto detach;*/
+
 	
 detach:
 	tc_opts.flags = tc_opts.prog_fd = tc_opts.prog_id = 0;

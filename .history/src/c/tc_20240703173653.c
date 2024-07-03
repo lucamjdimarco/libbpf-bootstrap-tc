@@ -382,16 +382,9 @@ int main(int argc, char **argv)
 
 	printf("Printing the flow map: \n");
 	if (strcmp(map_type, "ipv4") == 0) {
-		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 		print_ipv4_flow(map_fd_flow);
-		#endif
 	} else if (strcmp(map_type, "ipv6") == 0) {
-		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 		print_ipv6_flow(map_fd_flow);
-		#endif
-	} else {
-		fprintf(stderr, "Invalid map type\n");
-		goto detach;
 	}
 	
 detach:

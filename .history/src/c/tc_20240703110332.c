@@ -228,41 +228,6 @@ void process_ipv6_map(int map_fd, const char* map_type) {
 }
 #endif
 
-int initialize_map_fd(const char* map_type, struct tc_bpf *skel, int* map_fd, int* map_fd_flow) {
-	if (strcmp(map_type, "ipv4") == 0) {
-		#ifdef CLASSIFY_IPV4
-		*map_fd = bpf_map__fd(skel->maps.my_map);
-		*map_fd_flow = bpf_map__fd(skel->maps.ipv4_flow);
-		#elif defined(CLASSIFY_ONLY_ADDRESS_IPV4)
-		*map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv4);
-		*map_fd_flow = bpf_map__fd(skel->maps.ipv4_flow);
-		#elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-		*map_fd = bpf_map__fd(skel->maps.map_only_dest_ipv4);
-		*map_fd_flow = bpf_map__fd(skel->maps.ipv4_flow);
-		#endif
-	} else if (strcmp(map_type, "ipv6") == 0) {
-		#ifdef CLASSIFY_IPV6
-		*map_fd = bpf_map__fd(skel->maps.my_map_ipv6);
-		*map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
-		#elif defined(CLASSIFY_ONLY_ADDRESS_IPV6)
-		*map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv6);
-		*map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
-		#elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-		*map_fd = bpf_map__fd(skel->maps.map_only_dest_ipv6);
-		*map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
-		#endif
-	} else {
-		fprintf(stderr, "Invalid map type\n");
-		return -1;
-	}
-
-	if (*map_fd < 0 || *map_fd_flow < 0) {
-		fprintf(stderr, "Failed to get map file descriptor\n");
-		return -1;
-	}
-	return 0;
-}
-
 static volatile sig_atomic_t exiting = 0;
 
 static void sig_int(int signo)
@@ -365,16 +330,9 @@ int main(int argc, char **argv)
 
 	while (!exiting) {
 		if (strcmp(map_type, "ipv4") == 0) {
-			#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 			process_ipv4_map(map_fd, map_type);
-			#endif
 		} else if (strcmp(map_type, "ipv6") == 0) {
-			#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 			process_ipv6_map(map_fd, map_type);
-			#endif
-		} else {
-			fprintf(stderr, "Invalid map type\n");
-			goto detach;
 		}
 
 		sleep(3);
@@ -382,16 +340,9 @@ int main(int argc, char **argv)
 
 	printf("Printing the flow map: \n");
 	if (strcmp(map_type, "ipv4") == 0) {
-		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 		print_ipv4_flow(map_fd_flow);
-		#endif
 	} else if (strcmp(map_type, "ipv6") == 0) {
-		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 		print_ipv6_flow(map_fd_flow);
-		#endif
-	} else {
-		fprintf(stderr, "Invalid map type\n");
-		goto detach;
 	}
 	
 detach:

@@ -13,6 +13,19 @@
 
 //make CFLAGS_EXTRA="-DCLASS=1"
 
+
+static volatile sig_atomic_t exiting = 0;
+
+static void sig_int(int signo)
+{
+	exiting = 1;
+}
+
+static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
+{
+	return vfprintf(stderr, format, args);
+}
+
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4
 void print_ipv4_address(__u32 ip) {
     __u8 byte1 = ip & 0xFF;
@@ -263,18 +276,6 @@ int initialize_map_fd(const char* map_type, struct tc_bpf *skel, int* map_fd, in
 	return 0;
 }
 
-static volatile sig_atomic_t exiting = 0;
-
-static void sig_int(int signo)
-{
-	exiting = 1;
-}
-
-static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
-{
-	return vfprintf(stderr, format, args);
-}
-
 
 int main(int argc, char **argv)
 {
@@ -365,16 +366,9 @@ int main(int argc, char **argv)
 
 	while (!exiting) {
 		if (strcmp(map_type, "ipv4") == 0) {
-			#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 			process_ipv4_map(map_fd, map_type);
-			#endif
 		} else if (strcmp(map_type, "ipv6") == 0) {
-			#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 			process_ipv6_map(map_fd, map_type);
-			#endif
-		} else {
-			fprintf(stderr, "Invalid map type\n");
-			goto detach;
 		}
 
 		sleep(3);
@@ -382,16 +376,9 @@ int main(int argc, char **argv)
 
 	printf("Printing the flow map: \n");
 	if (strcmp(map_type, "ipv4") == 0) {
-		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 		print_ipv4_flow(map_fd_flow);
-		#endif
 	} else if (strcmp(map_type, "ipv6") == 0) {
-		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 		print_ipv6_flow(map_fd_flow);
-		#endif
-	} else {
-		fprintf(stderr, "Invalid map type\n");
-		goto detach;
 	}
 	
 detach:

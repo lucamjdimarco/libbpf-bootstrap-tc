@@ -376,7 +376,7 @@ int tc_ingress(struct __sk_buff *ctx)
         classify_only_dest_address_ipv4_packet(&new_info_only_dest_ipv4, data_end, data);
         packet = bpf_map_lookup_elem(&map_only_dest_ipv4, &new_info_only_dest_ipv4);
         if(!packet) {
-            flow_id = build_flowid(only_dest_address, counter++);
+            flow_id = build_flowid(2, counter++);
             ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info_only_dest_ipv4, BPF_ANY);
             if (ret) {
                 bpf_printk("Failed to insert new item in IPv4 flow maps\n");

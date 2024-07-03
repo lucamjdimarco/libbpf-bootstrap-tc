@@ -278,6 +278,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
 
     #ifdef CLASSIFY_IPV4
+    bpf_printk("CLASSIFY_IPV4\n\n\n\n\n");
     struct packet_info new_info = {};
     #endif
 

@@ -80,6 +80,12 @@ struct {
 } ipv6_flow SEC(".maps");
 #endif
 
+struct event_t {
+    __u64 ts;
+    __u64 flowid;
+    __u64 counter;
+} 
+
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1 << 24); // 16 MB di spazio
@@ -483,19 +489,15 @@ int tc_ingress(struct __sk_buff *ctx)
 
                 bpf_printk("Try to use ring buffer\n");
                 #ifdef CLASSIFY_IPV4
-                struct event_t {
-                    __u64 ts;
-                    __u64 flowid;
-                    __u64 counter;
-                } event = {
-                    .ts = bpf_ktime_get_ns(),
-                    .flowid = build_flowid(quintupla, counter - 1),
-                    .counter = 1
-                };   
+                struct event_t *event;
                 event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
                 if (!ret) {
                     return TC_ACT_UNSPEC;
                 }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = build_flowid(quintupla, counter - 1);
+                event->counter = 1;
 
                 bpf_ringbuf_submit(event, 0);
                 #endif
@@ -519,22 +521,16 @@ int tc_ingress(struct __sk_buff *ctx)
                 #ifdef CLASSIFY_IPV4
 
                 bpf_printk("Try to use ring buffer\n");
-                struct event_t {
-                    __u64 ts;
-                    __u64 flowid;
-                    __u64 counter;
-                } event = {
-                    .ts = bpf_ktime_get_ns(),
-                    .flowid = build_flowid(quintupla, counter - 1),
-                    .counter = packet->counter
-                };
-
+                struct event_t *event;
                 event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
                 if (!ret) {
                     return TC_ACT_UNSPEC;
                 }
 
-                bpf_ringbuf_submit(event, 0);
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = build_flowid(quintupla, counter - 1);
+                event->counter = packet->counter;
+                
                 #endif
 
                 bpf_printk("-----------------------------------------------------");

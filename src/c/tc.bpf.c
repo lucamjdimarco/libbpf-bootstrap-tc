@@ -439,6 +439,8 @@ int tc_ingress(struct __sk_buff *ctx)
         return TC_ACT_OK;
     }
 
+    bpf_printk("Flow ID: %llu\n", flow_id);
+
     cpu = bpf_get_smp_processor_id();
     bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
 

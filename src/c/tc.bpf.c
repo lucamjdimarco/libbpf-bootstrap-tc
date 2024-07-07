@@ -490,16 +490,16 @@ int tc_ingress(struct __sk_buff *ctx)
                 bpf_printk("Try to use ring buffer\n");
                 #ifdef CLASSIFY_IPV4
                 struct event_t *event;
-                event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                event = bpf_ringbuf_reserve(&events, sizeof(event_t), 0);
                 if (!ret) {
-                    return TC_ACT_UNSPEC;
+                    return TC_ACT_OK;
                 }
 
                 event->ts = bpf_ktime_get_ns();
                 event->flowid = build_flowid(quintupla, counter - 1);
                 event->counter = 1;
 
-                bpf_ringbuf_submit(event, 0);
+                bpf_ringbuf_submit(&event, 0);
                 #endif
 
 
@@ -522,15 +522,16 @@ int tc_ingress(struct __sk_buff *ctx)
 
                 bpf_printk("Try to use ring buffer\n");
                 struct event_t *event;
-                event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                ret = bpf_ringbuf_reserve(&events, sizeof(event_t), 0);
                 if (!ret) {
-                    return TC_ACT_UNSPEC;
+                    return TC_ACT_OK;
                 }
 
                 event->ts = bpf_ktime_get_ns();
                 event->flowid = build_flowid(quintupla, counter - 1);
                 event->counter = packet->counter;
-                
+
+                bpf_ringbuf_submit(&event, 0);
                 #endif
 
                 bpf_printk("-----------------------------------------------------");

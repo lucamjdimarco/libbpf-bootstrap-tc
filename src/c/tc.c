@@ -381,9 +381,23 @@ int main(int argc, char **argv)
 		goto detach;
 	}
 
+	struct ring_buffer *rb = NULL;
+	rb = ring_buffer__new(bpf_map__fd(skel->maps.events), handle_event, NULL, NULL);
+    if (!rb) {
+        fprintf(stderr, "Failed to create ring buffer\n");
+        goto cleanup;
+    }
+
 	while (!exiting) {
 		if (strcmp(map_type, "ipv4") == 0) {
 			#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+			printf("Try to use ringbuffer\n");
+			err = ring_buffer__poll(rb, 100 /* timeout, ms */);
+			if (err < 0) {
+				fprintf(stderr, "Error polling ring buffer: %d\n", err);
+				goto cleanup;
+			}
+			printf("Ringbuffer used\n");
 			process_ipv4_map(map_fd, map_type);
 			#endif
 		} else if (strcmp(map_type, "ipv6") == 0) {

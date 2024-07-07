@@ -80,6 +80,11 @@ struct {
 } ipv6_flow SEC(".maps");
 #endif
 
+struct {
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 1 << 24); // 16 MB di spazio
+} events SEC(".maps");
+
 static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
     return ((__u64)first_byte << 56) | (counter & 0x00FFFFFFFFFFFFFF);
 }
@@ -278,7 +283,6 @@ int tc_ingress(struct __sk_buff *ctx)
 
 
     #ifdef CLASSIFY_IPV4
-    bpf_printk("CLASSIFY_IPV4\n\n\n\n\n");
     struct packet_info new_info = {};
     #endif
 
@@ -476,6 +480,27 @@ int tc_ingress(struct __sk_buff *ctx)
                     bpf_printk("Failed to insert new item in IPv4 maps\n");
                     return TC_ACT_OK;
                 }
+
+                bpf_printk("Try to use ring buffer\n");
+                #ifdef CLASSIFY_IPV4
+                struct event_t {
+                    __u64 ts;
+                    __u64 flowid;
+                    __u64 counter;
+                } event = {
+                    .ts = bpf_ktime_get_ns(),
+                    .flowid = build_flowid(quintupla, counter - 1),
+                    .counter = 1
+                };   
+                event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!ret) {
+                    return TC_ACT_UNSPEC;
+                }
+
+                bpf_ringbuf_submit(event, 0);
+                #endif
+
+
 	        } else {
 
                 bpf_printk("Found item in IPv4 maps\n");
@@ -490,6 +515,27 @@ int tc_ingress(struct __sk_buff *ctx)
                 }
 
                 bpf_printk("Counter: %u\n", packet->counter);
+
+                #ifdef CLASSIFY_IPV4
+
+                bpf_printk("Try to use ring buffer\n");
+                struct event_t {
+                    __u64 ts;
+                    __u64 flowid;
+                    __u64 counter;
+                } event = {
+                    .ts = bpf_ktime_get_ns(),
+                    .flowid = build_flowid(quintupla, counter - 1),
+                    .counter = packet->counter
+                };
+
+                event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!ret) {
+                    return TC_ACT_UNSPEC;
+                }
+
+                bpf_ringbuf_submit(event, 0);
+                #endif
 
                 bpf_printk("-----------------------------------------------------");
 

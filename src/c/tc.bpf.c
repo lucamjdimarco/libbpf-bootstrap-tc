@@ -84,7 +84,7 @@ struct event_t {
     __u64 ts;
     __u64 flowid;
     __u64 counter;
-} 
+};
 
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
@@ -490,8 +490,8 @@ int tc_ingress(struct __sk_buff *ctx)
                 bpf_printk("Try to use ring buffer\n");
                 #ifdef CLASSIFY_IPV4
                 struct event_t *event;
-                event = bpf_ringbuf_reserve(&events, sizeof(event_t), 0);
-                if (!ret) {
+                event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
                     return TC_ACT_OK;
                 }
 
@@ -522,8 +522,8 @@ int tc_ingress(struct __sk_buff *ctx)
 
                 bpf_printk("Try to use ring buffer\n");
                 struct event_t *event;
-                ret = bpf_ringbuf_reserve(&events, sizeof(event_t), 0);
-                if (!ret) {
+                event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
                     return TC_ACT_OK;
                 }
 

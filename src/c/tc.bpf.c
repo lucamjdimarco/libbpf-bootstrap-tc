@@ -493,7 +493,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 event->flowid = build_flowid(quintupla, counter - 1);
                 event->counter = 1;
 
-                bpf_ringbuf_submit(&event, 0);
+                bpf_ringbuf_submit(event, 0);
                 #endif
 
 
@@ -525,7 +525,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 event->flowid = build_flowid(quintupla, counter - 1);
                 event->counter = packet->counter;
 
-                bpf_ringbuf_submit(&event, 0);
+                bpf_ringbuf_submit(event, 0);
                 #endif
 
                 bpf_printk("-----------------------------------------------------");

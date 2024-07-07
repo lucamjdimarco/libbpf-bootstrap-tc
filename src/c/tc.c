@@ -26,12 +26,16 @@ void print_ipv4_flow_details(__u64 key, struct packet_info *value) {
     printf("Flow: %llu\n", key);
     printf("---------------\n");
     printf("Key: Source IP: ");
+	#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
     print_ipv4_address(value->src_ip);
+	#endif
     printf("\nKey: Destination IP: ");
     print_ipv4_address(value->dst_ip);
+	#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
     printf("\nKey: Source Port: %u\n", value->src_port);
     printf("Key: Destination Port: %u\n", value->dst_port);
     printf("Key: Protocol: %u\n", value->protocol);
+	#endif
     printf("---------------\n");
 }
 
@@ -162,13 +166,17 @@ void print_ipv6_flow(int map_fd) {
 		if (!bpf_map_lookup_elem(map_fd, key, value)) {
 			printf("Flow: %llu\n", *key);
 			printf("---------------\n");
+			#if defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_IPV6)
 			printf("Key: Source IP: ");
 			print_ipv6_address(value->src_ip);
+			#endif
 			printf("Key: Destination IP: ");
 			print_ipv6_address(value->dst_ip);
+			#if defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_IPV6)
 			printf("Key: Source Port: %u\n", value->src_port);
 			printf("Key: Destination Port: %u\n", value->dst_port);
 			printf("Key: Protocol: %u\n", value->protocol);
+			#endif
 			printf("---------------\n");
 		} else {
 			printf("Valore non trovato\n");

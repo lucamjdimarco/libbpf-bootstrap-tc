@@ -273,7 +273,7 @@ int tc_ingress(struct __sk_buff *ctx)
     //struct ipv6hdr *ip6;
 
     static __u64 counter = 0;
-    __u64 flow_id;
+    __u64 flow_id = 0;
 
     enum FlowIdType {
         quintupla = 0,

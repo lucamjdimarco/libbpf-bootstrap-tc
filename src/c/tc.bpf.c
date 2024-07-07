@@ -278,6 +278,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
 
     #ifdef CLASSIFY_IPV4
+    bpf_printk("CLASSIFY_IPV4\n\n\n\n\n");
     struct packet_info new_info = {};
     #endif
 
@@ -302,7 +303,8 @@ int tc_ingress(struct __sk_buff *ctx)
     #endif
 
     struct value_packet *packet = NULL;
-    int ret, cpu;
+    int cpu;
+    long ret;
 
     /*__u64 packet_length = ctx->data_end - ctx->data;*/
     __u64 packet_length = ctx->len;
@@ -376,7 +378,7 @@ int tc_ingress(struct __sk_buff *ctx)
         classify_only_dest_address_ipv4_packet(&new_info_only_dest_ipv4, data_end, data);
         packet = bpf_map_lookup_elem(&map_only_dest_ipv4, &new_info_only_dest_ipv4);
         if(!packet) {
-            flow_id = build_flowid(2, counter++);
+            flow_id = build_flowid(only_dest_address, counter++);
             ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info_only_dest_ipv4, BPF_ANY);
             if (ret) {
                 bpf_printk("Failed to insert new item in IPv4 flow maps\n");

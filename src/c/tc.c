@@ -293,17 +293,14 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 	return vfprintf(stderr, format, args);
 }
 
-// Dichiarazione della funzione handle_event
-static void handle_event(void *ctx, int cpu, void *data, __u32 data_sz)
+// --------------------------------------------
+
+static int handle_event(void *ctx, void *data, size_t data_sz)
 {
     struct event_t *event = (struct event_t *)data;
     printf("Flow ID: %llu, Destination IP: %u, Counter: %llu\n",
            event->flow_id, event->ip_dst, event->counter);
-}
-
-static void handle_lost_events(void *ctx, int cpu, __u64 lost_cnt)
-{
-    fprintf(stderr, "Lost %llu events on CPU %d\n", lost_cnt, cpu);
+    return 0;
 }
 
 

@@ -80,12 +80,6 @@ struct {
 } ipv6_flow SEC(".maps");
 #endif
 
-struct event_t {
-    __u64 ts;
-    __u64 flowid;
-    __u64 counter;
-};
-
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1 << 24); // 16 MB di spazio

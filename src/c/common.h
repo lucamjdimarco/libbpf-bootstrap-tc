@@ -34,6 +34,12 @@ struct event {
 	__u64 counter;
 };
 
+struct event_t {
+    __u64 ts;
+    __u64 flowid;
+    __u64 counter;
+};
+
 struct packet_info {
 	__u32 src_ip; //IPv4 source address
 	__u32 dst_ip; //IPv4 destination address

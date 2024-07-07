@@ -492,7 +492,9 @@ int tc_ingress(struct __sk_buff *ctx)
                 }
 
                 event->ts = bpf_ktime_get_ns();
-                event->flowid = build_flowid(quintupla, counter);
+                //la scelta di counter - 1 ok ma non tiene conto dei flussi. Bisogna bloccare il valore di counter sul determinato flusso, altrimenti inconsistente
+                //si provi a fare prima ping 8.8.8.8 e poi 8.8.4.4 - prima 8.8.8.8 ha counter 0 poi counter 1 
+                event->flowid = build_flowid(quintupla, counter - 1);
                 event->counter = 1;
 
                 bpf_ringbuf_submit(event, 0);
@@ -524,7 +526,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 }
                 
                 event->ts = bpf_ktime_get_ns();
-                event->flowid = build_flowid(quintupla, counter);
+                event->flowid = build_flowid(quintupla, counter - 1);
                 event->counter = packet->counter;
 
                 bpf_ringbuf_submit(event, 0);

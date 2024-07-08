@@ -64,10 +64,10 @@ int write_data_influxdb(MHandler_t *h, long flow_id, double counter, long timest
 	return obj->writeData(flow_id, counter, timestamp);
 }
 
-void show_data_influxdb(MHandler_t *h, const char *measurement)
+/*void show_data_influxdb(MHandler_t *h, const char *measurement)
 {
 	InfluxDBWrapper *obj;
 
 	obj = static_cast<InfluxDBWrapper *>(h->obj);
 	obj->showData(measurement);
-}
+}*/

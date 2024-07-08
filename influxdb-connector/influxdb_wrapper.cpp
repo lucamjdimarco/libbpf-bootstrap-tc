@@ -59,7 +59,7 @@ int InfluxDBWrapper::writeData(long flow_id, double counter, long timestamp) {
     return -EINVAL;
 }
 
-void InfluxDBWrapper::showData(const std::string& measurement) {
+/*void InfluxDBWrapper::showData(const std::string& measurement) {
 	try {
 		auto results = db->query("SELECT * FROM " + measurement);
 		for (const auto& point : results) {
@@ -75,4 +75,4 @@ void InfluxDBWrapper::showData(const std::string& measurement) {
 	} catch (...) {
 		std::cerr << "Failed to query data from InfluxDB" << std::endl;
 	}
-}
+}*/

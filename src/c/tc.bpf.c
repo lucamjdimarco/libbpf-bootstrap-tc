@@ -511,12 +511,11 @@ int tc_ingress(struct __sk_buff *ctx)
                 struct event_t *event;
                 event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
                 if (!event) {
+                    //se non riesco a inserire l'evento nel ring buffer, devo dargli spazio 
                     return TC_ACT_OK;
                 }
 
                 event->ts = bpf_ktime_get_ns();
-                //la scelta di counter - 1 ok ma non tiene conto dei flussi. Bisogna bloccare il valore di counter sul determinato flusso, altrimenti inconsistente
-                //si provi a fare prima ping 8.8.8.8 e poi 8.8.4.4 - prima 8.8.8.8 ha counter 0 poi counter 1 
                 event->flowid = flow_id;
                 //event->flowid = build_flowid(quintupla, counter - 1);
                 event->counter = 1;

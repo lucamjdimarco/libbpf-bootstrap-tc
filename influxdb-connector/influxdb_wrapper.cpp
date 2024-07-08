@@ -40,7 +40,7 @@ int InfluxDBWrapper::writeTemperature(const char *c, double t) {
 	return -EINVAL;
 }
 
-int InfluxDBWrapper::writeData(long flow_id, double counter, long timestamp) {
+int InfluxDBWrapper::writeData(long flow_id, long counter, long timestamp) {
     std::string flow_id_str = std::to_string(flow_id);
 
     influxdb::Point point("flow_data");

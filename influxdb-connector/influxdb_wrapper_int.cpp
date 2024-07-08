@@ -56,7 +56,7 @@ int write_temp_influxdb(MHandler_t *h, const char *city, double temp)
 	return obj->writeTemperature(city, temp);
 }
 
-int write_data_influxdb(MHandler_t *h, long flow_id, double counter, long timestamp)
+int write_data_influxdb(MHandler_t *h, long flow_id, long counter, long timestamp)
 {
 	InfluxDBWrapper *obj;
 

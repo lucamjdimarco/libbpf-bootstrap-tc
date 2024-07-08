@@ -87,7 +87,7 @@ struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, __u64);
-    __type(value, struct packet_info);
+    __type(value, struct only_dest_ipv4);
 } ipv4_flow SEC(".maps");
 #endif
 

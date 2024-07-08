@@ -63,12 +63,34 @@ struct {
 #endif
 
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+
+#ifdef CLASSIFY_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, __u64);
     __type(value, struct packet_info);
 } ipv4_flow SEC(".maps");
+#endif
+
+#ifdef CLASSIFY_ONLY_ADDRESS_IPV4
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_ENTRIES);
+    __type(key, __u64);
+    __type(value, struct only_addr_ipv4);
+} ipv4_flow SEC(".maps");
+#endif
+
+#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_ENTRIES);
+    __type(key, __u64);
+    __type(value, struct packet_info);
+} ipv4_flow SEC(".maps");
+#endif
+
 #endif
 
 #if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)

@@ -460,7 +460,7 @@ int tc_ingress(struct __sk_buff *ctx)
             if(!packet) {
                 struct value_packet new_value = {
                     .counter = 1,
-                    .bytes_counter = packet_length
+                    .bytes_counter = packet_length,
                     .flow_id = flow_id
                 };
 

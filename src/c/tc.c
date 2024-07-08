@@ -447,6 +447,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Invalid map type\n");
 		goto detach;
 	}
+
+	show_data_influxdb(h, "flow_data");
 	
 detach:
 	tc_opts.flags = tc_opts.prog_fd = tc_opts.prog_id = 0;

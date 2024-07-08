@@ -63,3 +63,11 @@ int write_data_influxdb(MHandler_t *h, __u64 flow_id, double counter, std::chron
 	obj = static_cast<InfluxDBWrapper *>(h->obj);
 	return obj->writeData(flow_id, counter, timestamp);
 }
+
+void show_data_influxdb(MHandler_t *h, const char *measurement)
+{
+	InfluxDBWrapper *obj;
+
+	obj = static_cast<InfluxDBWrapper *>(h->obj);
+	obj->showData(measurement);
+}

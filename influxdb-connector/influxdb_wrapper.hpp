@@ -12,6 +12,7 @@ public:
 	void showDatabases();
 	int writeTemperature(const char *city, double temp);
 	int writeData(__u64 flow_id, double counter, std::chrono::system_clock::time_point timestamp);
+	void showData(const std::string& measurement);
 private:
 	std::unique_ptr<influxdb::InfluxDB> db;
 };

@@ -58,3 +58,21 @@ int InfluxDBWrapper::writeData(__u64 flow_id, double counter, std::chrono::syste
 
     return -EINVAL;
 }
+
+void InfluxDBWrapper::showData(const std::string& measurement) {
+	try {
+		auto results = db->query("SELECT * FROM " + measurement);
+		for (const auto& point : results) {
+			std::cout << "Time: " << point.getTimestamp().time_since_epoch().count() << ", ";
+			for (const auto& tag : point.getTags()) {
+				std::cout << tag.first << ": " << tag.second << ", ";
+			}
+			for (const auto& field : point.getFields()) {
+				std::cout << field.first << ": " << field.second << ", ";
+			}
+			std::cout << std::endl;
+		}
+	} catch (...) {
+		std::cerr << "Failed to query data from InfluxDB" << std::endl;
+	}
+}

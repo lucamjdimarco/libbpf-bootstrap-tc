@@ -62,7 +62,7 @@ int write_data_influxdb(MHandler_t *h,
 	InfluxDBWrapper *obj;
 
 	obj = static_cast<InfluxDBWrapper *>(h->obj);
-	return obj->writeFlowRate(ts, flowid, counter);
+	return obj->writeData(ts, flowid, counter);
 }
 
 /*void show_data_influxdb(MHandler_t *h, const char *measurement)

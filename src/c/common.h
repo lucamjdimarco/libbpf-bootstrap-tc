@@ -28,11 +28,11 @@
 #define CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 #endif
 
-struct event {
+/*struct event {
 	__u64 ts;
 	__u64 flowid;
 	__u64 counter;
-};
+};*/
 
 struct event_t {
     __u64 ts;
@@ -82,6 +82,7 @@ struct value_packet {
 	struct bpf_spin_lock lock;
 	__u32 counter; 
 	__u64 bytes_counter;
+	__u64 flow_id;
 };
 
 #endif // COMMON_HEADER_H

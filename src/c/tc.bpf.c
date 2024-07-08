@@ -357,7 +357,7 @@ int tc_ingress(struct __sk_buff *ctx)
         if(!packet) {
             flow_id = build_flowid(quintupla, counter++);
             ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info, BPF_ANY);
-            bpf_printk("ret: %d\n", ret);
+            //bpf_printk("ret: %d\n", ret);
             if (ret == -1) {
                 bpf_printk("Failed to insert new item in IPv4 flow maps\n");
                 return TC_ACT_OK;
@@ -371,7 +371,7 @@ int tc_ingress(struct __sk_buff *ctx)
         if(!packet) {
             flow_id = build_flowid(only_address, counter++);
             ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info_only_addr_ipv4, BPF_ANY);
-            if (ret) {
+            if (ret == -1) {
                 bpf_printk("Failed to insert new item in IPv4 flow maps\n");
                 return TC_ACT_OK;
             }
@@ -384,7 +384,7 @@ int tc_ingress(struct __sk_buff *ctx)
         if(!packet) {
             flow_id = build_flowid(only_dest_address, counter++);
             ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info_only_dest_ipv4, BPF_ANY);
-            if (ret) {
+            if (ret == -1) {
                 bpf_printk("Failed to insert new item in IPv4 flow maps\n");
                 return TC_ACT_OK;
             }
@@ -400,7 +400,7 @@ int tc_ingress(struct __sk_buff *ctx)
         if(!packet) {
             flow_id = build_flowid(quintupla, counter++);
             ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_ipv6, BPF_ANY);
-            if (ret) {
+            if (ret == -1) {
                 bpf_printk("Failed to insert new item in IPv6 flow maps\n");
                 return TC_ACT_OK;
             }
@@ -413,7 +413,7 @@ int tc_ingress(struct __sk_buff *ctx)
         if(!packet) {
             flow_id = build_flowid(only_address, counter++);
             ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_addr_ipv6, BPF_ANY);
-            if (ret) {
+            if (ret == -1) {
                 bpf_printk("Failed to insert new item in IPv6 flow maps\n");
                 return TC_ACT_OK;
             }
@@ -426,7 +426,7 @@ int tc_ingress(struct __sk_buff *ctx)
         if(!packet) {
             flow_id = build_flowid(only_dest_address, counter++);
             ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_dest_ipv6, BPF_ANY);
-            if (ret) {
+            if (ret == -1) {
                 bpf_printk("Failed to insert new item in IPv6 flow maps\n");
                 return TC_ACT_OK;
             }
@@ -461,6 +461,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 struct value_packet new_value = {
                     .counter = 1,
                     .bytes_counter = packet_length
+                    .flow_id = flow_id
                 };
 
                 bpf_printk("Create new item in IPv4 maps with counter 1\n");
@@ -494,7 +495,8 @@ int tc_ingress(struct __sk_buff *ctx)
                 event->ts = bpf_ktime_get_ns();
                 //la scelta di counter - 1 ok ma non tiene conto dei flussi. Bisogna bloccare il valore di counter sul determinato flusso, altrimenti inconsistente
                 //si provi a fare prima ping 8.8.8.8 e poi 8.8.4.4 - prima 8.8.8.8 ha counter 0 poi counter 1 
-                event->flowid = build_flowid(quintupla, counter - 1);
+                event->flowid = flow_id;
+                //event->flowid = build_flowid(quintupla, counter - 1);
                 event->counter = 1;
 
                 bpf_ringbuf_submit(event, 0);
@@ -526,7 +528,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 }
                 
                 event->ts = bpf_ktime_get_ns();
-                event->flowid = build_flowid(quintupla, counter - 1);
+                event->flowid = packet->flow_id;
                 event->counter = packet->counter;
 
                 bpf_ringbuf_submit(event, 0);

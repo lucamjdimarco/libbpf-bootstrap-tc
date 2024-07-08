@@ -55,3 +55,11 @@ int write_temp_influxdb(MHandler_t *h, const char *city, double temp)
 	obj = static_cast<InfluxDBWrapper *>(h->obj);
 	return obj->writeTemperature(city, temp);
 }
+
+int write_data_influxdb(MHandler_t *h, __u64 flow_id, double counter, std::chrono::system_clock::time_point timestamp)
+{
+	InfluxDBWrapper *obj;
+
+	obj = static_cast<InfluxDBWrapper *>(h->obj);
+	return obj->writeData(flow_id, counter, timestamp);
+}

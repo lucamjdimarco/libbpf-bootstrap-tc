@@ -22,6 +22,7 @@ extern "C" {
 	void show_databases_influxdb(MHandler_t *);
 	int write_temp_influxdb(MHandler_t *, const char *, double);
 	void destroy_influxdb(MHandler_t *);
+	int write_data_influxdb(MHandler_t *, __u64, double, std::chrono::system_clock::time_point);
 #ifdef __cplusplus
 }
 #endif

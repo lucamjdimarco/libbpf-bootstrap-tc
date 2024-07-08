@@ -39,3 +39,22 @@ int InfluxDBWrapper::writeTemperature(const char *c, double t) {
 
 	return -EINVAL;
 }
+
+int InfluxDBWrapper::writeData(__u64 flow_id, double counter, std::chrono::system_clock::time_point timestamp) {
+    std::string flow_id_str = std::to_string(flow_id);
+
+    influxdb::Point point("flow_data");
+
+    point.addTag("flow_id", flow_id_str);
+    point.addField("counter", counter);
+    point.setTimestamp(timestamp);
+
+    try {
+        db->write(std::move(point));
+        return 0;
+    } catch (...) {
+        /* do nothing */
+    }
+
+    return -EINVAL;
+}

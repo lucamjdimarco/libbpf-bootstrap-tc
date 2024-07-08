@@ -507,7 +507,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 }
 
                 bpf_printk("Try to use ring buffer\n");
-                #ifdef CLASSIFY_IPV4
+                
                 struct event_t *event;
                 event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
                 if (!event) {
@@ -522,7 +522,6 @@ int tc_ingress(struct __sk_buff *ctx)
                 event->counter = 1;
 
                 bpf_ringbuf_submit(event, 0);
-                #endif
 
 
 	        } else {

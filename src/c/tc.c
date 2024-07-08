@@ -298,7 +298,19 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
     struct event_t *event = (struct event_t *)data;
+    MHandler_t *influx_handler = (MHandler_t *)ctx;
+
     printf("Event: ts=%llu flowid=%llu counter=%llu\n", event->ts, event->flowid, event->counter);
+
+    // Convert timestamp to the appropriate type
+    auto timestamp = std::chrono::system_clock::time_point(std::chrono::nanoseconds(event->ts));
+
+    // Write data to InfluxDB
+    int ret = write_data_influxdb(influx_handler, event->flowid, event->counter, timestamp);
+    if (ret != 0) {
+        fprintf(stderr, "Failed to write data to InfluxDB\n");
+    }
+
     return 0;
 }
 
@@ -313,14 +325,15 @@ int main(int argc, char **argv)
 
 	/*-----------------------*/
 
-	/*MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
+	MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
 	if (!h) {
 		printf("Cannot create MHandler\n");
 		return -EINVAL;
 	}
 
 	show_databases_influxdb(h);
-	write_temp_influxdb(h, "Rome", 14.1);
+	
+	/*write_temp_influxdb(h, "Rome", 14.1);
 
 	destroy_influxdb(h);
 	h = NULL;
@@ -447,5 +460,6 @@ cleanup:
 	if (hook_created)
 		bpf_tc_hook_destroy(&tc_hook);
 	tc_bpf__destroy(skel);
+	destroy_influxdb(h);
 	return -err;
 }

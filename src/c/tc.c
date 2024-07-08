@@ -9,6 +9,7 @@
 #include <net/if.h>  // for if_nametoindex
 #include "tc.skel.h"
 #include "common.h"
+#include <chrono>
 #include "../../influxdb-connector/influxdb_wrapper_int.h"
 
 //make CFLAGS_EXTRA="-DCLASS=1"
@@ -413,13 +414,11 @@ int main(int argc, char **argv)
 	while (!exiting) {
 		if (strcmp(map_type, "ipv4") == 0) {
 			#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-			printf("Try to use ringbuffer\n");
 			err = ring_buffer__poll(rb, 100 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
 			}
-			printf("Ringbuffer used\n");
 			process_ipv4_map(map_fd, map_type);
 			#endif
 		} else if (strcmp(map_type, "ipv6") == 0) {

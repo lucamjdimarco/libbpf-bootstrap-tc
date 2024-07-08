@@ -9,7 +9,6 @@
 #include <net/if.h>  // for if_nametoindex
 #include "tc.skel.h"
 #include "common.h"
-#include <chrono>
 #include "../../influxdb-connector/influxdb_wrapper_int.h"
 
 //make CFLAGS_EXTRA="-DCLASS=1"
@@ -303,11 +302,8 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 
     printf("Event: ts=%llu flowid=%llu counter=%llu\n", event->ts, event->flowid, event->counter);
 
-    // Convert timestamp to the appropriate type
-    auto timestamp = std::chrono::system_clock::time_point(std::chrono::nanoseconds(event->ts));
-
     // Write data to InfluxDB
-    int ret = write_data_influxdb(influx_handler, event->flowid, event->counter, timestamp);
+    int ret = write_data_influxdb(influx_handler, event->flowid, event->counter, event->ts);
     if (ret != 0) {
         fprintf(stderr, "Failed to write data to InfluxDB\n");
     }

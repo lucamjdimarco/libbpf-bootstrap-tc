@@ -56,12 +56,13 @@ int write_temp_influxdb(MHandler_t *h, const char *city, double temp)
 	return obj->writeTemperature(city, temp);
 }
 
-int write_data_influxdb(MHandler_t *h, long flow_id, long counter, long timestamp)
+int write_data_influxdb(MHandler_t *h,
+			    uint64_t ts, uint64_t flowid, uint64_t counter)
 {
 	InfluxDBWrapper *obj;
 
 	obj = static_cast<InfluxDBWrapper *>(h->obj);
-	return obj->writeData(flow_id, counter, timestamp);
+	return obj->writeFlowRate(ts, flowid, counter);
 }
 
 /*void show_data_influxdb(MHandler_t *h, const char *measurement)

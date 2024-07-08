@@ -11,7 +11,7 @@ public:
 	~InfluxDBWrapper();
 	void showDatabases();
 	int writeTemperature(const char *city, double temp);
-	int writeData(long flow_id, long counter, long timestamp);
+	int writeData(uint64_t ts, uint64_t flowid, uint64_t counter);
 	//void showData(const std::string& measurement);
 private:
 	std::unique_ptr<influxdb::InfluxDB> db;

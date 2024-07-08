@@ -40,24 +40,27 @@ int InfluxDBWrapper::writeTemperature(const char *c, double t) {
 	return -EINVAL;
 }
 
-int InfluxDBWrapper::writeData(long flow_id, long counter, long timestamp) {
-    std::string flow_id_str = std::to_string(flow_id);
+int InfluxDBWrapper::writeData(uint64_t ts, uint64_t flowid, uint64_t counter) {
+    influxdb::Point point("rate");
+	double ccnt = 1.0D * counter;
+	std::string flowid_str;
+	std::ostringstream oss;
 
-    influxdb::Point point("flow_data");
+	oss << flowid;
+	flowid_str = oss.str();
+	point.addTag("flowid", flowid_str);
 
-    point.addTag("flow_id", flow_id_str);
-    point.addField("counter", counter);
-    //point.setTimestamp(timestamp);
+	point.addField("value", ccnt);
+
+	//FIXME: use ts instead of now()
 	point.setTimestamp(std::chrono::system_clock::now());
 
-    try {
-        db->write(std::move(point));
-        return 0;
-    } catch (...) {
-        /* do nothing */
-    }
+	try {
+		db->write(std::move(point));
+		return 0;
+	} catch (...) { /* do nothing */ }
 
-    return -EINVAL;
+	return -EINVAL;
 }
 
 /*void InfluxDBWrapper::showData(const std::string& measurement) {

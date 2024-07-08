@@ -22,7 +22,8 @@ extern "C" {
 	void show_databases_influxdb(MHandler_t *);
 	int write_temp_influxdb(MHandler_t *, const char *, double);
 	void destroy_influxdb(MHandler_t *);
-	int write_data_influxdb(MHandler_t *h, long, long, long);
+	int write_data_influxdb(MHandler_t *,
+				    uint64_t, uint64_t, uint64_t);
 	//void show_data_influxdb(MHandler_t *h, const char *measurement);
 #ifdef __cplusplus
 }

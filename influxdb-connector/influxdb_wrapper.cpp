@@ -1,5 +1,6 @@
 
 #include "influxdb_wrapper.hpp"
+#include <sstream> 
 
 /* con l'URI viene creato il DB se non esiste */
 InfluxDBWrapper::InfluxDBWrapper(const char *uri) {

@@ -47,7 +47,8 @@ int InfluxDBWrapper::writeData(long flow_id, double counter, long timestamp) {
 
     point.addTag("flow_id", flow_id_str);
     point.addField("counter", counter);
-    point.setTimestamp(timestamp);
+    //point.setTimestamp(timestamp);
+	point.setTimestamp(std::chrono::system_clock::now());
 
     try {
         db->write(std::move(point));

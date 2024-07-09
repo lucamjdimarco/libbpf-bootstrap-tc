@@ -5,12 +5,17 @@
 
 /* con l'URI viene creato il DB se non esiste */
 InfluxDBWrapper::InfluxDBWrapper(const char *uri) {
+	std::cerr << "InfluxDBWrapper constructor" << std::endl;
 	std::string cppString = uri;
 
 	/* throws an exception if we cannot connect to influxdb and/or
 	 * create the db.
 	 */
 	db = influxdb::InfluxDBFactory::Get(cppString);
+
+	 if (db == nullptr) {
+        std::cerr << "Failed to initialize db" << std::endl;
+    }
 	db->createDatabaseIfNotExists();
 }
 

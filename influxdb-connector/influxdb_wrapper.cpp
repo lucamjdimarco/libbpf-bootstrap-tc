@@ -1,6 +1,7 @@
 
 #include "influxdb_wrapper.hpp"
 #include <sstream> 
+#include <stdint.h>
 
 /* con l'URI viene creato il DB se non esiste */
 InfluxDBWrapper::InfluxDBWrapper(const char *uri) {
@@ -55,6 +56,12 @@ int InfluxDBWrapper::writeData(uint64_t ts, uint64_t flowid, uint64_t counter) {
 
 	//FIXME: use ts instead of now()
 	point.setTimestamp(std::chrono::system_clock::now());
+
+	if (db == nullptr) {
+		std::cerr << "Error: db pointer is null." << std::endl;
+		return -EINVAL;
+	}
+
 
 	try {
 		db->write(std::move(point));

@@ -22,7 +22,12 @@ INCLUDES := -I$(OUTPUT) -I../../libbpf/include/uapi -I$(dir $(VMLINUX))
 CFLAGS := -g -Wall $(CFLAGS_EXTRA)
 ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
 
-LIBS := -lelf -lz -lstdc++ -lInfluxDB
+#LIBS := -lelf -lz -lstdc++ -lInfluxDB
+
+########
+INFDB_WRP_SRC = influxdb_wrapper.cpp influxdb_wrapper_int.cpp
+INFLDB_WRP_OBJ = $(addprefix $(OUTPUT)/,$(INFDB_WRP_SRC:.cpp=.o))
+########
 
 APPS = tc
 
@@ -98,14 +103,14 @@ $(OUTPUT)/%.skel.h: $(OUTPUT)/%.bpf.o | $(OUTPUT) $(BPFTOOL)
 	$(Q)$(BPFTOOL) gen skeleton $< > $@
 
 # Aggiungi la compilazione di influxdb_wrapper.cpp
-$(OUTPUT)/influxdb_wrapper.cpp.o: ../../influxdb-connector/influxdb_wrapper.cpp | $(OUTPUT)
-	$(call msg,CC,$@)
-	$(Q)$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@
+# $(OUTPUT)/influxdb_wrapper.cpp.o: ../../influxdb-connector/influxdb_wrapper.cpp | $(OUTPUT)
+# 	$(call msg,CC,$@)
+# 	$(Q)$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Aggiungi la compilazione di influxdb_wrapper_int.cpp
-$(OUTPUT)/influxdb_wrapper_int.cpp.o: ../../influxdb-connector/influxdb_wrapper_int.cpp | $(OUTPUT)
-	$(call msg,CC,$@)
-	$(Q)$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@
+# $(OUTPUT)/influxdb_wrapper_int.cpp.o: ../../influxdb-connector/influxdb_wrapper_int.cpp | $(OUTPUT)
+# 	$(call msg,CC,$@)
+# 	$(Q)$(CXX) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Build user-space code
 $(patsubst %,$(OUTPUT)/%.o,$(APPS)): %.o: %.skel.h
@@ -114,6 +119,12 @@ $(OUTPUT)/%.o: %.c $(wildcard %.h) | $(OUTPUT)
 	$(call msg,CC,$@)
 	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(filter %.c,$^) -o $@
 
+###################
+$(OUTPUT)/%.o: %.cpp $(wildcard %.h) |  $(OUTPUT)
+	$(call msg,CCX,$@)
+	$(Q)$(CXX) $(CFLAGS) -c $(filter %.cpp,$^) -o $@
+###################
+
 
 # Build application binary
 #$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) | $(OUTPUT)
@@ -121,9 +132,14 @@ $(OUTPUT)/%.o: %.c $(wildcard %.h) | $(OUTPUT)
 #	$(Q)$(CC) $(CFLAGS) $^ $(ALL_LDFLAGS) -lelf -lz -o $@
 
 # Build application binary
-$(APPS): %: $(OUTPUT)/%.o $(OUTPUT)/influxdb_wrapper.cpp.o $(OUTPUT)/influxdb_wrapper_int.cpp.o $(LIBBPF_OBJ) | $(OUTPUT)
+# $(APPS): %: $(OUTPUT)/%.o $(OUTPUT)/influxdb_wrapper.cpp.o $(OUTPUT)/influxdb_wrapper_int.cpp.o $(LIBBPF_OBJ) | $(OUTPUT)
+# 	$(call msg,BINARY,$@)
+# 	$(Q)$(CXX) $(CFLAGS) $^ $(ALL_LDFLAGS) $(LIBS) -o $@
+
+# Build application binary
+$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) $(INFLDB_WRP_OBJ) | $(OUTPUT)
 	$(call msg,BINARY,$@)
-	$(Q)$(CXX) $(CFLAGS) $^ $(ALL_LDFLAGS) $(LIBS) -o $@
+	$(Q)$(CC) $(CFLAGS) $^ $(ALL_LDFLAGS) -lelf -lz -lstdc++ -lInfluxDB -o $@
 
 # delete failed targets
 .DELETE_ON_ERROR:

@@ -298,9 +298,7 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
     struct event_t *event = data;
-	if(!ctx) {
-		fprintf(stderr, "Error: ctx is NULL\n");
-	}
+	
     MHandler_t *influx_handler = (MHandler_t *)ctx;
 
 	if(!influx_handler) {

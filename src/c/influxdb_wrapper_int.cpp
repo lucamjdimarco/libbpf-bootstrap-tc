@@ -61,6 +61,16 @@ int write_data_influxdb(MHandler_t *h,
 {
 	InfluxDBWrapper *obj;
 
+	if (h == nullptr) {
+        std::cerr << "Error: h is null." << std::endl;
+        return -EINVAL;
+    }
+
+    if (h->obj == nullptr) {
+        std::cerr << "Error: h->obj is null." << std::endl;
+        return -EINVAL;
+    }
+
 	obj = static_cast<InfluxDBWrapper *>(h->obj);
 	return obj->writeData(ts, flowid, counter);
 }

@@ -11,7 +11,7 @@
 #include "common.h"
 #include "../../influxdb-connector/influxdb_wrapper_int.h"
 
-//make CFLAGS_EXTRA="-DCLASS=1"
+//make -j6 CFLAGS_EXTRA="-DCLASS=1"
 
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 void print_ipv4_address(__u32 ip) {

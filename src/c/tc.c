@@ -297,7 +297,7 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
-    struct event_t *event = (struct event_t *)data;
+    struct event_t *event = data;
     MHandler_t *influx_handler = (MHandler_t *)ctx;
 
     printf("Event: ts=%llu flowid=%llu counter=%llu\n", event->ts, event->flowid, event->counter);

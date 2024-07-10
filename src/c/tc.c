@@ -116,9 +116,9 @@ void process_ipv4_map(int fd, const char* map_type) {
 			printf("Value: Bytes Counter: %llu\n", value->bytes_counter);*/
 
 			#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
-			print_ipv4_address(key->src_ip);
+			//print_ipv4_address(key->src_ip);
 			#endif
-			print_ipv4_address(key->dst_ip);
+			//print_ipv4_address(key->dst_ip);
 			printf("Value: Counter: %u\n", value->counter);
 			printf("Value: Bytes Counter: %llu\n", value->bytes_counter);
 
@@ -426,7 +426,7 @@ int main(int argc, char **argv)
 			#endif
 		} else if (strcmp(map_type, "ipv6") == 0) {
 			#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-			err = ring_buffer__poll(rb, 1000 /* timeout, ms */);
+			err = ring_buffer__poll(rb, 100 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;

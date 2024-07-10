@@ -505,8 +505,6 @@ int tc_ingress(struct __sk_buff *ctx)
                     bpf_printk("Failed to insert new item in IPv4 maps\n");
                     return TC_ACT_OK;
                 }
-
-                bpf_printk("Try to use ring buffer\n");
                 
                 struct event_t *event;
                 event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
@@ -538,9 +536,6 @@ int tc_ingress(struct __sk_buff *ctx)
 
                 bpf_printk("Counter: %u\n", packet->counter);
 
-                #ifdef CLASSIFY_IPV4
-
-                bpf_printk("Try to use ring buffer\n");
                 struct event_t *event;
                 event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
                 if (!event) {
@@ -552,7 +547,6 @@ int tc_ingress(struct __sk_buff *ctx)
                 event->counter = packet->counter;
 
                 bpf_ringbuf_submit(event, 0);
-                #endif
 
                 bpf_printk("-----------------------------------------------------");
 
@@ -578,7 +572,8 @@ int tc_ingress(struct __sk_buff *ctx)
             if(!packet) {
                 struct value_packet new_value = {
                     .counter = 1,
-                    .bytes_counter = packet_length
+                    .bytes_counter = packet_length,
+                    .flow_id = flow_id
                 };
 
                 bpf_printk("Create new item in IPv6 maps with counter 1\n");
@@ -600,6 +595,21 @@ int tc_ingress(struct __sk_buff *ctx)
                     bpf_printk("Failed to insert new item in IPv4 maps\n");
                     return TC_ACT_OK;
                 }
+
+                struct event_t *event;
+                event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    //se non riesco a inserire l'evento nel ring buffer, devo dargli spazio 
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = flow_id;
+                //event->flowid = build_flowid(quintupla, counter - 1);
+                event->counter = 1;
+
+                bpf_ringbuf_submit(event, 0);
+
 	        } else {
 
                 bpf_printk("Found item in IPv6 maps\n");
@@ -613,7 +623,17 @@ int tc_ingress(struct __sk_buff *ctx)
                     bpf_printk("Counter is at maximum value\n");
                 }
 
-                bpf_printk("Counter: %u\n", packet->counter);
+                struct event_t *event;
+                event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+                
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = packet->flow_id;
+                event->counter = packet->counter;
+
+                bpf_ringbuf_submit(event, 0);
 
                 bpf_printk("-----------------------------------------------------");
 

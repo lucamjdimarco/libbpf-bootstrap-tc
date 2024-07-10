@@ -220,20 +220,20 @@ void process_ipv6_map(int map_fd, const char* map_type) {
 	value = malloc(sizeof(struct value_packet));
 
 	while(true){
-		err = bpf_map_get_next_key(map_fd, prev_key, key);
+		err = bpf_map_get_next_key(fd, prev_key, key);
 		if (err) {
 			if (errno == ENOENT)
 				err = 0;
 			break;
 		}
-		if (!bpf_map_lookup_elem(map_fd, key, value)) {
+		if (!bpf_map_lookup_elem(fd, key, value)) {
 			printf("---------------\n");
 			printf("Key: Source IP: ");
-			print_ipv6_address(key->src_ip);
+			print_ipv6_address(key.src_ip);
 			printf("Key: Destination IP: ");
-			print_ipv6_address(key->dst_ip);
-			printf("Value: Counter: %u\n", value->counter);
-			printf("Value: Bytes Counter: %llu\n", value->bytes_counter);
+			print_ipv6_address(key.dst_ip);
+			printf("Value: Counter: %u\n", value.counter);
+			printf("Value: Bytes Counter: %llu\n", value.bytes_counter);
 			printf("---------------\n");
 		} else {
 			printf("No value found\n");
@@ -424,11 +424,11 @@ int main(int argc, char **argv)
 			#endif
 		} else if (strcmp(map_type, "ipv6") == 0) {
 			#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-			err = ring_buffer__poll(rb, 100 /* timeout, ms */);
-			if (err < 0) {
-				fprintf(stderr, "Error polling ring buffer: %d\n", err);
-				goto cleanup;
-			}
+			// err = ring_buffer__poll(rb, 100 /* timeout, ms */);
+			// if (err < 0) {
+			// 	fprintf(stderr, "Error polling ring buffer: %d\n", err);
+			// 	goto cleanup;
+			// }
 			process_ipv6_map(map_fd, map_type);
 			#endif
 		} else {

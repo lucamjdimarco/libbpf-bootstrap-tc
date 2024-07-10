@@ -220,13 +220,13 @@ void process_ipv6_map(int map_fd, const char* map_type) {
 	value = malloc(sizeof(struct value_packet));
 
 	while(true){
-		err = bpf_map_get_next_key(map_fd, prev_key, key);
+		err = bpf_map_get_next_key(fd, prev_key, key);
 		if (err) {
 			if (errno == ENOENT)
 				err = 0;
 			break;
 		}
-		if (!bpf_map_lookup_elem(map_fd, key, value)) {
+		if (!bpf_map_lookup_elem(fd, key, value)) {
 			printf("---------------\n");
 			printf("Key: Source IP: ");
 			print_ipv6_address(key->src_ip);

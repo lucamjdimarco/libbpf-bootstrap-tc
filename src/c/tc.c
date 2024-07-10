@@ -201,6 +201,8 @@ void process_ipv6_map(int map_fd, const char* map_type) {
 	int counter = 0;
 	struct value_packet *value;
 
+	int err;
+
 	#ifdef CLASSIFY_IPV6
 	struct packet_info_ipv6 *key, *prev_key;
 	key = malloc(sizeof(struct packet_info_ipv6));

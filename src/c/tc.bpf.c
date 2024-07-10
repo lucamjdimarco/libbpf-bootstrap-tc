@@ -592,7 +592,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 #endif
 
                 if (ret) {
-                    bpf_printk("Failed to insert new item in IPv4 maps\n");
+                    bpf_printk("Failed to insert new item in IPv6 maps\n");
                     return TC_ACT_OK;
                 }
 

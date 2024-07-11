@@ -329,7 +329,9 @@ int main(int argc, char **argv)
 
 	/*-----------------------*/
 
-	MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
+	
+	//MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
+	MHandler_t *h = create_influxdb("http://influxdb:8086?db=tc_db");
 	if (!h) {
 		printf("Cannot create MHandler\n");
 		return -EINVAL;

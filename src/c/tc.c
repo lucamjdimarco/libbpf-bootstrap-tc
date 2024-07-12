@@ -307,7 +307,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		fprintf(stderr, "Error: influx_handler is NULL\n");
 	}
 
-    printf("Event: ts=%llu flowid=%llu counter=%llu src=%u dst=%u \n", event->ts, event->flowid, event->counter, event->src_ip, event->dst_ip);
+    printf("Event: ts=%llu flowid=%llu counter=%llu\n", event->ts, event->flowid, event->counter);
 
     // Write data to InfluxDB
     int ret = write_data_influxdb(influx_handler, event->ts, event->flowid, event->counter);

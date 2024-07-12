@@ -9,7 +9,8 @@
 #include <net/if.h>  // for if_nametoindex
 #include "tc.skel.h"
 #include "common.h"
-#include "../../influxdb-connector/influxdb_wrapper_int.h"
+//#include "../../influxdb-connector/influxdb_wrapper_int.h"
+#include "influxdb_wrapper_int.h"
 
 //make -j6 CFLAGS_EXTRA="-DCLASS=1"
 

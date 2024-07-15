@@ -241,8 +241,10 @@ void process_ipv6_map(int map_fd, const char* map_type) {
 		}
 		if (!bpf_map_lookup_elem(map_fd, key, value)) {
 			printf("---------------\n");
+			#if defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_IPV6)
 			printf("Key: Source IP: ");
 			print_ipv6_address(key->src_ip);
+			#endif
 			printf("Key: Destination IP: ");
 			print_ipv6_address(key->dst_ip);
 			printf("Value: Counter: %u\n", value->counter);

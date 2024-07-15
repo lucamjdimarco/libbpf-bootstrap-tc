@@ -563,7 +563,10 @@ int tc_ingress(struct __sk_buff *ctx)
             packet = bpf_map_lookup_elem(&map_only_dest_ipv6, &new_info_only_dest_ipv6);
             if (!packet) {
                 flow_id = build_flowid(only_dest_address, counter++);
-                ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_dest_ipv6, BPF_ANY);
+                __u64 *flow_id_ptr = &flow_id;
+                struct only_dest_ipv6 *info_ptr = &new_info_only_dest_ipv6;
+                //ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_dest_ipv6, BPF_ANY);
+                ret = bpf_map_update_elem(&ipv6_flow, flow_id_ptr, info_ptr, BPF_ANY);
                 if (ret == -1) {
                     bpf_printk("Failed to insert new item in IPv6 flow maps\n");
                     return TC_ACT_OK;

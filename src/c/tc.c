@@ -332,7 +332,13 @@ int main(int argc, char **argv)
 
 	
 	//MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
-	MHandler_t *h = create_influxdb("http://influxdb:8086?db=tc_db");
+
+	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+		MHandler_t *h = create_influxdb("http://influxdb:8086?db=tc_db");
+	#endif
+	#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+		MHandler_t *h = create_influxdb("http://10.89.0.34:8086?db=tc_db");
+	#endif
 	if (!h) {
 		printf("Cannot create MHandler\n");
 		return -EINVAL;

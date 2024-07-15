@@ -311,29 +311,29 @@ int tc_ingress(struct __sk_buff *ctx)
     };
 
 
-    // #ifdef CLASSIFY_IPV4
-    // struct packet_info new_info = {};
-    // #endif
+    #ifdef CLASSIFY_IPV4
+    struct packet_info new_info = {};
+    #endif
 
-    // #ifdef CLASSIFY_IPV6
-    // struct packet_info_ipv6 new_info_ipv6 = {};
-    // #endif
+    #ifdef CLASSIFY_IPV6
+    struct packet_info_ipv6 new_info_ipv6 = {};
+    #endif
 
-    // #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
-    // struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
-    // #endif
+    #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
+    struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
+    #endif
 
-    // #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
-    // struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
-    // #endif
+    #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
+    struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
+    #endif
 
-    // #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
-    // struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
-    // #endif
+    #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
+    struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
+    #endif
 
-    // #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
-    // struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
-    // #endif
+    #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
+    struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
+    #endif
 
     struct value_packet *packet = NULL;
     int cpu;
@@ -473,7 +473,7 @@ int tc_ingress(struct __sk_buff *ctx)
     switch (eth_proto) {
         #ifdef CLASSIFY_IPV4
         case bpf_htons(ETH_P_IP): {
-            struct packet_info new_info = {};
+            //struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
             packet = bpf_map_lookup_elem(&my_map, &new_info);
             if (!packet) {
@@ -490,7 +490,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
         #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
         case bpf_htons(ETH_P_IP): {
-            struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
+            //struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
             classify_only_address_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
             packet = bpf_map_lookup_elem(&map_only_addr_ipv4, &new_info_only_addr_ipv4);
             if (!packet) {
@@ -507,7 +507,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
         #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
         case bpf_htons(ETH_P_IP): {
-            struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
+            //struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
             classify_only_dest_address_ipv4_packet(&new_info_only_dest_ipv4, data_end, data);
             packet = bpf_map_lookup_elem(&map_only_dest_ipv4, &new_info_only_dest_ipv4);
             if (!packet) {
@@ -524,7 +524,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
         #ifdef CLASSIFY_IPV6
         case bpf_htons(ETH_P_IPV6): {
-            struct packet_info_ipv6 new_info_ipv6 = {};
+            //struct packet_info_ipv6 new_info_ipv6 = {};
             classify_ipv6_packet(&new_info_ipv6, data_end, data);
             packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
             if (!packet) {
@@ -541,7 +541,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
         #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
         case bpf_htons(ETH_P_IPV6): {
-            struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
+            //struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
             classify_only_address_ipv6_packet(&new_info_only_addr_ipv6, data_end, data);
             packet = bpf_map_lookup_elem(&map_only_addr_ipv6, &new_info_only_addr_ipv6);
             if (!packet) {
@@ -558,7 +558,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
         #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
         case bpf_htons(ETH_P_IPV6): {
-            struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
+            //struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
             classify_only_dest_address_ipv6_packet(&new_info_only_dest_ipv6, data_end, data);
             packet = bpf_map_lookup_elem(&map_only_dest_ipv6, &new_info_only_dest_ipv6);
             if (!packet) {

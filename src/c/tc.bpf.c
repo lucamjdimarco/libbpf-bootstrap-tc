@@ -556,6 +556,7 @@ int tc_ingress(struct __sk_buff *ctx)
         }
         #endif
 
+        //TOFIX: non funziona!!!
         #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
         case bpf_htons(ETH_P_IPV6): {
             //struct only_dest_ipv6 new_info_only_dest_ipv6 = {};

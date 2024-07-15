@@ -565,8 +565,13 @@ int tc_ingress(struct __sk_buff *ctx)
                 flow_id = build_flowid(only_dest_address, counter++);
                 // __u64 *flow_id_ptr = &flow_id;
                 // struct only_dest_ipv6 *info_ptr = &new_info_only_dest_ipv6;
-                ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_dest_ipv6, BPF_ANY);
+                //ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_dest_ipv6, BPF_ANY);
                 //ret = bpf_map_update_elem(&ipv6_flow, flow_id_ptr, info_ptr, BPF_ANY);
+                // Copia la struttura in un array temporaneo
+                __u64 temp_key[sizeof(struct only_dest_ipv6) / sizeof(__u64)];
+                __builtin_memcpy(temp_key, &new_info_only_dest_ipv6, sizeof(struct only_dest_ipv6));
+
+                ret = bpf_map_update_elem(&ipv6_flow, &flow_id, temp_key, BPF_ANY);
                 if (ret == -1) {
                     bpf_printk("Failed to insert new item in IPv6 flow maps\n");
                     return TC_ACT_OK;

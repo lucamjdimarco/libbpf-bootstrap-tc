@@ -15,6 +15,12 @@
 //make -j6 CFLAGS_EXTRA="-DCLASS=1"
 
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+	#define INFLUXDB_URL "http://influxdb:8086?db=tc_db"
+#elif defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+	#define INFLUXDB_URL "http://10.89.0.30:8086?db=tc_db"
+#endif
+
+#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 void print_ipv4_address(__u32 ip) {
     __u8 byte1 = ip & 0xFF;
     __u8 byte2 = (ip >> 8) & 0xFF;
@@ -74,6 +80,7 @@ void print_ipv4_flow(int fd) {
 
 }
 
+//funzione principale per il processamento in caso di utilizzo del filtro in IPv4
 void process_ipv4_map(int fd, const char* map_type) {
 	int counter = 0;
 	struct value_packet *value;
@@ -139,6 +146,8 @@ void process_ipv4_map(int fd, const char* map_type) {
 }
 #endif
 
+
+// Funzione per stampare l'indirizzo IPv6
 #if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 void print_ipv6_address(uint8_t *addr) {
     printf("IPv6 Address: ");
@@ -198,6 +207,7 @@ void print_ipv6_flow(int map_fd) {
 	free(value);
 }
 
+// Funzione per processare la mappa in caso di utilizzo del filtro in IPv6
 void process_ipv6_map(int map_fd, const char* map_type) {
 	int counter = 0;
 	struct value_packet *value;
@@ -249,6 +259,7 @@ void process_ipv6_map(int map_fd, const char* map_type) {
 }
 #endif
 
+// Funzione per inizializzare i file descriptor delle mappe
 int initialize_map_fd(const char* map_type, struct tc_bpf *skel, int* map_fd, int* map_fd_flow) {
 	if (strcmp(map_type, "ipv4") == 0) {
 		#ifdef CLASSIFY_IPV4
@@ -286,6 +297,7 @@ int initialize_map_fd(const char* map_type, struct tc_bpf *skel, int* map_fd, in
 
 static volatile sig_atomic_t exiting = 0;
 
+// Funzione per gestire il segnale di interruzione
 static void sig_int(int signo)
 {
 	exiting = 1;
@@ -298,6 +310,7 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 
 // --------------------------------------------
 
+// Funzione per scrivere i dati in InfluxDB
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
     struct event_t *event = data;
@@ -333,12 +346,14 @@ int main(int argc, char **argv)
 	
 	//MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
 
-	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-		MHandler_t *h = create_influxdb("http://influxdb:8086?db=tc_db");
-	#endif
-	#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-		MHandler_t *h = create_influxdb("http://10.89.0.30:8086?db=tc_db");
-	#endif
+	// #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+	// 	MHandler_t *h = create_influxdb("http://influxdb:8086?db=tc_db");
+	// #endif
+	// #if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+	// 	MHandler_t *h = create_influxdb("http://10.89.0.30:8086?db=tc_db");
+	// #endif
+
+	MHandler_t *h = create_influxdb(INFLUXDB_URL);
 	if (!h) {
 		printf("Cannot create MHandler\n");
 		return -EINVAL;
@@ -423,9 +438,12 @@ int main(int argc, char **argv)
         goto cleanup;
     }
 
+
+	// Main loop per processare i dati
 	while (!exiting) {
 		if (strcmp(map_type, "ipv4") == 0) {
 			#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+			// Polling ring buffer per processare i dati
 			err = ring_buffer__poll(rb, 100 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
@@ -466,6 +484,7 @@ int main(int argc, char **argv)
 
 	//show_data_influxdb(h, "flow_data");
 	
+// funzione per detachment del programma BPF
 detach:
 	tc_opts.flags = tc_opts.prog_fd = tc_opts.prog_id = 0;
 	err = bpf_tc_detach(&tc_hook, &tc_opts);
@@ -474,6 +493,7 @@ detach:
 		goto cleanup;
 	}
 
+// funzione per cleanup
 cleanup:
 	if (hook_created)
 		bpf_tc_hook_destroy(&tc_hook);

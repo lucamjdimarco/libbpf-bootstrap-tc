@@ -635,10 +635,10 @@ int tc_ingress(struct __sk_buff *ctx)
             return TC_ACT_OK;
     }
 
-    bpf_printk("Flow ID: %llu\n", flow_id);
+    // bpf_printk("Flow ID: %llu\n", flow_id);
 
-    cpu = bpf_get_smp_processor_id();
-    bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
+    // cpu = bpf_get_smp_processor_id();
+    // bpf_printk("Il codice BPF sta eseguendo sulla CPU %u\n", cpu);
 
     // switch(eth_proto) {
     //     #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
@@ -887,6 +887,6 @@ int tc_ingress(struct __sk_buff *ctx)
 //     }
 
 // 	return TC_ACT_OK;
-// }
+}
 
 char __license[] SEC("license") = "GPL";

@@ -140,7 +140,7 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
 
 
 
-    __u32 key = 0;
+     __u32 key = 0;
     struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key);
     if (!batch) {
         return;
@@ -558,13 +558,13 @@ int tc_ingress(struct __sk_buff *ctx)
     __u32 key = 0;
     struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key);
     if (batch && batch->count > 0) {
-        // Usa una dimensione massima fissa per bpf_ringbuf_reserve
-        void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0);
-        if (buffer) {
-            // Copia solo il numero effettivo di eventi nel buffer riservato
-            bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch->count, batch->events);
-            bpf_ringbuf_submit(buffer, 0);
-            batch->count = 0;
+        if (batch->count <= BATCH_SIZE) {
+            void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0);
+            if (buffer) {
+                bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch->count, batch->events);
+                bpf_ringbuf_submit(buffer, 0);
+                batch->count = 0;
+            }
         }
     }
 

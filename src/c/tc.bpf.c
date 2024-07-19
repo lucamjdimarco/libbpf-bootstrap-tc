@@ -151,11 +151,11 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
     batch->count += 1;
 
     if (batch->count >= BATCH_SIZE) {
-        // Invia il batch al ringbuf
         void *buffer = bpf_ringbuf_reserve(&events, sizeof(*event) * BATCH_SIZE, 0);
         if (buffer) {
-            bpf_probe_read_kernel(buffer, sizeof(*event) * BATCH_SIZE, batch->events);
-            bpf_ringbuf_submit(buffer, 0);
+            if (bpf_probe_read_kernel(buffer, sizeof(*event) * BATCH_SIZE, batch->events) == 0) {
+                bpf_ringbuf_submit(buffer, 0);
+            }
             batch->count = 0;
         }
     }
@@ -235,8 +235,9 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
         if (batch->count >= BATCH_SIZE) { \
             void *buffer = bpf_ringbuf_reserve(&events, sizeof(*event) * BATCH_SIZE, 0); \
             if (buffer) { \
-                bpf_probe_read_kernel(buffer, sizeof(*event) * BATCH_SIZE, batch->events); \
-                bpf_ringbuf_submit(buffer, 0); \
+                if (bpf_probe_read_kernel(buffer, sizeof(*event) * BATCH_SIZE, batch->events) == 0) { \
+                    bpf_ringbuf_submit(buffer, 0); \
+                } \
                 batch->count = 0; \
             } \
         } \
@@ -554,8 +555,9 @@ int tc_ingress(struct __sk_buff *ctx)
     if (batch && batch->count > 0) {
         void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * batch->count, 0);
         if (buffer) {
-            bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch->count, batch->events);
-            bpf_ringbuf_submit(buffer, 0);
+            if (bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch->count, batch->events) == 0) {
+                bpf_ringbuf_submit(buffer, 0);
+            }
             batch->count = 0;
         }
     }

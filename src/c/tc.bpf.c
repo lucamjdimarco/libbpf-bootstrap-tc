@@ -8,12 +8,26 @@
 #include <string.h>
 #include "common.h"
 
+/* -------------------------- */
 #define BATCH_SIZE 10
 
 struct event_batch {
     struct event_t events[BATCH_SIZE];
     __u32 count;
 };
+
+// Funzione per ottenere la lunghezza del batch
+static __always_inline __u32 get_batch_length(struct event_batch *batch) {
+    __u32 length = 0;
+    for (int i = 0; i < BATCH_SIZE; i++) {
+        if (batch->events[i].ts != 0) {
+            length++;
+        }
+    }
+    return length;
+}
+
+/* -------------------------- */
 
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
@@ -146,20 +160,21 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
         return;
     }
 
-    if (batch->count < BATCH_SIZE) {
-        struct event_t *event = &batch->events[batch->count];
+    __u32 batch_length = get_batch_length(batch);
+
+    if (batch_length < BATCH_SIZE) {
+        struct event_t *event = &batch->events[batch_length];
         event->ts = bpf_ktime_get_ns();
         event->flowid = packet->flow_id;
         event->counter = packet->counter;
-        batch->count += 1;
     }
 
-    if (batch->count >= BATCH_SIZE) {
+    if (batch_length >= BATCH_SIZE) {
         void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0);
         if (buffer) {
             bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events);
             bpf_ringbuf_submit(buffer, 0);
-            batch->count = 0;
+            __builtin_memset(batch->events, 0, sizeof(batch->events));
         }
     }
 
@@ -230,19 +245,19 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
         if (!batch) { \
             return TC_ACT_OK; \
         } \
-        if (batch->count < BATCH_SIZE) { \
-            struct event_t *event = &batch->events[batch->count]; \
+        __u32 batch_length = get_batch_length(batch); \
+        if (batch_length < BATCH_SIZE) { \
+            struct event_t *event = &batch->events[batch_length]; \
             event->ts = bpf_ktime_get_ns(); \
             event->flowid = flow_id; \
             event->counter = 1; \
-            batch->count += 1; \
         } \
-        if (batch->count >= BATCH_SIZE) { \
+        if (batch_length >= BATCH_SIZE) { \
             void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0); \
             if (buffer) { \
                 bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events); \
                 bpf_ringbuf_submit(buffer, 0); \
-                batch->count = 0; \
+                __builtin_memset(batch->events, 0, sizeof(batch->events)); \
             } \
         } \
     } else { \
@@ -557,13 +572,14 @@ int tc_ingress(struct __sk_buff *ctx)
     // Invia eventuali eventi rimanenti nel batch
     __u32 key = 0;
     struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key);
-    if (batch && batch->count > 0) {
-        if (batch->count <= BATCH_SIZE) {
-            void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * batch->count, 0);
+    if (batch) {
+        __u32 batch_length = get_batch_length(batch);
+        if (batch_length > 0) {
+            void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * batch_length, 0);
             if (buffer) {
-                bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch->count, batch->events);
+                bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch_length, batch->events);
                 bpf_ringbuf_submit(buffer, 0);
-                batch->count = 0;
+                __builtin_memset(batch->events, 0, sizeof(batch->events));
             }
         }
     }

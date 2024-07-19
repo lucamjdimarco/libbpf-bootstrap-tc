@@ -10,6 +10,7 @@
     "locale": "c",
     "ratio": "c",
     "tuple": "c",
-    "influxdb_wrapper_int.h": "c"
+    "influxdb_wrapper_int.h": "c",
+    "xiosbase": "c"
   }
 }

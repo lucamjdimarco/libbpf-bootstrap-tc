@@ -311,29 +311,29 @@ int tc_ingress(struct __sk_buff *ctx)
     };
 
 
-    #ifdef CLASSIFY_IPV4
+    // #ifdef CLASSIFY_IPV4
     
-    #endif
+    // #endif
 
-    #ifdef CLASSIFY_IPV6
-    struct packet_info_ipv6 new_info_ipv6 = {};
-    #endif
+    // #ifdef CLASSIFY_IPV6
+    // struct packet_info_ipv6 new_info_ipv6 = {};
+    // #endif
 
-    #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
-    struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
-    #endif
+    // #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
+    // struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
+    // #endif
 
-    #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
-    struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
-    #endif
+    // #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
+    // struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
+    // #endif
 
-    #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
-    struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
-    #endif
+    // #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
+    // struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
+    // #endif
 
-    #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
-    struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
-    #endif
+    // #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
+    // struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
+    // #endif
 
     struct value_packet *packet = NULL;
     int cpu;
@@ -543,7 +543,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
         #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
         case bpf_htons(ETH_P_IP): {
-            //struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
+            struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
             classify_only_address_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
             packet = bpf_map_lookup_elem(&map_only_addr_ipv4, &new_info_only_addr_ipv4);
             if (!packet) {
@@ -553,14 +553,64 @@ int tc_ingress(struct __sk_buff *ctx)
                     bpf_printk("Failed to insert new item in IPv4 flow maps\n");
                     return TC_ACT_OK;
                 }
+                struct value_packet new_value = {
+                    .counter = 1,
+                    .bytes_counter = packet_length,
+                    .flow_id = flow_id
+                };
+
+                ret = bpf_map_update_elem(&map_only_addr_ipv4, &new_info_only_addr_ipv4, &new_value, BPF_ANY);
+                if (ret) {
+                    bpf_printk("Failed to insert new item in IPv4 maps\n");
+                    return TC_ACT_OK;
+                }
+
+                bpf_printk("Create new item in flow maps with counter 1\n");
+                bpf_printk("-----------------------------------------------------");
+
+                struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = flow_id;
+                event->counter = 1;
+                bpf_ringbuf_submit(event, 0);
+                
+            }else{
+                bpf_printk("Found item in IPv4 maps\n");
+
+                if (packet->counter < MAX_COUNTER) {
+                    bpf_spin_lock(&packet->lock);
+                    packet->counter += 1;
+                    packet->bytes_counter += packet_length;
+                    bpf_spin_unlock(&packet->lock);
+                } else {
+                    bpf_printk("Counter is at maximum value\n");
+                }
+
+                struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = packet->flow_id;
+                event->counter = packet->counter;
+                bpf_ringbuf_submit(event, 0);
+
+                bpf_printk("-----------------------------------------------------");
+
             }
-            break;
+            return TC_ACT_OK;
+
         }
         #endif
 
         #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
         case bpf_htons(ETH_P_IP): {
-            //struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
+            struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
             classify_only_dest_address_ipv4_packet(&new_info_only_dest_ipv4, data_end, data);
             packet = bpf_map_lookup_elem(&map_only_dest_ipv4, &new_info_only_dest_ipv4);
             if (!packet) {
@@ -570,14 +620,65 @@ int tc_ingress(struct __sk_buff *ctx)
                     bpf_printk("Failed to insert new item in IPv4 flow maps\n");
                     return TC_ACT_OK;
                 }
+
+                struct value_packet new_value = {
+                    .counter = 1,
+                    .bytes_counter = packet_length,
+                    .flow_id = flow_id
+                };
+
+                ret = bpf_map_update_elem(&map_only_dest_ipv4, &new_info_only_dest_ipv4, &new_value, BPF_ANY);
+                if (ret) {
+                    bpf_printk("Failed to insert new item in IPv4 maps\n");
+                    return TC_ACT_OK;
+                }
+
+                bpf_printk("Create new item in flow maps with counter 1\n");
+                bpf_printk("-----------------------------------------------------");
+
+                struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = flow_id;
+                event->counter = 1;
+                bpf_ringbuf_submit(event, 0);
             }
-            break;
+            else {
+                bpf_printk("Found item in IPv4 maps\n");
+
+                if (packet->counter < MAX_COUNTER) {
+                    bpf_spin_lock(&packet->lock);
+                    packet->counter += 1;
+                    packet->bytes_counter += packet_length;
+                    bpf_spin_unlock(&packet->lock);
+                } else {
+                    bpf_printk("Counter is at maximum value\n");
+                }
+
+                struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = packet->flow_id;
+                event->counter = packet->counter;
+                bpf_ringbuf_submit(event, 0);
+
+                bpf_printk("-----------------------------------------------------");
+
+            }
+            return TC_ACT_OK;
+            //break;
         }
         #endif
 
         #ifdef CLASSIFY_IPV6
         case bpf_htons(ETH_P_IPV6): {
-            //struct packet_info_ipv6 new_info_ipv6 = {};
+            struct packet_info_ipv6 new_info_ipv6 = {};
             classify_ipv6_packet(&new_info_ipv6, data_end, data);
             packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
             if (!packet) {
@@ -587,14 +688,66 @@ int tc_ingress(struct __sk_buff *ctx)
                     bpf_printk("Failed to insert new item in IPv6 flow maps\n");
                     return TC_ACT_OK;
                 }
+
+                struct value_packet new_value = {
+                    .counter = 1,
+                    .bytes_counter = packet_length,
+                    .flow_id = flow_id
+                };
+
+                ret = bpf_map_update_elem(&my_map_ipv6, &new_info_ipv6, &new_value, BPF_ANY);
+
+                if (ret) {
+                    bpf_printk("Failed to insert new item in flow maps\n");
+                    return TC_ACT_OK;
+                }
+
+
+                bpf_printk("Create new item in flow maps with counter 1\n");
+                bpf_printk("-----------------------------------------------------");
+
+                struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = flow_id;
+                event->counter = 1;
+                bpf_ringbuf_submit(event, 0);
             }
-            break;
+            else
+            {
+                bpf_printk("Found item in flow maps\n");
+                if (packet->counter < MAX_COUNTER) {
+                    bpf_spin_lock(&packet->lock);
+                    packet->counter += 1;
+                    packet->bytes_counter += packet_length;
+                    bpf_spin_unlock(&packet->lock);
+                } else {
+                    bpf_printk("Counter is at maximum value\n");
+                }
+
+                struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = packet->flow_id;
+                event->counter = packet->counter;
+                bpf_ringbuf_submit(event, 0);
+
+                bpf_printk("-----------------------------------------------------");
+            }
+            return TC_ACT_OK;
+            
         }
         #endif
 
         #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
         case bpf_htons(ETH_P_IPV6): {
-            //struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
+            struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
             classify_only_address_ipv6_packet(&new_info_only_addr_ipv6, data_end, data);
             packet = bpf_map_lookup_elem(&map_only_addr_ipv6, &new_info_only_addr_ipv6);
             if (!packet) {
@@ -604,34 +757,139 @@ int tc_ingress(struct __sk_buff *ctx)
                     bpf_printk("Failed to insert new item in IPv6 flow maps\n");
                     return TC_ACT_OK;
                 }
+
+                struct value_packet new_value = {
+                    .counter = 1,
+                    .bytes_counter = packet_length,
+                    .flow_id = flow_id
+                };
+
+                ret = bpf_map_update_elem(&map_only_addr_ipv6, &new_info_only_addr_ipv6, &new_value, BPF_ANY);
+
+                if (ret) {
+                    bpf_printk("Failed to insert new item in IPv6 maps\n");
+                    return TC_ACT_OK;
+                }
+
+                bpf_printk("Create new item in flow maps with counter 1\n");
+                bpf_printk("-----------------------------------------------------");
+
+                struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = flow_id;
+                event->counter = 1;
+                bpf_ringbuf_submit(event, 0);
+
             }
-            break;
+            else{
+
+                bpf_printk("Found item in IPv6 maps\n");
+
+                if (packet->counter < MAX_COUNTER) {
+                    bpf_spin_lock(&packet->lock);
+                    packet->counter += 1;
+                    packet->bytes_counter += packet_length;
+                    bpf_spin_unlock(&packet->lock);
+                } else {
+                    bpf_printk("Counter is at maximum value\n");
+                }
+
+                struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = packet->flow_id;
+                event->counter = packet->counter;
+                bpf_ringbuf_submit(event, 0);
+
+                bpf_printk("-----------------------------------------------------");
+            }
+            return TC_ACT_OK;
+            
         }
         #endif
 
         //TOFIX: non funziona!!!
         #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
         case bpf_htons(ETH_P_IPV6): {
-            //struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
+            struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
             classify_only_dest_address_ipv6_packet(&new_info_only_dest_ipv6, data_end, data);
             packet = bpf_map_lookup_elem(&map_only_dest_ipv6, &new_info_only_dest_ipv6);
             if (!packet) {
                 flow_id = build_flowid(only_dest_address, counter++);
                 // __u64 *flow_id_ptr = &flow_id;
                 // struct only_dest_ipv6 *info_ptr = &new_info_only_dest_ipv6;
-                //ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_dest_ipv6, BPF_ANY);
+                ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_dest_ipv6, BPF_ANY);
                 //ret = bpf_map_update_elem(&ipv6_flow, flow_id_ptr, info_ptr, BPF_ANY);
                 // Copia la struttura in un array temporaneo
-                __u64 temp_key[sizeof(struct only_dest_ipv6) / sizeof(__u64)];
-                __builtin_memcpy(temp_key, &new_info_only_dest_ipv6, sizeof(struct only_dest_ipv6));
+                // __u64 temp_key[sizeof(struct only_dest_ipv6) / sizeof(__u64)];
+                // __builtin_memcpy(temp_key, &new_info_only_dest_ipv6, sizeof(struct only_dest_ipv6));
 
-                ret = bpf_map_update_elem(&ipv6_flow, &flow_id, temp_key, BPF_ANY);
+                // ret = bpf_map_update_elem(&ipv6_flow, &flow_id, temp_key, BPF_ANY);
                 if (ret == -1) {
                     bpf_printk("Failed to insert new item in IPv6 flow maps\n");
                     return TC_ACT_OK;
                 }
+
+                struct value_packet new_value = {
+                    .counter = 1,
+                    .bytes_counter = packet_length,
+                    .flow_id = flow_id
+                };
+
+                ret = bpf_map_update_elem(&map_only_dest_ipv6, &new_info_only_dest_ipv6, &new_value, BPF_ANY);
+                if (ret) {
+                    bpf_printk("Failed to insert new item in IPv6 maps\n");
+                    return TC_ACT_OK;
+                }
+
+                bpf_printk("Create new item in flow maps with counter 1\n");
+                bpf_printk("-----------------------------------------------------");
+
+                struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = flow_id;
+                event->counter = 1;
+                bpf_ringbuf_submit(event, 0);
+
             }
-            break;
+            else
+            {
+                bpf_printk("Found item in IPv6 maps\n");
+
+                if (packet->counter < MAX_COUNTER) {
+                    bpf_spin_lock(&packet->lock);
+                    packet->counter += 1;
+                    packet->bytes_counter += packet_length;
+                    bpf_spin_unlock(&packet->lock);
+                } else {
+                    bpf_printk("Counter is at maximum value\n");
+                }
+
+                struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+                if (!event) {
+                    return TC_ACT_OK;
+                }
+
+                event->ts = bpf_ktime_get_ns();
+                event->flowid = packet->flow_id;
+                event->counter = packet->counter;
+                bpf_ringbuf_submit(event, 0);
+
+                bpf_printk("-----------------------------------------------------");
+            }
+            return TC_ACT_OK;
+            
         }
         #endif
 

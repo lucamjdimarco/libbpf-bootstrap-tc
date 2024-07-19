@@ -475,8 +475,8 @@ int tc_ingress(struct __sk_buff *ctx)
                 event->counter = packet->counter;
                 bpf_ringbuf_submit(event, 0);
             }*/
-            return TC_ACT_OK;
-            //break;
+            //return TC_ACT_OK;
+            break;
         }
         #endif
 
@@ -484,7 +484,8 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
             classify_only_address_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
-            packet = bpf_map_lookup_elem(&map_only_addr_ipv4, &new_info_only_addr_ipv4);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_addr_ipv4, new_info_only_addr_ipv4, Only_Address, ipv4_flow);
+            /*packet = bpf_map_lookup_elem(&map_only_addr_ipv4, &new_info_only_addr_ipv4);
             if (!packet) {
                 flow_id = build_flowid(Only_Address, counter++);
                 ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info_only_addr_ipv4, BPF_ANY);
@@ -541,9 +542,9 @@ int tc_ingress(struct __sk_buff *ctx)
 
                 bpf_printk("-----------------------------------------------------");
 
-            }
-            return TC_ACT_OK;
-
+            }*/
+            //return TC_ACT_OK;
+            break;
         }
         #endif
 
@@ -610,8 +611,8 @@ int tc_ingress(struct __sk_buff *ctx)
                 bpf_printk("-----------------------------------------------------");
 
             }
-            return TC_ACT_OK;
-            //break;
+            //return TC_ACT_OK;
+            break;
         }
         #endif
 
@@ -679,8 +680,8 @@ int tc_ingress(struct __sk_buff *ctx)
 
                 bpf_printk("-----------------------------------------------------");
             }
-            return TC_ACT_OK;
-            
+            //return TC_ACT_OK;
+            break;
         }
         #endif
 
@@ -749,8 +750,8 @@ int tc_ingress(struct __sk_buff *ctx)
 
                 bpf_printk("-----------------------------------------------------");
             }
-            return TC_ACT_OK;
-            
+            //return TC_ACT_OK;
+            break;
         }
         #endif
 
@@ -827,8 +828,8 @@ int tc_ingress(struct __sk_buff *ctx)
 
                 bpf_printk("-----------------------------------------------------");
             }
-            return TC_ACT_OK;
-            
+            //return TC_ACT_OK;
+            break;
         }
         #endif
 
@@ -837,7 +838,7 @@ int tc_ingress(struct __sk_buff *ctx)
             return TC_ACT_OK;
     }
 
-    
+    return TC_ACT_OK;
 }
 
 char __license[] SEC("license") = "GPL";

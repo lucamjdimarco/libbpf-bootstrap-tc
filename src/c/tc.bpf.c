@@ -27,14 +27,16 @@
 //     return length;
 // }
 
+// struct {
+//     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+//     __uint(max_entries, 1);
+//     __type(key, __u32);
+//     __type(value, struct event_batch);
+// } event_buffer SEC(".maps");
+
 /* -------------------------- */
 
-struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-    __uint(max_entries, 1);
-    __type(key, __u32);
-    __type(value, struct event_batch);
-} event_buffer SEC(".maps");
+
 
 #ifdef CLASSIFY_IPV4
 struct {

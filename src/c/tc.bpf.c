@@ -552,7 +552,8 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
             classify_only_dest_address_ipv4_packet(&new_info_only_dest_ipv4, data_end, data);
-            packet = bpf_map_lookup_elem(&map_only_dest_ipv4, &new_info_only_dest_ipv4);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv4, new_info_only_dest_ipv4, Only_Dest_Address, ipv4_flow);
+            /*packet = bpf_map_lookup_elem(&map_only_dest_ipv4, &new_info_only_dest_ipv4);
             if (!packet) {
                 flow_id = build_flowid(Only_Dest_Address, counter++);
                 ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info_only_dest_ipv4, BPF_ANY);
@@ -610,7 +611,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
                 bpf_printk("-----------------------------------------------------");
 
-            }
+            }*/
             //return TC_ACT_OK;
             break;
         }
@@ -620,7 +621,8 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IPV6): {
             struct packet_info_ipv6 new_info_ipv6 = {};
             classify_ipv6_packet(&new_info_ipv6, data_end, data);
-            packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(my_map_ipv6, new_info_ipv6, Quintupla, ipv6_flow);
+            /*packet = bpf_map_lookup_elem(&my_map_ipv6, &new_info_ipv6);
             if (!packet) {
                 flow_id = build_flowid(Quintupla, counter++);
                 ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_ipv6, BPF_ANY);
@@ -679,7 +681,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 bpf_ringbuf_submit(event, 0);
 
                 bpf_printk("-----------------------------------------------------");
-            }
+            }*/
             //return TC_ACT_OK;
             break;
         }
@@ -689,7 +691,8 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IPV6): {
             struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
             classify_only_address_ipv6_packet(&new_info_only_addr_ipv6, data_end, data);
-            packet = bpf_map_lookup_elem(&map_only_addr_ipv6, &new_info_only_addr_ipv6);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_addr_ipv6, new_info_only_addr_ipv6, Only_Address, ipv6_flow);
+            /*packet = bpf_map_lookup_elem(&map_only_addr_ipv6, &new_info_only_addr_ipv6);
             if (!packet) {
                 flow_id = build_flowid(Only_Address, counter++);
                 ret = bpf_map_update_elem(&ipv6_flow, &flow_id, &new_info_only_addr_ipv6, BPF_ANY);
@@ -749,7 +752,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 bpf_ringbuf_submit(event, 0);
 
                 bpf_printk("-----------------------------------------------------");
-            }
+            }*/
             //return TC_ACT_OK;
             break;
         }
@@ -760,7 +763,8 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IPV6): {
             struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
             classify_only_dest_address_ipv6_packet(&new_info_only_dest_ipv6, data_end, data);
-            packet = bpf_map_lookup_elem(&map_only_dest_ipv6, &new_info_only_dest_ipv6);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv6, new_info_only_dest_ipv6, Only_Dest_Address, ipv6_flow);
+            /*packet = bpf_map_lookup_elem(&map_only_dest_ipv6, &new_info_only_dest_ipv6);
             if (!packet) {
                 flow_id = build_flowid(Only_Dest_Address, counter++);
                 // __u64 *flow_id_ptr = &flow_id;
@@ -827,7 +831,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 bpf_ringbuf_submit(event, 0);
 
                 bpf_printk("-----------------------------------------------------");
-            }
+            }*/
             //return TC_ACT_OK;
             break;
         }

@@ -134,11 +134,11 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
     bpf_ringbuf_submit(event, 0);
 }
 
-#define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, key, new_info, flow_type) do { \
+#define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
     packet = bpf_map_lookup_elem(&map_name, &new_info); \
     if (!packet) { \
         flow_id = build_flowid(flow_type, counter++); \
-        ret = bpf_map_update_elem(&ipv4_flow, &flow_id, &new_info, BPF_ANY); \
+        ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
         if (ret == -1) { \
             bpf_printk("Failed to insert new item in flow maps\n"); \
             return TC_ACT_OK; \
@@ -413,7 +413,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
-            CLASSIFY_PACKET_AND_UPDATE_MAP(my_map, new_info, quintupla);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(my_map, new_info, Quintupla, ipv4_flow);
             /*packet = bpf_map_lookup_elem(&my_map, &new_info);
             if (!packet) {
                 flow_id = build_flowid(Quintupla, counter++);

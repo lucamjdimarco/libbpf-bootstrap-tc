@@ -569,20 +569,20 @@ int tc_ingress(struct __sk_buff *ctx)
             return TC_ACT_OK;
     }
 
-    Invia eventuali eventi rimanenti nel batch
-    __u32 key = 0;
-    struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key);
-    if (batch) {
-        __u32 batch_length = get_batch_length(batch);
-        if (batch_length > 0) {
-            void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * batch_length, 0);
-            if (buffer) {
-                bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch_length, batch->events);
-                bpf_ringbuf_submit(buffer, 0);
-                __builtin_memset(batch->events, 0, sizeof(batch->events));
-            }
-        }
-    }
+    // Invia eventuali eventi rimanenti nel batch
+    // __u32 key = 0;
+    // struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key);
+    // if (batch) {
+    //     __u32 batch_length = get_batch_length(batch);
+    //     if (batch_length > 0) {
+    //         void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * batch_length, 0);
+    //         if (buffer) {
+    //             bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch_length, batch->events);
+    //             bpf_ringbuf_submit(buffer, 0);
+    //             __builtin_memset(batch->events, 0, sizeof(batch->events));
+    //         }
+    //     }
+    // }
 
 
     return TC_ACT_OK;

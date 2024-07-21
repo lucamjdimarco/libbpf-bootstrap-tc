@@ -569,20 +569,10 @@ int tc_ingress(struct __sk_buff *ctx)
     if (batch) {
         __u32 batch_length = get_batch_length(batch);
         if (batch_length > 0 && batch_length <= BATCH_SIZE) {
-            // Riserva spazio nel buffer degli eventi
             void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0);
             if (buffer) {
-                // Copia gli eventi rimanenti nel buffer
-                bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch_length, batch->events);
-                
-                // Imposta il resto del buffer su zero
-                __u32 remaining_size = BATCH_SIZE - batch_length;
-                __builtin_memset(buffer + sizeof(struct event_t) * batch_length, 0, sizeof(struct event_t) * remaining_size);
-                
-                // Invia il buffer
+                bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events);
                 bpf_ringbuf_submit(buffer, 0);
-                
-                // Resetta il conteggio degli eventi nel batch
                 batch->count = 0;
             }
         }

@@ -242,21 +242,19 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             return TC_ACT_OK; \
         } \
         __u32 batch_length = get_batch_length(batch); \
-        if (batch_length > BATCH_SIZE) { \
-            batch_length = BATCH_SIZE; \
-        } \
         if (batch_length < BATCH_SIZE) { \
             struct event_t *event = &batch->events[batch_length]; \
             event->ts = bpf_ktime_get_ns(); \
             event->flowid = flow_id; \
             event->counter = 1; \
+            batch->count += 1; \
         } \
-        if (batch_length >= BATCH_SIZE) { \
+        if (batch->count >= BATCH_SIZE) { \
             void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0); \
             if (buffer) { \
                 bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events); \
                 bpf_ringbuf_submit(buffer, 0); \
-                __builtin_memset(batch->events, 0, sizeof(batch->events)); \
+                batch->count = 0; \
             } \
         } \
     } else { \
@@ -567,17 +565,15 @@ int tc_ingress(struct __sk_buff *ctx)
             return TC_ACT_OK;
     }
 
-    // Invia eventuali eventi rimanenti nel batch
+    //Invia eventuali eventi rimanenti nel batch
     __u32 key = 0;
     struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key);
     if (batch) {
         __u32 batch_length = get_batch_length(batch);
         if (batch_length > 0) {
-            void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0);
+            void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * batch_length, 0);
             if (buffer) {
-                // Copia solo gli eventi validi nel buffer
                 bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch_length, batch->events);
-                // Sottometti solo la quantità di dati effettivamente valida
                 bpf_ringbuf_submit(buffer, 0);
                 batch->count = 0;
             }

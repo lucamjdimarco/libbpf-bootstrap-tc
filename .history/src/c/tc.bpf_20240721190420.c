@@ -576,10 +576,10 @@ int tc_ingress(struct __sk_buff *ctx)
                 bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch_length, batch->events);
                 
                 // Imposta il resto del buffer su zero manualmente
-                __u8 *buf_ptr = (__u8 *)buffer + sizeof(struct event_t) * batch_length;
-                for (__u32 i = 0; i < (BATCH_SIZE - batch_length) * sizeof(struct event_t); i++) {
-                    buf_ptr[i] = 0;
-                }
+            __u8 *buf_ptr = (__u8 *)buffer + sizeof(struct event_t) * batch_length;
+            for (__u32 i = 0; i < (BATCH_SIZE - batch_length) * sizeof(struct event_t); i++) {
+                buf_ptr[i] = 0;
+            }
                 
                 // Invia il buffer
                 bpf_ringbuf_submit(buffer, 0);

@@ -160,15 +160,14 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
         event->ts = bpf_ktime_get_ns();
         event->flowid = packet->flow_id;
         event->counter = packet->counter;
-        batch->count += 1;
     }
 
-    if (batch->count >= BATCH_SIZE) {
+    if (batch_length >= BATCH_SIZE) {
         void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0);
         if (buffer) {
             bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events);
             bpf_ringbuf_submit(buffer, 0);
-            batch->count = 0;
+            __builtin_memset(batch->events, 0, sizeof(batch->events));
         }
     }
 
@@ -245,14 +244,13 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             event->ts = bpf_ktime_get_ns(); \
             event->flowid = flow_id; \
             event->counter = 1; \
-            batch->count += 1; \
         } \
-        if (batch->count >= BATCH_SIZE) { \
+        if (batch_length >= BATCH_SIZE) { \
             void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0); \
             if (buffer) { \
                 bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events); \
                 bpf_ringbuf_submit(buffer, 0); \
-                batch->count = 0; \
+                __builtin_memset(batch->events, 0, sizeof(batch->events)); \
             } \
         } \
     } else { \
@@ -574,7 +572,7 @@ int tc_ingress(struct __sk_buff *ctx)
             if (buffer) {
                 bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch_length, batch->events);
                 bpf_ringbuf_submit(buffer, 0);
-                batch->count = 0;
+                __builtin_memset(batch->events, 0, sizeof(batch->events));
             }
         }
     }

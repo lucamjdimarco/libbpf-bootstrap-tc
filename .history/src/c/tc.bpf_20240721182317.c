@@ -574,7 +574,7 @@ int tc_ingress(struct __sk_buff *ctx)
             if (buffer) {
                 bpf_probe_read_kernel(buffer, sizeof(struct event_t) * batch_length, batch->events);
                 bpf_ringbuf_submit(buffer, 0);
-                batch->count = 0;
+                __builtin_memset(batch->events, 0, sizeof(batch->events));
             }
         }
     }

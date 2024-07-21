@@ -9,23 +9,23 @@
 #include "common.h"
 
 /* -------------------------- */
-// #define BATCH_SIZE 10
+#define BATCH_SIZE 10
 
-// struct event_batch {
-//     struct event_t events[BATCH_SIZE];
-//     __u32 count;
-// };
+struct event_batch {
+    struct event_t events[BATCH_SIZE];
+    __u32 count;
+};
 
-// static __always_inline __u32 get_batch_length(struct event_batch *batch) {
-//     return batch->count;
-// }
+static __always_inline __u32 get_batch_length(struct event_batch *batch) {
+    return batch->count;
+}
 
-// struct {
-//     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-//     __uint(max_entries, 1);
-//     __type(key, __u32);
-//     __type(value, struct event_batch);
-// } event_buffer SEC(".maps");
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 1);
+    __type(key, __u32);
+    __type(value, struct event_batch);
+} event_buffer SEC(".maps");
 
 /* -------------------------- */
 
@@ -565,19 +565,19 @@ int tc_ingress(struct __sk_buff *ctx)
     }
 
     // Invia eventuali eventi rimanenti nel batch
-    // __u32 key = 0;
-    // struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key);
-    // if (batch) {
-    //     __u32 batch_length = get_batch_length(batch);
-    //     if (batch_length > 0 && batch_length <= BATCH_SIZE) {
-    //         void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0);
-    //         if (buffer) {
-    //             bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events);
-    //             bpf_ringbuf_submit(buffer, 0);
-    //             batch->count = 0;
-    //         }
-    //     }
-    // }
+    __u32 key = 0;
+    struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key);
+    if (batch) {
+        __u32 batch_length = get_batch_length(batch);
+        if (batch_length > 0 && batch_length <= BATCH_SIZE) {
+            void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0);
+            if (buffer) {
+                bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events);
+                bpf_ringbuf_submit(buffer, 0);
+                batch->count = 0;
+            }
+        }
+    }
 
 
     return TC_ACT_OK;

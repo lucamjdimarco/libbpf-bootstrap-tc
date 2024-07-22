@@ -9,23 +9,23 @@
 #include "common.h"
 
 /* -------------------------- */
-// #define BATCH_SIZE 10
+#define BATCH_SIZE 10
 
-// struct event_batch {
-//     struct event_t events[BATCH_SIZE];
-//     __u32 count;
-// };
+struct event_batch {
+    struct event_t events[BATCH_SIZE];
+    __u32 count;
+};
 
-// static __always_inline __u32 get_batch_length(struct event_batch *batch) {
-//     return batch->count;
-// }
+static __always_inline __u32 get_batch_length(struct event_batch *batch) {
+    return batch->count;
+}
 
-// struct {
-//     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-//     __uint(max_entries, 1);
-//     __type(key, __u32);
-//     __type(value, struct event_batch);
-// } event_buffer SEC(".maps");
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(max_entries, 1);
+    __type(key, __u32);
+    __type(value, struct event_batch);
+} event_buffer SEC(".maps");
 
 /* -------------------------- */
 
@@ -174,15 +174,15 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
     //     }
     // }
 
-    struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
-    if (!event) {
-        return;
-    }
+    // struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+    // if (!event) {
+    //     return;
+    // }
 
-    event->ts = bpf_ktime_get_ns();
-    event->flowid = packet->flow_id;
-    event->counter = packet->counter;
-    bpf_ringbuf_submit(event, 0);
+    // event->ts = bpf_ktime_get_ns();
+    // event->flowid = packet->flow_id;
+    // event->counter = packet->counter;
+    // bpf_ringbuf_submit(event, 0);
 }
 
 #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \

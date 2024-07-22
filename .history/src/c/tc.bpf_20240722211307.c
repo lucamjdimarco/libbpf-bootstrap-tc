@@ -217,49 +217,49 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
 //     } \
 // } while (0)
 
-#define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
-    packet = bpf_map_lookup_elem(&map_name, &new_info); \
-    if (!packet) { \
-        flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
-        ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
-        if (ret == -1) { \
-            bpf_printk("Failed to insert new item in flow maps\n"); \
-            return TC_ACT_OK; \
-        } \
-        struct value_packet new_value = { \
-            .counter = 1, \
-            .bytes_counter = packet_length, \
-            .flow_id = flow_id \
-        }; \
-        ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
-        if (ret) { \
-            bpf_printk("Failed to insert new item in flow maps\n"); \
-            return TC_ACT_OK; \
-        } \
-        __u32 key = 0; \
-        struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key); \
-        if (!batch) { \
-            return TC_ACT_OK; \
-        } \
-        if (batch->count < BATCH_SIZE) { \
-            struct event_t *event = &batch->events[batch->count]; \
-            event->ts = bpf_ktime_get_ns(); \
-            event->flowid = flow_id; \
-            event->counter = 1; \
-            batch->count += 1; \
-        } \
-        if (batch->count >= BATCH_SIZE) { \
-            void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0); \
-            if (buffer) { \
-                bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events); \
-                bpf_ringbuf_submit(buffer, 0); \
-                batch->count = 0; \
-            } \
-        } \
-    } else { \
-        handle_packet_event(packet, flow_id, packet_length); \
-    } \
-} while (0)
+// #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
+//     packet = bpf_map_lookup_elem(&map_name, &new_info); \
+//     if (!packet) { \
+//         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
+//         ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
+//         if (ret == -1) { \
+//             bpf_printk("Failed to insert new item in flow maps\n"); \
+//             return TC_ACT_OK; \
+//         } \
+//         struct value_packet new_value = { \
+//             .counter = 1, \
+//             .bytes_counter = packet_length, \
+//             .flow_id = flow_id \
+//         }; \
+//         ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
+//         if (ret) { \
+//             bpf_printk("Failed to insert new item in flow maps\n"); \
+//             return TC_ACT_OK; \
+//         } \
+//         __u32 key = 0; \
+//         struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key); \
+//         if (!batch) { \
+//             return TC_ACT_OK; \
+//         } \
+//         if (batch->count < BATCH_SIZE) { \
+//             struct event_t *event = &batch->events[batch->count]; \
+//             event->ts = bpf_ktime_get_ns(); \
+//             event->flowid = flow_id; \
+//             event->counter = 1; \
+//             batch->count += 1; \
+//         } \
+//         if (batch->count >= BATCH_SIZE) { \
+//             void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0); \
+//             if (buffer) { \
+//                 bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events); \
+//                 bpf_ringbuf_submit(buffer, 0); \
+//                 batch->count = 0; \
+//             } \
+//         } \
+//     } else { \
+//         handle_packet_event(packet, flow_id, packet_length); \
+//     } \
+// } while (0)
 
 
 

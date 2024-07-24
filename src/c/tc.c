@@ -36,10 +36,10 @@ void print_ipv4_flow_details(__u64 key, struct packet_info *value) {
 	#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
     print_ipv4_address(value->src_ip);
 	#endif
-    printf("\nKey: Destination IP: ");
+    printf("Key: Destination IP: ");
     print_ipv4_address(value->dst_ip);
 	#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
-    printf("\nKey: Source Port: %u\n", value->src_port);
+    printf("Key: Source Port: %u\n", value->src_port);
     printf("Key: Destination Port: %u\n", value->dst_port);
     printf("Key: Protocol: %u\n", value->protocol);
 	#endif
@@ -123,8 +123,10 @@ void process_ipv4_map(int fd, const char* map_type) {
 			printf("Value: Bytes Counter: %llu\n", value->bytes_counter);*/
 
 			#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
+			printf("Source IP: ");
 			print_ipv4_address(key->src_ip);
 			#endif
+			printf("Destination IP: ");
 			print_ipv4_address(key->dst_ip);
 			printf("Value: Counter: %u\n", value->counter);
 			printf("Value: Bytes Counter: %llu\n", value->bytes_counter);

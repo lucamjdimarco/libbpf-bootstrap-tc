@@ -186,6 +186,7 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
 }
 
 #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
+    struct value_packet *packet = NULL; \
     packet = bpf_map_lookup_elem(&map_name, &new_info); \
     if (!packet) { \
         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
@@ -466,7 +467,7 @@ int tc_ingress(struct __sk_buff *ctx)
         ONLY_DEST_ADDRESS = 2
     };
 
-    struct value_packet *packet = NULL;
+    
     long ret;
     /*__u64 packet_length = ctx->data_end - ctx->data;*/
     __u64 packet_length = ctx->len;

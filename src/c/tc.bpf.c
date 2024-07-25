@@ -121,6 +121,21 @@ struct {
 } ipv6_flow SEC(".maps");
 #endif
 #endif
+/*------------------------------------------------*/ 
+struct batch_event {
+    __u64 flowid;
+    __u64 counter;
+    __u64 bytes;
+};
+
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 1024); // numero massimo di batch simultanei
+    __type(key, __u64);
+    __type(value, struct batch_event);
+} batch_map SEC(".maps");
+
+/*------------------------------------------------*/ 
 
 // Ring buffer per gli eventi
 struct {
@@ -154,6 +169,52 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
     event->counter = packet->counter;
     bpf_ringbuf_submit(event, 0);
 }
+
+
+/*------------------------------------------------*/ 
+
+static __always_inline void update_batch(__u64 flowid, __u64 bytes) {
+    struct batch_event *event = bpf_map_lookup_elem(&batch_map, &flowid);
+    if (event) {
+        event->counter += 1;
+        event->bytes += bytes;
+    } else {
+        struct batch_event new_event = {
+            .flowid = flowid,
+            .counter = 1,
+            .bytes = bytes,
+        };
+        bpf_map_update_elem(&batch_map, &flowid, &new_event, BPF_ANY);
+    }
+}
+
+
+static __always_inline void submit_batch_to_ringbuf() {
+    __u64 key = 0;
+    __u64 next_key;
+    struct batch_event *event;
+    struct event_t *ring_event;
+
+    while (bpf_map_get_next_key(&batch_map, &key, &next_key) == 0) {
+        event = bpf_map_lookup_elem(&batch_map, &next_key);
+        if (event) {
+            ring_event = bpf_ringbuf_reserve(&events, sizeof(*ring_event), 0);
+            if (ring_event) {
+                ring_event->ts = bpf_ktime_get_ns();
+                ring_event->flowid = event->flowid;
+                ring_event->counter = event->counter;
+                ring_event->bytes = event->bytes;
+                bpf_ringbuf_submit(ring_event, 0);
+            }
+            bpf_map_delete_elem(&batch_map, &next_key);
+        }
+        key = next_key;
+    }
+}
+
+
+
+/*------------------------------------------------*/ 
 
 #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
     struct value_packet *packet = NULL; \
@@ -436,6 +497,8 @@ int tc_ingress(struct __sk_buff *ctx)
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
             CLASSIFY_PACKET_AND_UPDATE_MAP(my_map, new_info, QUINTUPLA, ipv4_flow);
+            flow_id = build_flowid(new_info.protocol, __sync_fetch_and_add(&counter, 1));
+            update_batch(flow_id, packet_length);
             break;
         }
         #endif
@@ -491,6 +554,10 @@ int tc_ingress(struct __sk_buff *ctx)
             return TC_ACT_OK;
     }
 
+     // Invio dei dati batch al ring buffer in base a una condizione (ad esempio, ogni 1000 pacchetti)
+    if (counter % 1000 == 0) {
+        submit_batch_to_ringbuf();
+    }
 
     return TC_ACT_OK;
 }

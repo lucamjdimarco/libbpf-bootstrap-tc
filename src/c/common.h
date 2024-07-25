@@ -83,6 +83,7 @@ struct value_packet {
 	__u32 counter; 
 	__u64 bytes_counter;
 	__u64 flow_id;
+	//struct bpf_timer timer;
 };
 
 #endif // COMMON_HEADER_H

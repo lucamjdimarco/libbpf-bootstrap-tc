@@ -8,29 +8,6 @@
 #include <string.h>
 #include "common.h"
 
-/* -------------------------- */
-// #define BATCH_SIZE 10
-
-// struct event_batch {
-//     struct event_t events[BATCH_SIZE];
-//     __u32 count;
-// };
-
-// static __always_inline __u32 get_batch_length(struct event_batch *batch) {
-//     return batch->count;
-// }
-
-// struct {
-//     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
-//     __uint(max_entries, 1);
-//     __type(key, __u32);
-//     __type(value, struct event_batch);
-// } event_buffer SEC(".maps");
-
-/* -------------------------- */
-
-
-
 #ifdef CLASSIFY_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
@@ -117,12 +94,32 @@ struct {
 #endif
 
 #if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+#ifdef CLASSIFY_IPV6
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
     __type(key, __u64);
     __type(value, struct packet_info_ipv6);
 } ipv6_flow SEC(".maps");
+#endif
+
+#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_ENTRIES);
+    __type(key, __u64);
+    __type(value, struct only_addr_ipv6);
+} ipv6_flow SEC(".maps");
+#endif
+
+#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_ENTRIES);
+    __type(key, __u64);
+    __type(value, struct only_dest_ipv6);
+} ipv6_flow SEC(".maps");
+#endif
 #endif
 
 // Ring buffer per gli eventi
@@ -145,34 +142,6 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
     } else {
         bpf_printk("Counter is at maximum value\n");
     }
-
-
-    // __u32 key = 0;
-    // struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key);
-    // if (!batch) {
-    //     return;
-    // }
-
-    // __u32 batch_length = get_batch_length(batch);
-
-    // if (batch_length < BATCH_SIZE) {
-    //     bpf_printk("Batch length: %u\n", batch_length);
-    //     struct event_t *event = &batch->events[batch_length];
-    //     event->ts = bpf_ktime_get_ns();
-    //     event->flowid = packet->flow_id;
-    //     event->counter = packet->counter;
-    //     batch->count += 1;
-    // }
-
-    // if (batch_length >= BATCH_SIZE) {
-    //     void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0);
-    //     if (buffer) {
-    //         bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events);
-    //         bpf_ringbuf_submit(buffer, 0);
-    //         __builtin_memset(batch->events, 0, sizeof(batch->events));
-    //         batch->count = 0;
-    //     }
-    // }
     
 
     struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
@@ -218,57 +187,6 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
         handle_packet_event(packet, flow_id, packet_length); \
     } \
 } while (0)
-
-// #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
-//     packet = bpf_map_lookup_elem(&map_name, &new_info); \
-//     if (!packet) { \
-//         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
-//         ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
-//         if (ret == -1) { \
-//             bpf_printk("Failed to insert new item in flow maps\n"); \
-//             return TC_ACT_OK; \
-//         } \
-//         struct value_packet new_value = { \
-//             .counter = 1, \
-//             .bytes_counter = packet_length, \
-//             .flow_id = flow_id \
-//         }; \
-//         ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
-//         if (ret) { \
-//             bpf_printk("Failed to insert new item in flow maps\n"); \
-//             return TC_ACT_OK; \
-//         } \
-//         __u32 key = 0; \
-//         struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key); \
-//         if (!batch) { \
-//             struct event_batch new_batch = {}; \
-//             struct event_t *event = &new_batch.events[0]; \
-//             event->ts = bpf_ktime_get_ns(); \
-//             event->flowid = flow_id; \
-//             event->counter = 1; \
-//             new_batch.count = 1; \
-//             bpf_map_update_elem(&event_buffer, &key, &new_batch, BPF_ANY); \
-//         } else { \
-//             if (batch->count < BATCH_SIZE) { \
-//                 struct event_t *event = &batch->events[batch->count]; \
-//                 event->ts = bpf_ktime_get_ns(); \
-//                 event->flowid = flow_id; \
-//                 event->counter = 1; \
-//                 batch->count += 1; \
-//             } \
-//             if (batch->count >= BATCH_SIZE) { \
-//                 void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0); \
-//                 if (buffer) { \
-//                     bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events); \
-//                     bpf_ringbuf_submit(buffer, 0); \
-//                     batch->count = 0; \
-//                 } \
-//             } \
-//         } \
-//     } else { \
-//         handle_packet_event(packet, flow_id, packet_length); \
-//     } \
-// } while (0)
 
 
 
@@ -572,21 +490,6 @@ int tc_ingress(struct __sk_buff *ctx)
             bpf_printk("Unknown protocol\n");
             return TC_ACT_OK;
     }
-
-    // Invia eventuali eventi rimanenti nel batch
-    // __u32 key = 0;
-    // struct event_batch *batch = bpf_map_lookup_elem(&event_buffer, &key);
-    // if (batch) {
-    //     __u32 batch_length = get_batch_length(batch);
-    //     if (batch_length > 0 && batch_length <= BATCH_SIZE) {
-    //         void *buffer = bpf_ringbuf_reserve(&events, sizeof(struct event_t) * BATCH_SIZE, 0);
-    //         if (buffer) {
-    //             bpf_probe_read_kernel(buffer, sizeof(struct event_t) * BATCH_SIZE, batch->events);
-    //             bpf_ringbuf_submit(buffer, 0);
-    //             batch->count = 0;
-    //         }
-    //     }
-    // }
 
 
     return TC_ACT_OK;

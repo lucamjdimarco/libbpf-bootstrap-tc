@@ -12,6 +12,11 @@
 #define CLOCK_BOOTTIME		7
 #define SWIN_SCALER		1000000000ul /* 1sec in nanosec */
 
+typedef __u8  __attribute__((__may_alias__))  __u8_alias_t;
+typedef __u16 __attribute__((__may_alias__)) __u16_alias_t;
+typedef __u32 __attribute__((__may_alias__)) __u32_alias_t;
+typedef __u64 __attribute__((__may_alias__)) __u64_alias_t;
+
 static __always_inline void __read_once_size(const volatile void *p, void *res, int size)
 {
 	switch (size) {

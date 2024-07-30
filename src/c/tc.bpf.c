@@ -532,11 +532,10 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
         if (!event) { \
             return TC_ACT_OK; \
         } \
-        // event->ts = bpf_ktime_get_ns(); \
-        // event->flowid = flow_id; \
-        // event->counter = 1; \
-        // bpf_ringbuf_submit(event, 0); \
-
+        /*event->ts = bpf_ktime_get_ns(); \
+        event->flowid = flow_id; \
+        event->counter = 1; \
+        bpf_ringbuf_submit(event, 0); \*/
     } else { \
         handle_packet_event(packet, flow_id, packet_length); \
     } \

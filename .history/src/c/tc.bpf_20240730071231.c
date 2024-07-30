@@ -179,17 +179,19 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
     } else {
         bpf_printk("Counter is at maximum value\n");
     }
+
+    update_window(packet, bpf_ktime_get_ns(), true);
     
 
-    struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
-    if (!event) {
-        return;
-    }
+    // struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+    // if (!event) {
+    //     return;
+    // }
 
-    event->ts = bpf_ktime_get_ns();
-    event->flowid = packet->flow_id;
-    event->counter = packet->counter;
-    bpf_ringbuf_submit(event, 0);
+    // event->ts = bpf_ktime_get_ns();
+    // event->flowid = packet->flow_id;
+    // event->counter = packet->counter;
+    // bpf_ringbuf_submit(event, 0);
 }
 
 
@@ -323,85 +325,139 @@ lookup:
 }
 
 
+// static __always_inline
+// int update_window(struct slotted_window *sw, __u64 ts, bool start_timer, struct value_packet *packet, __u64 flow_id,)
+// {
+// 	const __u64 cur_tsw = ts / SWIN_SCALER; // normalizzo il timestamp
+// 	__u64 tsw = READ_ONCE(sw->tsw); // leggo il timestamp della finestra
+// 	__u64 *cnt = &sw->cnt; // puntatore al contatore della finestra
+// 	struct event_t *event; // evento da inserire nel ring buffer    
+// 	__u64 cnt_val; // valore del contatore
+// 	// __u64 delta; 
+// 	// __u64 avg;
+// 	int rc;
+
+// 	if (cur_tsw <= tsw)
+//         /* the current window is still open */
+// 		goto update;
+
+// 	if (try_swin_lock(sw))
+// 		/* busy, another cpu is currently closing the window */
+// 		goto update;
+
+// 	/* the current window must be closed */
+// 	// delta = cur_tsw - tsw;
+// 	// if (delta <= DECAY_TABLE_MAX) {
+// 	// 	if (delta < 1)
+// 	// 		/* impossibile, uhm? */
+// 	// 		goto err;
+
+// 	// 	cnt_val = READ_ONCE(*cnt);
+
+// 	// 	avg = __LOG_SCALE_OUT((__LOG_SCALE_IN(cnt_val) *
+// 	// 			      decay_table[(delta - 1)])) +
+// 	// 		/* sw->avg is only read in this section */
+// 	// 	      __LOG_SCALE_OUT(sw->avg * decay_table[delta]);
+// 	// } else {
+// 	// 	avg = 0;
+// 	// }
+
+// 	// WRITE_ONCE(sw->avg, avg);
+
+//     //sono nel caso in cui la finestra è stata chiusa
+
+// 	/* write the content on ring buffer */
+// 	rc = prepare_ring_buffer_write(&events, &event);
+//     int counter_to_write = READ_ONCE(*cnt);
+// 	if (rc)
+// 		goto update_win;
+
+//     //inserisco l'evento nel ring buffer
+// 	event->ts = tsw;
+// 	event->flowid = packet->flow_id;
+// 	event->counter = counter_to_write;
+
+// 	bpf_ringbuf_submit(event, 0);
+
+// update_win:
+// 	/* time to create a new window */
+// 	WRITE_ONCE(*cnt, 0);
+// 	WRITE_ONCE(sw->tsw, cur_tsw);
+
+// 	/* we cannot rely upon the __sync_lock_release() semantic, so we need
+// 	 * to use a workaround, e.g.: manually set the sw->sync back to 0.
+// 	 */
+// 	swin_unlock(sw);
+
+// 	if (!start_timer)
+// 		goto update;
+
+// 	/* start timer bound to this window */
+// 	rc = update_window_start_timer(&sw->timer, SWIN_TIMER_TIMEOUT);
+// 	if (rc)
+// 		goto err;
+
+// update:
+// 	__sync_fetch_and_add(cnt, 1);
+// 	return 0;
+
+// err:
+// 	return -EINVAL;
+// }
+
 static __always_inline
-int update_window(struct slotted_window *sw, __u64 ts, bool start_timer, struct value_packet *packet, __u64 flow_id,)
-{
-	const __u64 cur_tsw = ts / SWIN_SCALER; // normalizzo il timestamp
-	__u64 tsw = READ_ONCE(sw->tsw); // leggo il timestamp della finestra
-	__u64 *cnt = &sw->cnt; // puntatore al contatore della finestra
-	struct event_t *event; // evento da inserire nel ring buffer    
-	__u64 cnt_val; // valore del contatore
-	// __u64 delta; 
-	// __u64 avg;
-	int rc;
+int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
+    const __u64 cur_tsw = ts / SWIN_SCALER; // Normalizzo il timestamp
+    __u64 tsw = READ_ONCE(packet->tsw); // Leggo il timestamp della finestra
+    __u64 *cnt = &packet->cnt; // Puntatore al contatore della finestra
+    struct event_t *event; // Evento da inserire nel ring buffer    
+    __u64 cnt_val; // Valore del contatore
 
-	if (cur_tsw <= tsw)
-        /* the current window is still open */
-		goto update;
+    if (cur_tsw <= tsw)
+        /* La finestra corrente è ancora aperta */
+        goto update;
 
-	if (try_swin_lock(sw))
-		/* busy, another cpu is currently closing the window */
-		goto update;
+    if (try_swin_lock(&packet->lock))
+        /* Occupato, un altro CPU sta chiudendo la finestra */
+        goto update;
 
-	/* the current window must be closed */
-	// delta = cur_tsw - tsw;
-	// if (delta <= DECAY_TABLE_MAX) {
-	// 	if (delta < 1)
-	// 		/* impossibile, uhm? */
-	// 		goto err;
+    /* La finestra corrente deve essere chiusa */
+    cnt_val = READ_ONCE(*cnt);
 
-	// 	cnt_val = READ_ONCE(*cnt);
+    /* Invia il contenuto nel ring buffer */
+    int rc = prepare_ring_buffer_write(&events, &event);
+    if (rc)
+        goto update_win;
 
-	// 	avg = __LOG_SCALE_OUT((__LOG_SCALE_IN(cnt_val) *
-	// 			      decay_table[(delta - 1)])) +
-	// 		/* sw->avg is only read in this section */
-	// 	      __LOG_SCALE_OUT(sw->avg * decay_table[delta]);
-	// } else {
-	// 	avg = 0;
-	// }
+    event->ts = tsw;
+    event->flowid = packet->flow_id;
+    event->counter = cnt_val;
 
-	// WRITE_ONCE(sw->avg, avg);
-
-    //sono nel caso in cui la finestra è stata chiusa
-
-	/* write the content on ring buffer */
-	rc = prepare_ring_buffer_write(&events, &event);
-    int counter_to_write = READ_ONCE(*cnt);
-	if (rc)
-		goto update_win;
-
-    //inserisco l'evento nel ring buffer
-	event->ts = tsw;
-	event->flowid = packet->flow_id;
-	event->counter = counter_to_write;
-
-	bpf_ringbuf_submit(event, 0);
+    bpf_ringbuf_submit(event, 0);
 
 update_win:
-	/* time to create a new window */
-	WRITE_ONCE(*cnt, 0);
-	WRITE_ONCE(sw->tsw, cur_tsw);
+    /* Tempo di creare una nuova finestra */
+    WRITE_ONCE(*cnt, 0);
+    WRITE_ONCE(packet->tsw, cur_tsw);
 
-	/* we cannot rely upon the __sync_lock_release() semantic, so we need
-	 * to use a workaround, e.g.: manually set the sw->sync back to 0.
-	 */
-	swin_unlock(sw);
+    swin_unlock(&packet->lock);
 
-	if (!start_timer)
-		goto update;
+    if (!start_timer)
+        goto update;
 
-	/* start timer bound to this window */
-	rc = update_window_start_timer(&sw->timer, SWIN_TIMER_TIMEOUT);
-	if (rc)
-		goto err;
+    /* Avvia il timer associato a questa finestra */
+    rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
+    if (rc)
+        return -EINVAL;
 
 update:
-	__sync_fetch_and_add(cnt, 1);
-	return 0;
+    __sync_fetch_and_add(cnt, 1);
+    return 0;
 
 err:
-	return -EINVAL;
+    return -EINVAL;
 }
+
 
 
 

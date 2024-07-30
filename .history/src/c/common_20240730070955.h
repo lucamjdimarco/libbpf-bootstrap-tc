@@ -14,24 +14,30 @@
 #define MAX_ENTRIES 256
 #define MAX_COUNTER 4294967295 /* 2 ^ 32 */
 
-#if MY_DIRECTIVE == 1
+#if CLASS == 1
 #define CLASSIFY_IPV4
-#elif MY_DIRECTIVE == 2
+#elif CLASS == 2
 #define CLASSIFY_IPV6
-#elif MY_DIRECTIVE == 3
+#elif CLASS == 3
 #define CLASSIFY_ONLY_ADDRESS_IPV4
-#elif MY_DIRECTIVE == 4
+#elif CLASS == 4
 #define CLASSIFY_ONLY_ADDRESS_IPV6
-#elif MY_DIRECTIVE == 5
+#elif CLASS == 5
 #define CLASSIFY_ONLY_DEST_ADDRESS_IPV4
-#elif MY_DIRECTIVE == 6
+#elif CLASS == 6
 #define CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 #endif
 
-struct event {
+/*struct event {
 	__u64 ts;
 	__u64 flowid;
 	__u64 counter;
+};*/
+
+struct event_t {
+    __u64 ts;
+    __u64 flowid;
+    __u64 counter;
 };
 
 struct packet_info {
@@ -76,6 +82,14 @@ struct value_packet {
 	struct bpf_spin_lock lock;
 	__u32 counter; 
 	__u64 bytes_counter;
+	__u64 flow_id;
+	//struct bpf_timer timer;
+
+	__u64 sync;
+	__u64 init;
+	__u64 tsw;
+	__u64 cnt;
+	struct bpf_timer timer;
 };
 
 #endif // COMMON_HEADER_H

@@ -233,7 +233,7 @@ int update_window_start_timer(struct bpf_timer *timer, __u64 timeout)
 
 
 static __always_inline int
-prepare_ring_buffer_write(void *map, struct event_t **pevent)
+prepare_ring_buffer_write(void *map, struct event **pevent)
 {
 	if (!pevent)
 		return -EINVAL;

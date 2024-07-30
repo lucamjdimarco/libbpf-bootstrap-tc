@@ -14,29 +14,30 @@
 #define MAX_ENTRIES 256
 #define MAX_COUNTER 4294967295 /* 2 ^ 32 */
 
-// Definizione di un'enumerazione per le possibili direttive
-enum Directive {
-    DIRECTIVE_NONE,
-    DIRECTIVE_CLASSIFY_IPV4,
-    DIRECTIVE_CLASSIFY_IPV6,
-	DIRECTIVE_CLASSIFY_ONLY_ADDRESS_IPV4,
-	DIRECTIVE_CLASSIFY_ONLY_ADDRESS_IPV6
-};
-
-#if MY_DIRECTIVE == 1
+#if CLASS == 1
 #define CLASSIFY_IPV4
-#elif MY_DIRECTIVE == 2
+#elif CLASS == 2
 #define CLASSIFY_IPV6
-#elif MY_DIRECTIVE == 3
+#elif CLASS == 3
 #define CLASSIFY_ONLY_ADDRESS_IPV4
-#elif MY_DIRECTIVE == 4
+#elif CLASS == 4
 #define CLASSIFY_ONLY_ADDRESS_IPV6
+#elif CLASS == 5
+#define CLASSIFY_ONLY_DEST_ADDRESS_IPV4
+#elif CLASS == 6
+#define CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 #endif
 
-struct event {
+/*struct event {
 	__u64 ts;
 	__u64 flowid;
 	__u64 counter;
+};*/
+
+struct event_t {
+    __u64 ts;
+    __u64 flowid;
+    __u64 counter;
 };
 
 struct packet_info {
@@ -67,10 +68,31 @@ struct only_addr_ipv6 {
 	__u8 dst_ip[16];   // IPv6 destination address
 };
 
+struct only_dest_ipv4 {
+	__u32 dst_ip; //IPv4 destination address
+};
+
+struct only_dest_ipv6 {
+	__u8 dst_ip[16];   // IPv6 destination address
+};
+
+
 struct value_packet {
 	//sizeof(bpf_spin_lock) = 4 byte
 	struct bpf_spin_lock lock;
 	__u32 counter; 
+	__u64 bytes_counter;
+	__u64 flow_id;
+	//struct bpf_timer timer;
+
+	__u64 sync;
+	__u64 init;
+
+	__u64 tsw;
+	__u64 cnt;
+	//__u64 avg;
+
+	struct bpf_timer timer;
 };
 
 #endif // COMMON_HEADER_H

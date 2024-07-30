@@ -181,15 +181,15 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
     }
     
 
-    struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
-    if (!event) {
-        return;
-    }
+    // struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+    // if (!event) {
+    //     return;
+    // }
 
-    event->ts = bpf_ktime_get_ns();
-    event->flowid = packet->flow_id;
-    event->counter = packet->counter;
-    bpf_ringbuf_submit(event, 0);
+    // event->ts = bpf_ktime_get_ns();
+    // event->flowid = packet->flow_id;
+    // event->counter = packet->counter;
+    // bpf_ringbuf_submit(event, 0);
 }
 
 

@@ -11,6 +11,9 @@
     "ratio": "c",
     "tuple": "c",
     "influxdb_wrapper_int.h": "c",
-    "xiosbase": "c"
+    "xiosbase": "c",
+    "memory": "c",
+    "istream": "c",
+    "streambuf": "c"
   }
 }

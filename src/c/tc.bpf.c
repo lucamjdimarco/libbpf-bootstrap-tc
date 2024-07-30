@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 /* Copyright (c) 2022 Hengqi Chen */
 #include <vmlinux.h>
+#include <errno.h>
 #include <bpf/bpf_endian.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 #include <bpf/bpf_helpers.h>
 #include <string.h>
 #include "common.h"
+
+#define CLOCK_BOOTTIME		7
+#define SWIN_SCALER		1000000000ul /* 1sec in nanosec */
 
 #define READ_ONCE(x)					\
 ({							\
@@ -236,7 +240,7 @@ static __always_inline int swin_timer_init(void *map, struct bpf_timer *timer)
 	if (rc)
 		return rc;
 
-	return bpf_timer_set_callback(timer, swin_timer_cb);
+	return bpf_timer_set_callback(timer, 0);
 }
 
 static __always_inline
@@ -396,9 +400,9 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
         /* La finestra corrente è ancora aperta */
         goto update;
 
-    if (try_swin_lock(&packet->lock))
-        /* Occupato, un altro CPU sta chiudendo la finestra */
-        goto update;
+    // if (try_swin_lock(&packet->lock))
+    //     /* Occupato, un altro CPU sta chiudendo la finestra */
+    //     goto update;
 
     /* La finestra corrente deve essere chiusa */
     cnt_val = READ_ONCE(*cnt);

@@ -12,6 +12,20 @@
 #define CLOCK_BOOTTIME		7
 #define SWIN_SCALER		1000000000ul /* 1sec in nanosec */
 
+static __always_inline void __read_once_size(const volatile void *p, void *res, int size)
+{
+	switch (size) {
+	case 1: *(__u8_alias_t  *) res = *(volatile __u8_alias_t  *) p; break;
+	case 2: *(__u16_alias_t *) res = *(volatile __u16_alias_t *) p; break;
+	case 4: *(__u32_alias_t *) res = *(volatile __u32_alias_t *) p; break;
+	case 8: *(__u64_alias_t *) res = *(volatile __u64_alias_t *) p; break;
+	default:
+		barrier();
+		__builtin_memcpy((void *)res, (const void *)p, size);
+		barrier();
+	}
+}
+
 #define READ_ONCE(x)					\
 ({							\
 	union { typeof(x) __val; char __c[1]; } __u =	\

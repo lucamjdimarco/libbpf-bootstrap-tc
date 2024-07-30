@@ -11,6 +11,7 @@
 
 #define CLOCK_BOOTTIME		7
 #define SWIN_SCALER		1000000000ul /* 1sec in nanosec */
+#define SWIN_TIMER_TIMEOUT	(SWIN_SCALER << 1ul)
 
 typedef __u8  __attribute__((__may_alias__))  __u8_alias_t;
 typedef __u16 __attribute__((__may_alias__)) __u16_alias_t;
@@ -38,6 +39,20 @@ static __always_inline void __read_once_size(const volatile void *p, void *res, 
 	__read_once_size(&(x), __u.__c, sizeof(x));	\
 	__u.__val;					\
 })
+
+static __always_inline void __write_once_size(volatile void *p, void *res, int size)
+{
+	switch (size) {
+	case 1: *(volatile  __u8_alias_t *) p = *(__u8_alias_t  *) res; break;
+	case 2: *(volatile __u16_alias_t *) p = *(__u16_alias_t *) res; break;
+	case 4: *(volatile __u32_alias_t *) p = *(__u32_alias_t *) res; break;
+	case 8: *(volatile __u64_alias_t *) p = *(__u64_alias_t *) res; break;
+	default:
+		barrier();
+		__builtin_memcpy((void *)p, (const void *)res, size);
+		barrier();
+	}
+}
 
 #define WRITE_ONCE(x, val)				\
 ({							\
@@ -414,6 +429,7 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     struct event_t *event; // Evento da inserire nel ring buffer    
     __u64 cnt_val; // Valore del contatore
     __u32 *counter = &packet->counter; // Puntatore al contatore mio
+    __u32 counter_val; // Valore del contatore mio
 
     if (cur_tsw <= tsw)
         /* La finestra corrente è ancora aperta */
@@ -444,7 +460,7 @@ update_win:
     WRITE_ONCE(*counter, 0);
     WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
 
-    swin_unlock(&packet->lock);
+    //swin_unlock(&packet->lock);
 
     if (!start_timer)
         goto update;

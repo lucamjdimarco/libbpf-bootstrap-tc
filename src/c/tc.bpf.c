@@ -184,17 +184,17 @@ struct {
 	__type(value, struct slotted_window);
 } hmapsw SEC(".maps");
 
-struct slotted_window {
-	/* avoid multiple concurrent window updates */
-	__u64 sync;
-	__u64 init;
+// struct slotted_window {
+// 	/* avoid multiple concurrent window updates */
+// 	__u64 sync;
+// 	__u64 init;
 
-	__u64 tsw;
-	__u64 cnt;
-	//__u64 avg;
+// 	__u64 tsw;
+// 	__u64 cnt;
+// 	//__u64 avg;
 
-	struct bpf_timer timer;
-};
+// 	struct bpf_timer timer;
+// };
 
 /*------------------------------------------------*/ 
 

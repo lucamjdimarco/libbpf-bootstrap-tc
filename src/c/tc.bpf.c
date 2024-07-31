@@ -452,6 +452,7 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     event->ts = tsw;
     event->flowid = packet->flow_id;
     event->counter = counter_val;
+    bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
 
     bpf_ringbuf_submit(event, 0);
 

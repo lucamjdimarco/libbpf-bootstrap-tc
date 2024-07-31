@@ -458,7 +458,7 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
 update_win:
     /* Tempo di creare una nuova finestra */
     WRITE_ONCE(*cnt, 0);
-    WRITE_ONCE(*counter, 0);
+    //WRITE_ONCE(*counter, 0);
     WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
 
     //swin_unlock(&packet->lock);

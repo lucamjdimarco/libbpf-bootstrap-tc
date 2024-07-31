@@ -12,6 +12,7 @@
 #define CLOCK_BOOTTIME		7
 // #define SWIN_SCALER		1000000000ul /* 1sec in nanosec */
 #define SWIN_SCALER 10000000000ul /* 10 seconds in nanoseconds */
+
 #define SWIN_TIMER_TIMEOUT	(SWIN_SCALER << 1ul)
 
 typedef __u8  __attribute__((__may_alias__))  __u8_alias_t;

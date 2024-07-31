@@ -447,7 +447,7 @@ int main(int argc, char **argv)
 		if (strcmp(map_type, "ipv4") == 0) {
 			#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 			// Polling ring buffer per processare i dati
-			err = ring_buffer__poll(rb, 100 /* timeout, ms */);
+			err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
@@ -456,7 +456,7 @@ int main(int argc, char **argv)
 			#endif
 		} else if (strcmp(map_type, "ipv6") == 0) {
 			#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-			err = ring_buffer__poll(rb, 100 /* timeout, ms */);
+			err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;

@@ -555,11 +555,13 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             .tsw = 0, \
             .cnt = 0 \
         }; \
+        /* inserimento della nuova istanza rappresentante il flusso */ \
         int ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
         if (ret) { \
             bpf_printk("Failed to insert new item in map_name\n"); \
             return TC_ACT_OK; \
         } \
+        /* inserimento del nuovo flusso nella mappa dei flussi */ \
         ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
         if (ret) { \
             bpf_printk("Failed to insert new item in map_flow\n"); \
@@ -571,12 +573,14 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             bpf_printk("Failed to lookup newly inserted item in map_name\n"); \
             return TC_ACT_OK; \
         } \
+        /* Inizializzazione del timer */ \
         int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
         if (rc) { \
             bpf_printk("Failed to initialize timer\n"); \
             return TC_ACT_OK; \
         } \
     } else { \
+        /* gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra */ \
         handle_packet_event(packet, flow_id, packet_length); \
     } \
 } while (0)

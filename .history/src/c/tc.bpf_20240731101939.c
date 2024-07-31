@@ -563,7 +563,7 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             bpf_printk("Failed to insert new item in map_flow\n"); \
             return TC_ACT_OK; \
         } \
-        int rc = bpf_timer_init(&new_value.timer, map_name, CLOCK_BOOTTIME); \
+        int rc = bpf_timer_init(&new_value.timer, &map_name, CLOCK_BOOTTIME); \
         if (rc) { \
             bpf_printk("Failed to initialize timer\n"); \
             return TC_ACT_OK; \

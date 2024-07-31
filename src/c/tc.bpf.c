@@ -214,12 +214,12 @@ static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
 
 /*------------------------------------------------*/ 
 
-#define try_swin_lock(sw)	__sync_lock_test_and_set(&(sw)->sync, 1)
-#define swin_unlock(sw)					\
-	do {						\
-		__sync_fetch_and_and(&(sw)->sync, 0);	\
-		barrier();				\
-	} while(0)
+// #define try_swin_lock(sw)	__sync_lock_test_and_set(&(sw)->sync, 1)
+// #define swin_unlock(sw)					\
+// 	do {						\
+// 		__sync_fetch_and_and(&(sw)->sync, 0);	\
+// 		barrier();				\
+// 	} while(0)
 
 
 static __always_inline

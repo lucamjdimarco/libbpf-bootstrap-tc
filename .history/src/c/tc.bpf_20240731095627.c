@@ -570,6 +570,14 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
         } \
     } else { \
         handle_packet_event(packet, flow_id, packet_length); \
+        int ret = bpf_map_update_elem(&map_name, &new_info, packet, BPF_ANY); \
+        if (ret) { \
+            bpf_printk("Failed to update existing item in map_name\n"); \
+        } \
+        ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
+        if (ret) { \
+            bpf_printk("Failed to update existing item in map_flow\n"); \
+        } \
     } \
 } while (0)
 

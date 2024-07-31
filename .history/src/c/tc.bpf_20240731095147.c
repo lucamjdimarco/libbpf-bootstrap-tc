@@ -505,74 +505,41 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
 
 /*------------------------------------------------*/ 
 
-// #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
-//     struct value_packet *packet = NULL; \
-//     packet = bpf_map_lookup_elem(&map_name, &new_info); \
-//     if (!packet) { \
-//         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
-//         ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
-//         if (ret == -1) { \
-//             bpf_printk("Failed to insert new item in flow maps\n"); \
-//             return TC_ACT_OK; \
-//         } \
-//         struct value_packet new_value = { \
-//             .counter = 1, \
-//             .bytes_counter = packet_length, \
-//             .flow_id = flow_id \
-//         }; \
-//         ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
-//         if (ret) { \
-//             bpf_printk("Failed to insert new item in flow maps\n"); \
-//             return TC_ACT_OK; \
-//         } \
-//         rc = swin_timer_init(&map_name, &packet->timer); \
-//         if (rc) \
-//             return TC_ACT_OK; \
-//         struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0); \
-//         if (!event) { \
-//             return TC_ACT_OK; \
-//         } \
-//         /*event->ts = bpf_ktime_get_ns(); \
-//         event->flowid = flow_id; \
-//         event->counter = 1; \
-//         bpf_ringbuf_submit(event, 0); \*/
-//     } else { \
-//         handle_packet_event(packet, flow_id, packet_length); \
-//     } \
-// } while (0)
-
 #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
     struct value_packet *packet = NULL; \
     packet = bpf_map_lookup_elem(&map_name, &new_info); \
     if (!packet) { \
         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
+        ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
+        if (ret == -1) { \
+            bpf_printk("Failed to insert new item in flow maps\n"); \
+            return TC_ACT_OK; \
+        } \
         struct value_packet new_value = { \
             .counter = 1, \
             .bytes_counter = packet_length, \
-            .flow_id = flow_id, \
-            .tsw = 0, \
-            .cnt = 0 \
+            .flow_id = flow_id \
         }; \
-        int ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
+        ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
         if (ret) { \
-            bpf_printk("Failed to insert new item in map_name\n"); \
+            bpf_printk("Failed to insert new item in flow maps\n"); \
             return TC_ACT_OK; \
         } \
-        ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
-        if (ret) { \
-            bpf_printk("Failed to insert new item in map_flow\n"); \
+        rc = swin_timer_init(&map_name, &packet->timer); \
+        if (rc) \
+            return TC_ACT_OK; \
+        struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0); \
+        if (!event) { \
             return TC_ACT_OK; \
         } \
-        int rc = swin_timer_init(&new_value.timer, &map_name); \
-        if (rc) { \
-            bpf_printk("Failed to initialize timer\n"); \
-            return TC_ACT_OK; \
-        } \
+        /*event->ts = bpf_ktime_get_ns(); \
+        event->flowid = flow_id; \
+        event->counter = 1; \
+        bpf_ringbuf_submit(event, 0); \*/
     } else { \
         handle_packet_event(packet, flow_id, packet_length); \
     } \
 } while (0)
-
 
 
 

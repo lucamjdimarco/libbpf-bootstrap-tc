@@ -473,7 +473,7 @@ update_win:
         return -EINVAL;
 
 update:
-    //__sync_fetch_and_add(cnt, 1);
+    __sync_fetch_and_add(cnt, 1);
     return 0;
 
 err:

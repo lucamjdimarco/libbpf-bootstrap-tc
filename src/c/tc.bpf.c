@@ -184,17 +184,17 @@ struct {
 	__type(value, struct slotted_window);
 } hmapsw SEC(".maps");
 
-struct slotted_window {
-	/* avoid multiple concurrent window updates */
-	__u64 sync;
-	__u64 init;
+// struct slotted_window {
+// 	/* avoid multiple concurrent window updates */
+// 	__u64 sync;
+// 	__u64 init;
 
-	__u64 tsw;
-	__u64 cnt;
-	//__u64 avg;
+// 	__u64 tsw;
+// 	__u64 cnt;
+// 	//__u64 avg;
 
-	struct bpf_timer timer;
-};
+// 	struct bpf_timer timer;
+// };
 
 /*------------------------------------------------*/ 
 
@@ -214,12 +214,12 @@ static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
 
 /*------------------------------------------------*/ 
 
-#define try_swin_lock(sw)	__sync_lock_test_and_set(&(sw)->sync, 1)
-#define swin_unlock(sw)					\
-	do {						\
-		__sync_fetch_and_and(&(sw)->sync, 0);	\
-		barrier();				\
-	} while(0)
+// #define try_swin_lock(sw)	__sync_lock_test_and_set(&(sw)->sync, 1)
+// #define swin_unlock(sw)					\
+// 	do {						\
+// 		__sync_fetch_and_and(&(sw)->sync, 0);	\
+// 		barrier();				\
+// 	} while(0)
 
 
 static __always_inline
@@ -555,11 +555,13 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             .tsw = 0, \
             .cnt = 0 \
         }; \
+        /* inserimento della nuova istanza rappresentante il flusso */ \
         int ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
         if (ret) { \
             bpf_printk("Failed to insert new item in map_name\n"); \
             return TC_ACT_OK; \
         } \
+        /* inserimento del nuovo flusso nella mappa dei flussi */ \
         ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
         if (ret) { \
             bpf_printk("Failed to insert new item in map_flow\n"); \
@@ -571,12 +573,14 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             bpf_printk("Failed to lookup newly inserted item in map_name\n"); \
             return TC_ACT_OK; \
         } \
+        /* Inizializzazione del timer */ \
         int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
         if (rc) { \
             bpf_printk("Failed to initialize timer\n"); \
             return TC_ACT_OK; \
         } \
     } else { \
+        /* gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra */ \
         handle_packet_event(packet, flow_id, packet_length); \
     } \
 } while (0)

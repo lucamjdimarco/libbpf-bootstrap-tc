@@ -439,7 +439,6 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     __u32 *counter = &packet->counter;
 
     if (cur_tsw <= tsw)
-        bpf_spin_unlock(&packet->lock);
         /* La finestra corrente è ancora aperta */
         goto update;
 

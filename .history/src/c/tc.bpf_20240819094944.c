@@ -457,8 +457,8 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     bpf_ringbuf_submit(event, 0);
 
 update_win:
-    /* Creare una nuova finestra */
-    //WRITE_ONCE(*cnt, 0);
+    /* Tempo di creare una nuova finestra */
+    WRITE_ONCE(*cnt, 0);
     //WRITE_ONCE(*counter, 0);
     WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
 

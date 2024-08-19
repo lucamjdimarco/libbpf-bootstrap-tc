@@ -476,7 +476,7 @@ update_win:
     if (!start_timer)
         goto update;
 
-    __sync_synchronize();
+    __sync_synchronize()
     /* Avvia il timer associato a questa finestra */
     rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
     if (rc)

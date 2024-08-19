@@ -425,21 +425,21 @@ static __always_inline int swin_timer_init(void *map, struct bpf_timer *timer)
 static __always_inline
 int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     const __u64 cur_tsw = ts / SWIN_SCALER; // Normalizzo il timestamp
-    __u64 tsw = READ_ONCE(packet->tsw); // Leggo il timestamp della finestra
+    //__u64 tsw = READ_ONCE(packet->tsw); // Leggo il timestamp della finestra
     //__u64 *cnt = &packet->cnt; // Puntatore al contatore della finestra
     struct event_t *event; // Evento da inserire nel ring buffer    
     //__u64 cnt_val; // Valore del contatore
-    __u32 *counter = &packet->counter; // Puntatore al contatore mio
+    //__u32 *counter = &packet->counter; // Puntatore al contatore mio
     __u32 counter_val; // Valore del contatore mio
 
     // Acquisisci il lock
-    //bpf_spin_lock(&packet->lock);
+    bpf_spin_lock(&packet->lock);
 
-    //__u64 tsw = packet->tsw;
-    //__u32 *counter = &packet->counter;
+    __u64 tsw = packet->tsw;
+    __u32 *counter = &packet->counter;
 
     if (cur_tsw <= tsw) {
-        //bpf_spin_unlock(&packet->lock);
+        bpf_spin_unlock(&packet->lock);
         /* La finestra corrente è ancora aperta */
         goto update;
     }
@@ -451,7 +451,8 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
 
     /* La finestra corrente deve essere chiusa */
     //cnt_val = READ_ONCE(*cnt);
-    counter_val = READ_ONCE(*counter);
+    //counter_val = READ_ONCE(*counter);
+    counter_val = *counter;
 
     /* Invia il contenuto nel ring buffer */
     int rc = prepare_ring_buffer_write(&events, &event);
@@ -476,7 +477,6 @@ update_win:
     if (!start_timer)
         goto update;
 
-    __sync_synchronize();
     /* Avvia il timer associato a questa finestra */
     rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
     if (rc)

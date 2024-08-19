@@ -553,6 +553,7 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             .bytes_counter = packet_length, \
             .flow_id = flow_id, \
             .tsw = 0, \
+            //.cnt = 0 \
         }; \
         /* inserimento della nuova istanza rappresentante il flusso */ \
         int ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \

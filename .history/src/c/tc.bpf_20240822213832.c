@@ -473,7 +473,6 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     const __u64 cur_tsw = ts / SWIN_SCALER;
     struct event_t *event = NULL;
     __u32 counter_val;
-    
     bpf_spin_lock(&packet->lock);
     __u64 tsw = packet->tsw;
     __u32 *counter = &packet->counter;

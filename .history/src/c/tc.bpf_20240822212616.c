@@ -627,11 +627,11 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             return TC_ACT_OK; \
         } \
         /* Inizializzazione del timer */ \
-        /*int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
-        if (rc) { \
-            bpf_printk("Failed to initialize timer\n"); \
-            return TC_ACT_OK; \
-        } \ */
+        // int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
+        // if (rc) { \
+        //     bpf_printk("Failed to initialize timer\n"); \
+        //     return TC_ACT_OK; \
+        // } \
         /* Inizializzazione del timer in modo atomico */ \
         if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) { \
             int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \

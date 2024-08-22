@@ -470,33 +470,33 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     ---- ------ -----*/
 
     /* TEST */
-    const __u64 cur_tsw = ts / SWIN_SCALER;
-    bpf_spin_lock(&packet->lock);
-    __u64 tsw = packet->tsw;
-    struct event_t *event = NULL;
-    __u32 *counter = &packet->counter;
-    __u32 counter_val;
+    // const __u64 cur_tsw = ts / SWIN_SCALER;
+    // bpf_spin_lock(&packet->lock);
+    // __u64 tsw = packet->tsw;
+    // struct event_t *event = NULL;
+    // __u32 *counter = &packet->counter;
+    // __u32 counter_val;
 
-    if (cur_tsw <= tsw) {
-        bpf_spin_unlock(&packet->lock);
-        goto update;
-    }
+    // if (cur_tsw <= tsw) {
+    //     bpf_spin_unlock(&packet->lock);
+    //     goto update;
+    // }
 
-    counter_val = *counter;
+    // counter_val = *counter;
 
-    event->ts = tsw;
-    event->flowid = packet->flow_id;
-    event->counter = counter_val;
+    // event->ts = tsw;
+    // event->flowid = packet->flow_id;
+    // event->counter = counter_val;
 
-    bpf_spin_unlock(&packet->lock);
+    // bpf_spin_unlock(&packet->lock);
 
-    int rc = prepare_ring_buffer_write(&events, &event);
-    if (rc)
-        goto update_win;
+    // int rc = prepare_ring_buffer_write(&events, &event);
+    // if (rc)
+    //     goto update_win;
     
-    bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
+    // bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
 
-    bpf_ringbuf_submit(event, 0);
+    // bpf_ringbuf_submit(event, 0);
 
     /* FINE TEST */
 
@@ -506,13 +506,13 @@ update_win:
     //WRITE_ONCE(*counter, 0);
 
     /* VECCHIO CODICE */
-    //WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
+    WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
     /* ------- */
 
     /* TEST */
-    bpf_spin_lock(&packet->lock);
-    packet->tsw = cur_tsw;
-    bpf_spin_unlock(&packet->lock);
+    // bpf_spin_lock(&packet->lock);
+    // packet->tsw = cur_tsw;
+    // bpf_spin_unlock(&packet->lock);
     /* FINE TEST */
 
     //swin_unlock(&packet->lock);
@@ -606,7 +606,6 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             .bytes_counter = packet_length, \
             .flow_id = flow_id, \
             .tsw = 0, \
-            .initialized = 0, \
         }; \
         /* inserimento della nuova istanza rappresentante il flusso */ \
         int ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
@@ -627,20 +626,10 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             return TC_ACT_OK; \
         } \
         /* Inizializzazione del timer */ \
-        /*int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
+        int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
         if (rc) { \
             bpf_printk("Failed to initialize timer\n"); \
             return TC_ACT_OK; \
-        } \ */
-        /* Inizializzazione del timer in modo atomico */ \
-        if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) { \
-            int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
-            if (rc) { \
-                bpf_printk("Failed to initialize timer\n"); \
-                /* Se fallisce, ripristina il flag di inizializzazione */ \
-                __sync_bool_compare_and_swap(&packet->initialized, 1, 0); \
-                return TC_ACT_OK; \
-            } \
         } \
     } else { \
         /* gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra */ \

@@ -506,13 +506,13 @@ update_win:
     //WRITE_ONCE(*counter, 0);
 
     /* VECCHIO CODICE */
-    //WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
+    WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
     /* ------- */
 
     /* TEST */
-    bpf_spin_lock(&packet->lock);
-    packet->tsw = cur_tsw;
-    bpf_spin_unlock(&packet->lock);
+    // bpf_spin_lock(&packet->lock);
+    // packet->tsw = cur_tsw;
+    // bpf_spin_unlock(&packet->lock);
     /* FINE TEST */
 
     //swin_unlock(&packet->lock);
@@ -606,7 +606,6 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             .bytes_counter = packet_length, \
             .flow_id = flow_id, \
             .tsw = 0, \
-            .initialized = 0, \
         }; \
         /* inserimento della nuova istanza rappresentante il flusso */ \
         int ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
@@ -627,20 +626,10 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             return TC_ACT_OK; \
         } \
         /* Inizializzazione del timer */ \
-        /*int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
+        int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
         if (rc) { \
             bpf_printk("Failed to initialize timer\n"); \
             return TC_ACT_OK; \
-        } \ */
-        /* Inizializzazione del timer in modo atomico */ \
-        if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) { \
-            int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
-            if (rc) { \
-                bpf_printk("Failed to initialize timer\n"); \
-                /* Se fallisce, ripristina il flag di inizializzazione */ \
-                __sync_bool_compare_and_swap(&packet->initialized, 1, 0); \
-                return TC_ACT_OK; \
-            } \
         } \
     } else { \
         /* gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra */ \

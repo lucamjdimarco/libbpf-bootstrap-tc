@@ -503,14 +503,7 @@ update_win:
     /* Creare una nuova finestra */
     //WRITE_ONCE(*cnt, 0);
     //WRITE_ONCE(*counter, 0);
-
-    /* VECCHIO CODICE */
-    //WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
-    /* ------- */
-
-    bpf_spin_lock(&packet->lock);
-    packet->tsw = cur_tsw;
-    bpf_spin_unlock(&packet->lock);
+    WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
 
     //swin_unlock(&packet->lock);
 

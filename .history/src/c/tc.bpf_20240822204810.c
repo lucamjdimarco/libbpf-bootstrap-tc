@@ -477,40 +477,14 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     __u32 *counter = &packet->counter;
     __u32 counter_val;
 
-    if (cur_tsw <= tsw) {
-        goto update;
-    }
 
-    counter_val = *counter;
-
-    event->ts = tsw;
-    event->flowid = packet->flow_id;
-    event->counter = counter_val;
-
-    bpf_spin_unlock(&packet->lock);
-
-    int rc = prepare_ring_buffer_write(&events, &event);
-    if (rc)
-        goto update_win;
     
-    bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
-
-    bpf_ringbuf_submit(event, 0);
-
-    /* FINE TEST */
 
 update_win:
     /* Creare una nuova finestra */
     //WRITE_ONCE(*cnt, 0);
     //WRITE_ONCE(*counter, 0);
-
-    /* VECCHIO CODICE */
-    //WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
-    /* ------- */
-
-    bpf_spin_lock(&packet->lock);
-    packet->tsw = cur_tsw;
-    bpf_spin_unlock(&packet->lock);
+    WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
 
     //swin_unlock(&packet->lock);
 

@@ -424,7 +424,7 @@ static __always_inline int swin_timer_init(void *map, struct bpf_timer *timer)
 
 static __always_inline
 int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
-    /* VECCHIO CODICE */
+    /* VECCHIO CODICE
     const __u64 cur_tsw = ts / SWIN_SCALER; // Normalizzo il timestamp
     __u64 tsw = READ_ONCE(packet->tsw); // Leggo il timestamp della finestra
     //__u64 *cnt = &packet->cnt; // Puntatore al contatore della finestra
@@ -467,7 +467,7 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
 
     bpf_ringbuf_submit(event, 0);
 
-    /*---- ------ -----*/
+    ---- ------ -----*/
 
     /* TEST */
     // const __u64 cur_tsw = ts / SWIN_SCALER;
@@ -506,14 +506,12 @@ update_win:
     //WRITE_ONCE(*counter, 0);
 
     /* VECCHIO CODICE */
-    WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
+    //WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
     /* ------- */
 
-    /* TEST */
-    // bpf_spin_lock(&packet->lock);
-    // packet->tsw = cur_tsw;
-    // bpf_spin_unlock(&packet->lock);
-    /* FINE TEST */
+    bpf_spin_lock(&packet->lock);
+    packet->tsw = cur_tsw;
+    bpf_spin_unlock(&packet->lock);
 
     //swin_unlock(&packet->lock);
 

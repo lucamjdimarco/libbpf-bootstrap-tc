@@ -188,6 +188,19 @@ static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
     return ((__u64)first_byte << 56) | (counter & 0x00FFFFFFFFFFFFFF);
 }
 
+
+
+
+/*------------------------------------------------*/ 
+
+// #define try_swin_lock(sw)	__sync_lock_test_and_set(&(sw)->sync, 1)
+// #define swin_unlock(sw)					\
+// 	do {						\
+// 		__sync_fetch_and_and(&(sw)->sync, 0);	\
+// 		barrier();				\
+// 	} while(0)
+
+
 static __always_inline
 int update_window_start_timer(struct bpf_timer *timer, __u64 timeout)
 {
@@ -244,14 +257,201 @@ static __always_inline int swin_timer_init(void *map, struct bpf_timer *timer)
 	return bpf_timer_set_callback(timer, 0);
 }
 
+// static __always_inline
+// struct slotted_window *slotted_window_init_or_get(void *map, __u64 *key)
+// {
+// 	struct slotted_window *sw, init;
+// 	int rc;
+    
+//     //cerco nella mappa per il batch, se esiste gia un elemento appartenente
+//     //allo stesso flusso
+//     //come key deve essere usato il flowid (?)
+// 	sw = bpf_map_lookup_elem(map, key);
+//     //se è stato trovao un elemento, ritorno il puntatore
+// 	if (sw)
+// 		return sw;
+
+// 	memset(&init, 0, sizeof(init));
+
+// 	/* note that updating an hashtable element is an atomic op */
+// 	rc = bpf_map_update_elem(map, key, &init, BPF_NOEXIST);
+// 	if (rc) {
+// 		if (rc == -EEXIST)
+// 			/* another cpu has just createed the entry, give up */
+// 			goto lookup;
+
+// 		return NULL;
+// 	}
+
+// lookup:
+//     sw = bpf_map_lookup_elem(map, key);
+//     if (!sw)
+//         return NULL;
+
+//     /* see https://reviews.llvm.org/D72184 */
+//     if (__sync_lock_test_and_set(&sw->init, 1))
+//         /* already initialized */
+//         return sw;
+
+//     /* only a single CPU can be here */
+
+//     /* we want to initialize a timer only once.
+//     * A timer needs to be defined inside a map element which is already
+//     * stored in the map. For this reason, we cannot  use a
+//     * publish/subscribe approach - e.g. create a map element, initialize
+//     * the timer within it and finally update the map with that element.
+//     * Publish allows cpus to see the whole map element fully initialized
+//     * or not.
+//     *
+//     * Our approach in this case, is to allow *only* a  CPU to initialized
+//     * the timer when a new map element is createde and pushed into the
+//     * map. However, in the mean while the CPU is taking the element lock
+//     * and initialize the timer, another CPU could reference to that
+//     * element finding that timer is not still initialized. We admit this
+//     * corner case as it could happen only the first time a new map element
+//     * is created inside the map.
+//     */
+
+//     //inizializzo il timer
+//     rc = swin_timer_init(map, &sw->timer);
+//     if (rc)
+//         return NULL;
+
+//     return sw;
+// }
+
+
+// static __always_inline
+// int update_window(struct slotted_window *sw, __u64 ts, bool start_timer, struct value_packet *packet, __u64 flow_id,)
+// {
+// 	const __u64 cur_tsw = ts / SWIN_SCALER; // normalizzo il timestamp
+// 	__u64 tsw = READ_ONCE(sw->tsw); // leggo il timestamp della finestra
+// 	__u64 *cnt = &sw->cnt; // puntatore al contatore della finestra
+// 	struct event_t *event; // evento da inserire nel ring buffer    
+// 	__u64 cnt_val; // valore del contatore
+// 	// __u64 delta; 
+// 	// __u64 avg;
+// 	int rc;
+
+// 	if (cur_tsw <= tsw)
+//         /* the current window is still open */
+// 		goto update;
+
+// 	if (try_swin_lock(sw))
+// 		/* busy, another cpu is currently closing the window */
+// 		goto update;
+
+// 	/* the current window must be closed */
+// 	// delta = cur_tsw - tsw;
+// 	// if (delta <= DECAY_TABLE_MAX) {
+// 	// 	if (delta < 1)
+// 	// 		/* impossibile, uhm? */
+// 	// 		goto err;
+
+// 	// 	cnt_val = READ_ONCE(*cnt);
+
+// 	// 	avg = __LOG_SCALE_OUT((__LOG_SCALE_IN(cnt_val) *
+// 	// 			      decay_table[(delta - 1)])) +
+// 	// 		/* sw->avg is only read in this section */
+// 	// 	      __LOG_SCALE_OUT(sw->avg * decay_table[delta]);
+// 	// } else {
+// 	// 	avg = 0;
+// 	// }
+
+// 	// WRITE_ONCE(sw->avg, avg);
+
+//     //sono nel caso in cui la finestra è stata chiusa
+
+// 	/* write the content on ring buffer */
+// 	rc = prepare_ring_buffer_write(&events, &event);
+//     int counter_to_write = READ_ONCE(*cnt);
+// 	if (rc)
+// 		goto update_win;
+
+//     //inserisco l'evento nel ring buffer
+// 	event->ts = tsw;
+// 	event->flowid = packet->flow_id;
+// 	event->counter = counter_to_write;
+
+// 	bpf_ringbuf_submit(event, 0);
+
+// update_win:
+// 	/* time to create a new window */
+// 	WRITE_ONCE(*cnt, 0);
+// 	WRITE_ONCE(sw->tsw, cur_tsw);
+
+// 	/* we cannot rely upon the __sync_lock_release() semantic, so we need
+// 	 * to use a workaround, e.g.: manually set the sw->sync back to 0.
+// 	 */
+// 	swin_unlock(sw);
+
+// 	if (!start_timer)
+// 		goto update;
+
+// 	/* start timer bound to this window */
+// 	rc = update_window_start_timer(&sw->timer, SWIN_TIMER_TIMEOUT);
+// 	if (rc)
+// 		goto err;
+
+// update:
+// 	__sync_fetch_and_add(cnt, 1);
+// 	return 0;
+
+// err:
+// 	return -EINVAL;
+// }
+
 static __always_inline
 int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
+    /* VECCHIO CODICE
+    const __u64 cur_tsw = ts / SWIN_SCALER; // Normalizzo il timestamp
+    __u64 tsw = READ_ONCE(packet->tsw); // Leggo il timestamp della finestra
+    //__u64 *cnt = &packet->cnt; // Puntatore al contatore della finestra
+    struct event_t *event; // Evento da inserire nel ring buffer    
+    //__u64 cnt_val; // Valore del contatore
+    __u32 *counter = &packet->counter; // Puntatore al contatore mio
+    __u32 counter_val; // Valore del contatore mio
 
+    // Acquisisci il lock
+    //bpf_spin_lock(&packet->lock);
+
+    //__u64 tsw = packet->tsw;
+    //__u32 *counter = &packet->counter;
+
+    if (cur_tsw <= tsw) {
+        //bpf_spin_unlock(&packet->lock);
+        //La finestra corrente è ancora aperta
+        goto update;
+    }
+        
+
+    // if (try_swin_lock(&packet->lock))
+    //     //Occupato, un altro CPU sta chiudendo la finestra
+    //     goto update;
+
+    //La finestra corrente deve essere chiusa
+    //cnt_val = READ_ONCE(*cnt);
+
+    counter_val = READ_ONCE(*counter);
+
+    //Invia il contenuto nel ring buffer
+    int rc = prepare_ring_buffer_write(&events, &event);
+    if (rc)
+        goto update_win;
+
+    event->ts = tsw;
+    event->flowid = packet->flow_id;
+    event->counter = counter_val;
+    bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
+
+    bpf_ringbuf_submit(event, 0);
+
+    ---- ------ -----*/
+
+    /* TEST */
     const __u64 cur_tsw = ts / SWIN_SCALER;
     struct event_t *event = NULL;
     __u32 counter_val;
-
-    int rc;
     
     bpf_spin_lock(&packet->lock);
     __u64 tsw = packet->tsw;
@@ -270,7 +470,7 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
 
     bpf_spin_unlock(&packet->lock);
 
-    rc = prepare_ring_buffer_write(&events, &event);
+    int rc = prepare_ring_buffer_write(&events, &event);
     if (rc)
         goto update_win;
     
@@ -278,10 +478,24 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
 
     bpf_ringbuf_submit(event, 0);
 
+    /* FINE TEST */
+
 update_win:
+    /* Creare una nuova finestra */
+    //WRITE_ONCE(*cnt, 0);
+    //WRITE_ONCE(*counter, 0);
+
+    /* VECCHIO CODICE */
+    //WRITE_ONCE(packet->tsw, cur_tsw); // Aggiorno il timestamp della finestra
+    /* ------- */
+
+    /* TEST */
     bpf_spin_lock(&packet->lock);
     packet->tsw = cur_tsw;
     bpf_spin_unlock(&packet->lock);
+    /* FINE TEST */
+
+    //swin_unlock(&packet->lock);
 
     if (!start_timer)
         goto update;
@@ -310,11 +524,60 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
     }
     
     update_window(packet, bpf_ktime_get_ns(), true);
+    
+    // struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+    // if (!event) {
+    //     return;
+    // }
+
+    // event->ts = bpf_ktime_get_ns();
+    // event->flowid = packet->flow_id;
+    // event->counter = packet->counter;
+    // bpf_ringbuf_submit(event, 0);
 }
+
+
+
+/*------------------------------------------------*/ 
+
+// #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
+//     struct value_packet *packet = NULL; \
+//     packet = bpf_map_lookup_elem(&map_name, &new_info); \
+//     if (!packet) { \
+//         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
+//         ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
+//         if (ret == -1) { \
+//             bpf_printk("Failed to insert new item in flow maps\n"); \
+//             return TC_ACT_OK; \
+//         } \
+//         struct value_packet new_value = { \
+//             .counter = 1, \
+//             .bytes_counter = packet_length, \
+//             .flow_id = flow_id \
+//         }; \
+//         ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
+//         if (ret) { \
+//             bpf_printk("Failed to insert new item in flow maps\n"); \
+//             return TC_ACT_OK; \
+//         } \
+//         rc = swin_timer_init(&map_name, &packet->timer); \
+//         if (rc) \
+//             return TC_ACT_OK; \
+//         struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0); \
+//         if (!event) { \
+//             return TC_ACT_OK; \
+//         } \
+//         /*event->ts = bpf_ktime_get_ns(); \
+//         event->flowid = flow_id; \
+//         event->counter = 1; \
+//         bpf_ringbuf_submit(event, 0); \*/
+//     } else { \
+//         handle_packet_event(packet, flow_id, packet_length); \
+//     } \
+// } while (0)
 
 #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
     struct value_packet *packet = NULL; \
-    int ret; \
     packet = bpf_map_lookup_elem(&map_name, &new_info); \
     if (!packet) { \
         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
@@ -326,7 +589,7 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             .initialized = 0, \
         }; \
         /* inserimento della nuova istanza rappresentante il flusso */ \
-        ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
+        int ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
         if (ret) { \
             bpf_printk("Failed to insert new item in map_name\n"); \
             return TC_ACT_OK; \
@@ -364,6 +627,9 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
         handle_packet_event(packet, flow_id, packet_length); \
     } \
 } while (0)
+
+
+
 
 
 // classificazione dei pacchetti IPv4
@@ -666,6 +932,11 @@ int tc_ingress(struct __sk_buff *ctx)
             bpf_printk("Unknown protocol\n");
             return TC_ACT_OK;
     }
+
+     // Invio dei dati batch al ring buffer in base a una condizione (ad esempio, ogni 1000 pacchetti)
+    // if (counter % 1000 == 0) {
+    //     submit_batch_to_ringbuf();
+    // }
 
     return TC_ACT_OK;
 }

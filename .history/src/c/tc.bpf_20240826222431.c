@@ -250,8 +250,6 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     const __u64 cur_tsw = ts / SWIN_SCALER;
     struct event_t *event = NULL;
     __u32 counter_val;
-
-    int rc;
     
     bpf_spin_lock(&packet->lock);
     __u64 tsw = packet->tsw;
@@ -270,7 +268,7 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
 
     bpf_spin_unlock(&packet->lock);
 
-    rc = prepare_ring_buffer_write(&events, &event);
+    int rc = prepare_ring_buffer_write(&events, &event);
     if (rc)
         goto update_win;
     
@@ -314,7 +312,6 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
 
 #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
     struct value_packet *packet = NULL; \
-    int ret; \
     packet = bpf_map_lookup_elem(&map_name, &new_info); \
     if (!packet) { \
         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
@@ -326,7 +323,7 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             .initialized = 0, \
         }; \
         /* inserimento della nuova istanza rappresentante il flusso */ \
-        ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
+        int ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
         if (ret) { \
             bpf_printk("Failed to insert new item in map_name\n"); \
             return TC_ACT_OK; \

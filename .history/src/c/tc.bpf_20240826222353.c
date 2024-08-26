@@ -250,8 +250,6 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     const __u64 cur_tsw = ts / SWIN_SCALER;
     struct event_t *event = NULL;
     __u32 counter_val;
-
-    int rc;
     
     bpf_spin_lock(&packet->lock);
     __u64 tsw = packet->tsw;
@@ -270,7 +268,7 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
 
     bpf_spin_unlock(&packet->lock);
 
-    rc = prepare_ring_buffer_write(&events, &event);
+    int rc = prepare_ring_buffer_write(&events, &event);
     if (rc)
         goto update_win;
     
@@ -312,9 +310,48 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
     update_window(packet, bpf_ktime_get_ns(), true);
 }
 
+
+
+/*------------------------------------------------*/ 
+
+// #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
+//     struct value_packet *packet = NULL; \
+//     packet = bpf_map_lookup_elem(&map_name, &new_info); \
+//     if (!packet) { \
+//         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
+//         ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
+//         if (ret == -1) { \
+//             bpf_printk("Failed to insert new item in flow maps\n"); \
+//             return TC_ACT_OK; \
+//         } \
+//         struct value_packet new_value = { \
+//             .counter = 1, \
+//             .bytes_counter = packet_length, \
+//             .flow_id = flow_id \
+//         }; \
+//         ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
+//         if (ret) { \
+//             bpf_printk("Failed to insert new item in flow maps\n"); \
+//             return TC_ACT_OK; \
+//         } \
+//         rc = swin_timer_init(&map_name, &packet->timer); \
+//         if (rc) \
+//             return TC_ACT_OK; \
+//         struct event_t *event = bpf_ringbuf_reserve(&events, sizeof(*event), 0); \
+//         if (!event) { \
+//             return TC_ACT_OK; \
+//         } \
+//         /*event->ts = bpf_ktime_get_ns(); \
+//         event->flowid = flow_id; \
+//         event->counter = 1; \
+//         bpf_ringbuf_submit(event, 0); \*/
+//     } else { \
+//         handle_packet_event(packet, flow_id, packet_length); \
+//     } \
+// } while (0)
+
 #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
     struct value_packet *packet = NULL; \
-    int ret; \
     packet = bpf_map_lookup_elem(&map_name, &new_info); \
     if (!packet) { \
         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
@@ -326,7 +363,7 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
             .initialized = 0, \
         }; \
         /* inserimento della nuova istanza rappresentante il flusso */ \
-        ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
+        int ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
         if (ret) { \
             bpf_printk("Failed to insert new item in map_name\n"); \
             return TC_ACT_OK; \
@@ -364,6 +401,9 @@ static __always_inline void handle_packet_event(struct value_packet *packet, __u
         handle_packet_event(packet, flow_id, packet_length); \
     } \
 } while (0)
+
+
+
 
 
 // classificazione dei pacchetti IPv4
@@ -666,6 +706,11 @@ int tc_ingress(struct __sk_buff *ctx)
             bpf_printk("Unknown protocol\n");
             return TC_ACT_OK;
     }
+
+     // Invio dei dati batch al ring buffer in base a una condizione (ad esempio, ogni 1000 pacchetti)
+    // if (counter % 1000 == 0) {
+    //     submit_batch_to_ringbuf();
+    // }
 
     return TC_ACT_OK;
 }

@@ -251,7 +251,6 @@ int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts, bo
     if (packet->counter < MAX_COUNTER) {
         packet->counter += 1;
         packet->bytes_counter += packet_length;
-    }
     // } else {
     //     bpf_printk("Counter is at maximum value\n");
     // }

@@ -435,7 +435,7 @@ int main(int argc, char **argv)
 	}
 
 	struct ring_buffer *rb = NULL;
-	rb = ring_buffer__new(bpf_map__fd(skel->maps.rbuf_events), handle_event, h, NULL);
+	rb = ring_buffer__new(bpf_map__fd(skel->maps.events), handle_event, h, NULL);
     if (!rb) {
         fprintf(stderr, "Failed to create ring buffer\n");
         goto cleanup;

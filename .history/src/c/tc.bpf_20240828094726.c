@@ -263,21 +263,19 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     event->flowid = packet->flow_id;
     event->counter = counter_val;
 
-    goto update_win;
-
-    //bpf_spin_unlock(&packet->lock);
+    bpf_spin_unlock(&packet->lock);
 
     //Riserva spazio nel rbuf per poter poi aggiungere l'evento secondo la logica commit/abort
-    // rc = prepare_ring_buffer_write(&rbuf_events, &event);
-    // if (rc)
-    //     goto update_win;
+    rc = prepare_ring_buffer_write(&rbuf_events, &event);
+    if (rc)
+        goto update_win;
     
-    // bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
+    bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
 
-    // bpf_ringbuf_submit(event, 0);
+    bpf_ringbuf_submit(event, 0);
 
 update_win:
-    //bpf_spin_lock(&packet->lock);
+    bpf_spin_lock(&packet->lock);
     packet->tsw = cur_tsw;
     bpf_spin_unlock(&packet->lock);
 
@@ -304,7 +302,6 @@ send_rbuf:
 
     bpf_ringbuf_submit(event, 0);
 
-    return 0;
 
 err:
     return -EINVAL;

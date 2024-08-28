@@ -289,6 +289,8 @@ update_win:
     rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
     if (rc)
         return -EINVAL;
+    
+    goto send_rbuf;
 
 //update:
     //__sync_fetch_and_add(cnt, 1);

@@ -170,12 +170,13 @@ struct {
     __type(value, struct only_dest_ipv6);
 } ipv6_flow SEC(".maps");
 #endif
+#endif
 
 // Ring buffer per gli eventi
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1 << 24); // 16 MB di spazio
-} rbuf_events SEC(".maps");
+} events SEC(".maps");
 
 // Funzione per costruire l'ID del flusso
 static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter) {
@@ -218,7 +219,7 @@ prepare_ring_buffer_write(void *map, struct event_t **pevent)
 		return -EINVAL;
 
 	/* let's send data to userspace using ring buffer */
-	*pevent = bpf_ringbuf_reserve(&rbuf_events, sizeof(**pevent), 0);
+	*pevent = bpf_ringbuf_reserve(&events, sizeof(**pevent), 0);
 	if (!(*pevent))
 		/* no space left on ring buffer */
 		return -ENOMEM;
@@ -253,8 +254,7 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
 
     if (cur_tsw <= tsw) {
         bpf_spin_unlock(&packet->lock);
-        //goto update;
-        return 0;
+        goto update;
     }
 
     counter_val = *counter;
@@ -263,40 +263,9 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     event->flowid = packet->flow_id;
     event->counter = counter_val;
 
-    goto update_win;
-
-    //bpf_spin_unlock(&packet->lock);
-
-    //Riserva spazio nel rbuf per poter poi aggiungere l'evento secondo la logica commit/abort
-    // rc = prepare_ring_buffer_write(&rbuf_events, &event);
-    // if (rc)
-    //     goto update_win;
-    
-    // bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
-
-    // bpf_ringbuf_submit(event, 0);
-
-update_win:
-    //bpf_spin_lock(&packet->lock);
-    packet->tsw = cur_tsw;
     bpf_spin_unlock(&packet->lock);
 
-    if (!start_timer)
-        //goto update;
-        return 0;
-
-    /* Avvia il timer associato a questa finestra */
-    rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
-    if (rc)
-        return -EINVAL;
-
-//update:
-    //__sync_fetch_and_add(cnt, 1);
-    //return 0;
-
-send_rbuf:
-    //Riserva spazio nel rbuf per poter poi aggiungere l'evento secondo la logica commit/abort
-    rc = prepare_ring_buffer_write(&rbuf_events, &event);
+    rc = prepare_ring_buffer_write(&events, &event);
     if (rc)
         goto update_win;
     
@@ -304,6 +273,21 @@ send_rbuf:
 
     bpf_ringbuf_submit(event, 0);
 
+update_win:
+    bpf_spin_lock(&packet->lock);
+    packet->tsw = cur_tsw;
+    bpf_spin_unlock(&packet->lock);
+
+    if (!start_timer)
+        goto update;
+
+    /* Avvia il timer associato a questa finestra */
+    rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
+    if (rc)
+        return -EINVAL;
+
+update:
+    //__sync_fetch_and_add(cnt, 1);
     return 0;
 
 err:

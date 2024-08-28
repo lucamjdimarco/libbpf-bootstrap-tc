@@ -277,7 +277,7 @@ int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
     // bpf_ringbuf_submit(event, 0);
 
 update_win:
-    //bpf_spin_lock(&packet->lock);
+    bpf_spin_lock(&packet->lock);
     packet->tsw = cur_tsw;
     bpf_spin_unlock(&packet->lock);
 

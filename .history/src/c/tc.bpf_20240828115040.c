@@ -320,14 +320,14 @@ err:
 }
 
 static __always_inline void handle_packet_event(struct value_packet *packet, __u64 flow_id, __u64 packet_length) {
-    // if (packet->counter < MAX_COUNTER) {
-    //     bpf_spin_lock(&packet->lock);
-    //     packet->counter += 1;
-    //     packet->bytes_counter += packet_length;
-    //     bpf_spin_unlock(&packet->lock);
-    // } else {
-    //     bpf_printk("Counter is at maximum value\n");
-    // }
+    if (packet->counter < MAX_COUNTER) {
+        bpf_spin_lock(&packet->lock);
+        packet->counter += 1;
+        packet->bytes_counter += packet_length;
+        bpf_spin_unlock(&packet->lock);
+    } else {
+        bpf_printk("Counter is at maximum value\n");
+    }
     
     update_window(packet, bpf_ktime_get_ns(), true);
 }

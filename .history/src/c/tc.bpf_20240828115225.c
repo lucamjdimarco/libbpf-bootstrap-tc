@@ -239,7 +239,7 @@ static __always_inline int swin_timer_init(void *map, struct bpf_timer *timer)
 }
 
 static __always_inline
-int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts, bool start_timer) {
+int update_window(struct value_packet *packet, __u64 ts, bool start_timer) {
 
     const __u64 cur_tsw = ts / SWIN_SCALER;
     struct event_t *event = NULL;

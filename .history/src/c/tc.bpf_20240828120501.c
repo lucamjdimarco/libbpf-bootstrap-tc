@@ -75,13 +75,6 @@ struct {
     __type(key, struct only_addr_ipv6);
     __type(value, struct value_packet);
 } map_only_addr_ipv6 SEC(".maps");
-
-struct {
-    __uint(type, BPF_MAP_TYPE_HASH);
-    __uint(max_entries, MAX_ENTRIES);
-    __type(key, __u64);
-    __type(value, struct only_addr_ipv6);
-} ipv6_flow SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
@@ -107,7 +100,24 @@ struct {
     __type(key, struct only_dest_ipv6);
     __type(value, struct value_packet);
 } map_only_dest_ipv6 SEC(".maps");
+#endif
 
+
+#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
+
+#endif
+
+
+#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_ENTRIES);
+    __type(key, __u64);
+    __type(value, struct only_addr_ipv6);
+} ipv6_flow SEC(".maps");
+#endif
+
+#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
     __uint(max_entries, MAX_ENTRIES);
@@ -197,6 +207,10 @@ int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts, bo
         packet->counter += 1;
         packet->bytes_counter += packet_length;
     }
+    // } else {
+    //     bpf_printk("Counter is at maximum value\n");
+    // }
+
     __u64 tsw = packet->tsw;
     __u32 *counter = &packet->counter;
 
@@ -242,110 +256,58 @@ err:
     return -EINVAL;
 }
 
-// #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
-//     struct value_packet *packet = NULL; \
-//     int ret; \
-//     packet = bpf_map_lookup_elem(&map_name, &new_info); \
-//     if (!packet) { \
-//         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
-//         struct value_packet new_value = { \
-//             .counter = 1, \
-//             .bytes_counter = packet_length, \
-//             .flow_id = flow_id, \
-//             .tsw = 0, \
-//             .initialized = 0, \
-//         }; \
-//         /* inserimento della nuova istanza rappresentante il flusso */ \
-//         ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
-//         if (ret) { \
-//             bpf_printk("Failed to insert new item in map_name\n"); \
-//             return TC_ACT_OK; \
-//         } \
-//         /* inserimento del nuovo flusso nella mappa dei flussi */ \
-//         ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
-//         if (ret) { \
-//             bpf_printk("Failed to insert new item in map_flow\n"); \
-//             return TC_ACT_OK; \
-//         } \
-//         /* Ricarica l'elemento aggiornato dalla mappa per ottenere l'indirizzo corretto del timer */ \
-//         packet = bpf_map_lookup_elem(&map_name, &new_info); \
-//         if (!packet) { \
-//             bpf_printk("Failed to lookup newly inserted item in map_name\n"); \
-//             return TC_ACT_OK; \
-//         } \
-//         if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) { \
-//             int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
-//             if (rc) { \
-//                 bpf_printk("Failed to initialize timer\n"); \
-//                 /* Se fallisce, ripristina il flag di inizializzazione */ \
-//                 __sync_bool_compare_and_swap(&packet->initialized, 1, 0); \
-//                 return TC_ACT_OK; \
-//             } \
-//         } \
-//     } else { \
-//         /* gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra */ \
-//         update_window(packet, packet_length, bpf_ktime_get_ns(), true); \
-//     } \
-// } while (0)
-
-int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, int packet_length) {
-    struct value_packet *packet = NULL;
-    int ret;
-    __u64 flow_id;
-
-    // Cerca il pacchetto nella mappa
-    packet = bpf_map_lookup_elem(map_name, new_info);
-    if (!packet) {
-        // Costruisce un nuovo flow_id
-        flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1));
-
-        // Inizializza una nuova struttura value_packet
-        struct value_packet new_value = {
-            .counter = 1,
-            .bytes_counter = packet_length,
-            .flow_id = flow_id,
-            .tsw = 0,
-            .initialized = 0,
-        };
-
-        // Inserimento della nuova istanza rappresentante il flusso
-        ret = bpf_map_update_elem(map_name, new_info, &new_value, BPF_ANY);
-        if (ret) {
-            bpf_printk("Failed to insert new item in map_name\n");
-            return TC_ACT_OK;
-        }
-
-        // Inserimento del nuovo flusso nella mappa dei flussi
-        ret = bpf_map_update_elem(map_flow, &flow_id, new_info, BPF_ANY);
-        if (ret) {
-            bpf_printk("Failed to insert new item in map_flow\n");
-            return TC_ACT_OK;
-        }
-
-        // Ricarica l'elemento aggiornato dalla mappa per ottenere l'indirizzo corretto del timer
-        packet = bpf_map_lookup_elem(map_name, new_info);
-        if (!packet) {
-            bpf_printk("Failed to lookup newly inserted item in map_name\n");
-            return TC_ACT_OK;
-        }
-
-        // Inizializzazione del timer
-        if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) {
-            int rc = bpf_timer_init(&packet->timer, map_name, CLOCK_BOOTTIME);
-            if (rc) {
-                bpf_printk("Failed to initialize timer\n");
-                // Se fallisce, ripristina il flag di inizializzazione
-                __sync_bool_compare_and_swap(&packet->initialized, 1, 0);
-                return TC_ACT_OK;
-            }
-        }
-    } else {
-        // Gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra
-        update_window(packet, packet_length, bpf_ktime_get_ns(), true);
-    }
-
-    return TC_ACT_OK;
-}
+#define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
+    struct value_packet *packet = NULL; \
+    int ret; \
+    packet = bpf_map_lookup_elem(&map_name, &new_info); \
+    if (!packet) { \
+        flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
+        struct value_packet new_value = { \
+            .counter = 1, \
+            .bytes_counter = packet_length, \
+            .flow_id = flow_id, \
+            .tsw = 0, \
+            .initialized = 0, \
+        }; \
+        /* inserimento della nuova istanza rappresentante il flusso */ \
+        ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
+        if (ret) { \
+            bpf_printk("Failed to insert new item in map_name\n"); \
+            return TC_ACT_OK; \
+        } \
+        /* inserimento del nuovo flusso nella mappa dei flussi */ \
+        ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
+        if (ret) { \
+            bpf_printk("Failed to insert new item in map_flow\n"); \
+            return TC_ACT_OK; \
+        } \
+        /* Ricarica l'elemento aggiornato dalla mappa per ottenere l'indirizzo corretto del timer */ \
+        packet = bpf_map_lookup_elem(&map_name, &new_info); \
+        if (!packet) { \
+            bpf_printk("Failed to lookup newly inserted item in map_name\n"); \
+            return TC_ACT_OK; \
+        } \
+        /* Inizializzazione del timer */ \
+        /*int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME);*/ \
+        /*if (rc) { */\
+            /* bpf_printk("Failed to initialize timer\n"); */ \
+            /* return TC_ACT_OK; */\
+        /*} */\
+        /* Inizializzazione del timer in modo atomico */ \
+        if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) { \
+            int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
+            if (rc) { \
+                bpf_printk("Failed to initialize timer\n"); \
+                /* Se fallisce, ripristina il flag di inizializzazione */ \
+                __sync_bool_compare_and_swap(&packet->initialized, 1, 0); \
+                return TC_ACT_OK; \
+            } \
+        } \
+    } else { \
+        /* gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra */ \
+        update_window(packet, packet_length, bpf_ktime_get_ns(), true); \
+    } \
+} while (0)
 
 
 // classificazione dei pacchetti IPv4
@@ -558,7 +520,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
-            classify_packet_and_update_map(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
             break;
         }
         #endif
@@ -567,7 +529,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
             classify_ONLY_ADDRESS_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
-            classify_packet_and_update_map(map_only_addr_ipv4, new_info_only_addr_ipv4, ONLY_ADDRESS, ipv4_flow);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_addr_ipv4, new_info_only_addr_ipv4, ONLY_ADDRESS, ipv4_flow);
             break;
         }
         #endif
@@ -576,7 +538,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
             classify_ONLY_DEST_ADDRESS_ipv4_packet(&new_info_only_dest_ipv4, data_end, data);
-            classify_packet_and_update_map(map_only_dest_ipv4, new_info_only_dest_ipv4, ONLY_DEST_ADDRESS, ipv4_flow);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv4, new_info_only_dest_ipv4, ONLY_DEST_ADDRESS, ipv4_flow);
             break;
         }
         #endif
@@ -585,7 +547,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IPV6): {
             struct packet_info_ipv6 new_info_ipv6 = {};
             classify_ipv6_packet(&new_info_ipv6, data_end, data);
-            classify_packet_and_update_map(map_ipv6, new_info_ipv6, QUINTUPLA, ipv6_flow);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv6, new_info_ipv6, QUINTUPLA, ipv6_flow);
             break;
         }
         #endif
@@ -594,7 +556,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IPV6): {
             struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
             classify_ONLY_ADDRESS_ipv6_packet(&new_info_only_addr_ipv6, data_end, data);
-            classify_packet_and_update_map(map_only_addr_ipv6, new_info_only_addr_ipv6, ONLY_ADDRESS, ipv6_flow);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_addr_ipv6, new_info_only_addr_ipv6, ONLY_ADDRESS, ipv6_flow);
             break;
         }
         #endif
@@ -604,7 +566,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IPV6): {
             struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
             classify_ONLY_DEST_ADDRESS_ipv6_packet(&new_info_only_dest_ipv6, data_end, data);
-            classify_packet_and_update_map(map_only_dest_ipv6, new_info_only_dest_ipv6, ONLY_DEST_ADDRESS, ipv6_flow);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv6, new_info_only_dest_ipv6, ONLY_DEST_ADDRESS, ipv6_flow);
             break;
         }
         #endif

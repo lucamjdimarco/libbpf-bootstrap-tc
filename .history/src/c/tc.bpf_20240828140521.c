@@ -288,7 +288,7 @@ err:
 //     } \
 // } while (0)
 
-int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter) {
+int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 counter) {
     struct value_packet *packet = NULL;
     int ret;
     __u64 flow_id;
@@ -297,7 +297,7 @@ int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type
     packet = bpf_map_lookup_elem(map_name, new_info);
     if (!packet) {
         // Costruisce un nuovo flow_id
-        flow_id = build_flowid(flow_type, __sync_fetch_and_add(counter, 1));
+        flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1));
 
         // Inizializza una nuova struttura value_packet
         struct value_packet new_value = {

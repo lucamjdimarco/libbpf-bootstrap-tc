@@ -288,7 +288,7 @@ err:
 //     } \
 // } while (0)
 
-int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter) {
+int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow) {
     struct value_packet *packet = NULL;
     int ret;
     __u64 flow_id;

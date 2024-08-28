@@ -288,7 +288,7 @@ err:
 //     } \
 // } while (0)
 
-int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter) {
+int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow) {
     struct value_packet *packet = NULL;
     int ret;
     __u64 flow_id;
@@ -536,7 +536,7 @@ int tc_ingress(struct __sk_buff *ctx)
     static __u64 *counter;
     __u64 flow_id = 0;
     
-    *counter = 0;
+    counter = 0;
     __u64 packet_length = ctx->len;
 
     // Controllo se il pacchetto è un pacchetto IP
@@ -559,7 +559,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
-            classify_packet_and_update_map(map_ipv4, new_info, QUINTUPLA, ipv4_flow, packet_length, counter);
+            classify_packet_and_update_map(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
             break;
         }
         #endif

@@ -370,7 +370,7 @@ int classify_packet_and_update_map(struct parameter *param) {
         // Inizializza una nuova struttura value_packet
         struct value_packet new_value = {
             .counter = 1,
-            .bytes_counter = param->packet_length,
+            .bytes_counter = packet_length,
             .flow_id = flow_id,
             .tsw = 0,
             .initialized = 0,

@@ -602,7 +602,7 @@ int tc_ingress(struct __sk_buff *ctx)
     struct vlan_hdr *vlan;
 
     struct parameter param = {};
-    struct parameter *param_ptr = NULL;
+    struct parameter *param_ptr;
 
     static __u64 *counter;
     __u64 flow_id = 0;
@@ -630,7 +630,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
-            param = {
+            struct parameter param = {
                 .map_name = &map_ipv4,
                 .new_info = &new_info,
                 .flow_type = QUINTUPLA,
@@ -639,7 +639,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 .counter = counter
             };
 
-            param_ptr = &param;
+            struct parameter *param_ptr = &param;
             //classify_packet_and_update_map(&map_ipv4, &new_info, QUINTUPLA, &ipv4_flow, packet_length, counter);
             classify_packet_and_update_map(param_ptr);
             break;

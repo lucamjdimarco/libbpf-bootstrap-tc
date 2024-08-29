@@ -639,7 +639,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 .counter = counter
             };
 
-            param_ptr = &param;
+            *param_ptr = &param;
             //classify_packet_and_update_map(&map_ipv4, &new_info, QUINTUPLA, &ipv4_flow, packet_length, counter);
             classify_packet_and_update_map(param_ptr);
             break;

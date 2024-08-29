@@ -409,7 +409,7 @@ int classify_packet_and_update_map(struct parameter param) {
         }
     } else {
         // Gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra
-        update_window(packet, param.packet_length, bpf_ktime_get_ns(), true);
+        update_window(packet, param->packet_length, bpf_ktime_get_ns(), true);
     }
 
     return TC_ACT_OK;

@@ -20,15 +20,6 @@ enum FlowIdType {
         ONLY_DEST_ADDRESS = 2
 };
 
-struct parameter {
-    void *map_name;
-    void *new_info;
-    int flow_type;
-    void *map_flow;
-    __u64 packet_length;
-    __u64 *counter;
-};
-
 #ifdef CLASSIFY_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
@@ -356,16 +347,16 @@ err:
 //     return TC_ACT_OK;
 // }
 
-int classify_packet_and_update_map(struct parameter *param) {
+int classify_packet_and_update_map(struct parameter parameter) {
     struct value_packet *packet = NULL;
     int ret;
     __u64 flow_id;
 
     // Cerca il pacchetto nella mappa
-    packet = bpf_map_lookup_elem(parameter->map_name, parameter->new_info);
+    packet = bpf_map_lookup_elem(parameter.map_name, parameter.new_info);
     if (!packet) {
         // Costruisce un nuovo flow_id
-        flow_id = build_flowid(parameter->flow_type, __sync_fetch_and_add(parameter->counter, 1));
+        flow_id = build_flowid(parameter.flow_type, __sync_fetch_and_add(parameter.counter, 1));
 
         // Inizializza una nuova struttura value_packet
         struct value_packet new_value = {
@@ -377,21 +368,21 @@ int classify_packet_and_update_map(struct parameter *param) {
         };
 
         // Inserimento della nuova istanza rappresentante il flusso
-        ret = bpf_map_update_elem(parameter->map_name, parameter->new_info, &new_value, BPF_ANY);
+        ret = bpf_map_update_elem(parameter.map_name, parameter.new_info, &new_value, BPF_ANY);
         if (ret) {
             bpf_printk("Failed to insert new item in map_name\n");
             return TC_ACT_OK;
         }
 
         // Inserimento del nuovo flusso nella mappa dei flussi
-        ret = bpf_map_update_elem(parameter->map_flow, &(parameter->flow_id), parameter.new_info, BPF_ANY);
+        ret = bpf_map_update_elem(parameter.map_flow, &parameter.flow_id, parameter.new_info, BPF_ANY);
         if (ret) {
             bpf_printk("Failed to insert new item in map_flow\n");
             return TC_ACT_OK;
         }
 
         // Ricarica l'elemento aggiornato dalla mappa per ottenere l'indirizzo corretto del timer
-        packet = bpf_map_lookup_elem(parameter->map_name, parameter->new_info);
+        packet = bpf_map_lookup_elem(parameter.map_name, parameter.new_info);
         if (!packet) {
             bpf_printk("Failed to lookup newly inserted item in map_name\n");
             return TC_ACT_OK;
@@ -399,7 +390,7 @@ int classify_packet_and_update_map(struct parameter *param) {
 
         // Inizializzazione del timer
         if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) {
-            int rc = bpf_timer_init(&packet->timer, parameter->map_name, CLOCK_BOOTTIME);
+            int rc = bpf_timer_init(&packet->timer, parameter.map_name, CLOCK_BOOTTIME);
             if (rc) {
                 bpf_printk("Failed to initialize timer\n");
                 // Se fallisce, ripristina il flag di inizializzazione
@@ -409,7 +400,7 @@ int classify_packet_and_update_map(struct parameter *param) {
         }
     } else {
         // Gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra
-        update_window(packet, parameter->packet_length, bpf_ktime_get_ns(), true);
+        update_window(packet, parameter.packet_length, bpf_ktime_get_ns(), true);
     }
 
     return TC_ACT_OK;
@@ -627,14 +618,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
-            struct parameter parameter = {
-                .map_name = &map_ipv4,
-                .new_info = &new_info,
-                .flow_type = QUINTUPLA,
-                .map_flow = &ipv4_flow,
-                .packet_length = packet_length,
-                .counter = counter
-            };
+            parameter = {&map_ipv4, &new_info, QUINTUPLA, &ipv4_flow, packet_length, counter};
             //classify_packet_and_update_map(&map_ipv4, &new_info, QUINTUPLA, &ipv4_flow, packet_length, counter);
             classify_packet_and_update_map(parameter);
             break;

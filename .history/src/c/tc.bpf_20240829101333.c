@@ -368,21 +368,21 @@ int classify_packet_and_update_map(struct parameter parameter) {
         };
 
         // Inserimento della nuova istanza rappresentante il flusso
-        ret = bpf_map_update_elem(parameter.map_name, parameter.new_info, &new_value, BPF_ANY);
+        ret = bpf_map_update_elem(map_name, new_info, &new_value, BPF_ANY);
         if (ret) {
             bpf_printk("Failed to insert new item in map_name\n");
             return TC_ACT_OK;
         }
 
         // Inserimento del nuovo flusso nella mappa dei flussi
-        ret = bpf_map_update_elem(parameter.map_flow, &parameter.flow_id, parameter.new_info, BPF_ANY);
+        ret = bpf_map_update_elem(map_flow, &flow_id, new_info, BPF_ANY);
         if (ret) {
             bpf_printk("Failed to insert new item in map_flow\n");
             return TC_ACT_OK;
         }
 
         // Ricarica l'elemento aggiornato dalla mappa per ottenere l'indirizzo corretto del timer
-        packet = bpf_map_lookup_elem(parameter.map_name, parameter.new_info);
+        packet = bpf_map_lookup_elem(map_name, new_info);
         if (!packet) {
             bpf_printk("Failed to lookup newly inserted item in map_name\n");
             return TC_ACT_OK;
@@ -390,7 +390,7 @@ int classify_packet_and_update_map(struct parameter parameter) {
 
         // Inizializzazione del timer
         if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) {
-            int rc = bpf_timer_init(&packet->timer, parameter.map_name, CLOCK_BOOTTIME);
+            int rc = bpf_timer_init(&packet->timer, map_name, CLOCK_BOOTTIME);
             if (rc) {
                 bpf_printk("Failed to initialize timer\n");
                 // Se fallisce, ripristina il flag di inizializzazione
@@ -400,7 +400,7 @@ int classify_packet_and_update_map(struct parameter parameter) {
         }
     } else {
         // Gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra
-        update_window(packet, parameter.packet_length, bpf_ktime_get_ns(), true);
+        update_window(packet, packet_length, bpf_ktime_get_ns(), true);
     }
 
     return TC_ACT_OK;

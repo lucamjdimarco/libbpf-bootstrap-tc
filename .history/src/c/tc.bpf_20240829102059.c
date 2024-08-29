@@ -636,7 +636,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 .counter = counter
             };
             //classify_packet_and_update_map(&map_ipv4, &new_info, QUINTUPLA, &ipv4_flow, packet_length, counter);
-            classify_packet_and_update_map(&parameter);
+            classify_packet_and_update_map(parameter);
             break;
         }
         #endif

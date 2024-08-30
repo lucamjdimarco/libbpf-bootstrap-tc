@@ -181,16 +181,16 @@ prepare_ring_buffer_write(void *map, struct event_t **pevent)
 }
 
 
-// static __always_inline int swin_timer_init(void *map, struct bpf_timer *timer)
-// {
-// 	int rc;
+static __always_inline int swin_timer_init(void *map, struct bpf_timer *timer)
+{
+	int rc;
 
-// 	rc = bpf_timer_init(timer, map, CLOCK_BOOTTIME);
-// 	if (rc)
-// 		return rc;
+	rc = bpf_timer_init(timer, map, CLOCK_BOOTTIME);
+	if (rc)
+		return rc;
 
-// 	return bpf_timer_set_callback(timer, 0);
-// }
+	return bpf_timer_set_callback(timer, 0);
+}
 
 static __always_inline
 int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts, bool start_timer) {
@@ -599,13 +599,13 @@ int tc_ingress(struct __sk_buff *ctx)
 	void *data_end = (void *)(__u64)ctx->data_end;
 	void *data = (void *)(__u64)ctx->data;
 	struct ethhdr *eth;
-    //struct vlan_hdr *vlan;
+    struct vlan_hdr *vlan;
 
     struct parameter param = {};
     struct parameter *param_ptr = NULL;
 
     static __u64 *counter;
-    //__u64 flow_id = 0;
+    __u64 flow_id = 0;
     
     *counter = 0;
     __u64 packet_length = ctx->len;

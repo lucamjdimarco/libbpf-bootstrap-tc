@@ -20,6 +20,11 @@ enum FlowIdType {
         ONLY_DEST_ADDRESS = 2
 };
 
+struct parameter {
+    int flow_type;
+    __u64 packet_length;
+} __attribute__((packed));
+
 #ifdef CLASSIFY_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);

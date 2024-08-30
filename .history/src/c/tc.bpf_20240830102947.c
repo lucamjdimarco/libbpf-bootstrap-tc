@@ -361,12 +361,12 @@ int classify_packet_and_update_map(void *map_name, void *new_info, void *map_flo
     packet = bpf_map_lookup_elem(map_name, new_info);
     if (!packet) {
         // Costruisce un nuovo flow_id
-        flow_id = build_flowid(param->flow_type, __sync_fetch_and_add(counter, 1));
+        flow_id = build_flowid(param.flow_type, __sync_fetch_and_add(counter, 1));
 
         // Inizializza una nuova struttura value_packet
         struct value_packet new_value = {
             .counter = 1,
-            .bytes_counter = param->packet_length,
+            .bytes_counter = param.packet_length,
             .flow_id = flow_id,
             .tsw = 0,
             .initialized = 0,
@@ -405,7 +405,7 @@ int classify_packet_and_update_map(void *map_name, void *new_info, void *map_flo
         }
     } else {
         // Gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra
-        update_window(packet, param->packet_length, bpf_ktime_get_ns(), true);
+        update_window(packet, param.packet_length, bpf_ktime_get_ns(), true);
     }
 
     return TC_ACT_OK;

@@ -312,7 +312,7 @@ int classify_packet_and_update_map(struct param p) {
     if (!packet) {
         // Costruisce un nuovo flow_id
         //flow_id = build_flowid(flow_type, __sync_fetch_and_add(counter, 1));
-        flow_id = build_flowid(p.flow_type, __sync_fetch_and_add(p.counter, 1));
+        flow_id = build_flowid(p.flow_type, __sync_fetch_and_add((__u64 *)p.counter, 1));
 
         // Inizializza una nuova struttura value_packet
         struct value_packet new_value = {
@@ -548,8 +548,10 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct ethhdr *eth;
     //struct vlan_hdr *vlan;
 
-    static __u64 counter = 0;
+    static __u64 *counter;
     //__u64 flow_id = 0;
+    
+    *counter = 0;
 
 
     __u64 packet_length = ctx->len;
@@ -580,7 +582,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 .flow_type = QUINTUPLA,
                 .map_flow = &ipv4_flow,
                 .packet_length = packet_length,
-                .counter = &counter,
+                .counter = &counter
             };
 
             classify_packet_and_update_map(p);

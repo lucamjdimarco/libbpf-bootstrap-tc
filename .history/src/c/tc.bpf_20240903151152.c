@@ -580,7 +580,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 .flow_type = QUINTUPLA,
                 .map_flow = &ipv4_flow,
                 .packet_length = packet_length,
-                .counter = &counter,
+                .counter = &counter
             };
 
             classify_packet_and_update_map(p);

@@ -552,6 +552,7 @@ int tc_ingress(struct __sk_buff *ctx)
     //__u64 flow_id = 0;
 
 
+
     __u64 packet_length = ctx->len;
 
     // Controllo se il pacchetto è un pacchetto IP
@@ -580,7 +581,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 .flow_type = QUINTUPLA,
                 .map_flow = &ipv4_flow,
                 .packet_length = packet_length,
-                .counter = &counter,
+                .counter = &counter
             };
 
             classify_packet_and_update_map(p);

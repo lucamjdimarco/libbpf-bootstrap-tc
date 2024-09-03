@@ -251,116 +251,116 @@ update_win:
 //     return -EINVAL;
 }
 
-#define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
-    struct value_packet *packet = NULL; \
-    int ret; \
-    packet = bpf_map_lookup_elem(&map_name, &new_info); \
-    if (!packet) { \
-        flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
-        struct value_packet new_value = { \
-            .counter = 1, \
-            .bytes_counter = packet_length, \
-            .flow_id = flow_id, \
-            .tsw = 0, \
-            .initialized = 0, \
-        }; \
-        /* inserimento della nuova istanza rappresentante il flusso */ \
-        ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
-        if (ret) { \
-            bpf_printk("Failed to insert new item in map_name\n"); \
-            return TC_ACT_OK; \
-        } \
-        /* inserimento del nuovo flusso nella mappa dei flussi */ \
-        ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
-        if (ret) { \
-            bpf_printk("Failed to insert new item in map_flow\n"); \
-            return TC_ACT_OK; \
-        } \
-        /* Ricarica l'elemento aggiornato dalla mappa per ottenere l'indirizzo corretto del timer */ \
-        packet = bpf_map_lookup_elem(&map_name, &new_info); \
-        if (!packet) { \
-            bpf_printk("Failed to lookup newly inserted item in map_name\n"); \
-            return TC_ACT_OK; \
-        } \
-        if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) { \
-            int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
-            if (rc) { \
-                bpf_printk("Failed to initialize timer\n"); \
-                /* Se fallisce, ripristina il flag di inizializzazione */ \
-                __sync_bool_compare_and_swap(&packet->initialized, 1, 0); \
-                return TC_ACT_OK; \
-            } \
-        } \
-    } else { \
-        /* gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra */ \
-        update_window(packet, packet_length, bpf_ktime_get_ns(), true); \
-    } \
-} while (0)
+// #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
+//     struct value_packet *packet = NULL; \
+//     int ret; \
+//     packet = bpf_map_lookup_elem(&map_name, &new_info); \
+//     if (!packet) { \
+//         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
+//         struct value_packet new_value = { \
+//             .counter = 1, \
+//             .bytes_counter = packet_length, \
+//             .flow_id = flow_id, \
+//             .tsw = 0, \
+//             .initialized = 0, \
+//         }; \
+//         /* inserimento della nuova istanza rappresentante il flusso */ \
+//         ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
+//         if (ret) { \
+//             bpf_printk("Failed to insert new item in map_name\n"); \
+//             return TC_ACT_OK; \
+//         } \
+//         /* inserimento del nuovo flusso nella mappa dei flussi */ \
+//         ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
+//         if (ret) { \
+//             bpf_printk("Failed to insert new item in map_flow\n"); \
+//             return TC_ACT_OK; \
+//         } \
+//         /* Ricarica l'elemento aggiornato dalla mappa per ottenere l'indirizzo corretto del timer */ \
+//         packet = bpf_map_lookup_elem(&map_name, &new_info); \
+//         if (!packet) { \
+//             bpf_printk("Failed to lookup newly inserted item in map_name\n"); \
+//             return TC_ACT_OK; \
+//         } \
+//         if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) { \
+//             int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
+//             if (rc) { \
+//                 bpf_printk("Failed to initialize timer\n"); \
+//                 /* Se fallisce, ripristina il flag di inizializzazione */ \
+//                 __sync_bool_compare_and_swap(&packet->initialized, 1, 0); \
+//                 return TC_ACT_OK; \
+//             } \
+//         } \
+//     } else { \
+//         /* gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra */ \
+//         update_window(packet, packet_length, bpf_ktime_get_ns(), true); \
+//     } \
+// } while (0)
 
 
 //int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter)
-// static __always_inline 
-// int classify_packet_and_update_map(struct param p) {
-//     struct value_packet *packet = NULL;
-//     int ret;
-//     __u64 flow_id;
+static __always_inline 
+int classify_packet_and_update_map(struct param p) {
+    struct value_packet *packet = NULL;
+    int ret;
+    __u64 flow_id;
 
-//     //static __u64 *counter = 0;
+    //static __u64 *counter = 0;
 
-//     // Cerca il pacchetto nella mappa
-//     packet = bpf_map_lookup_elem(p.map_name, p.new_info);
-//     if (!packet) {
-//         // Costruisce un nuovo flow_id
-//         //flow_id = build_flowid(flow_type, __sync_fetch_and_add(counter, 1));
-//         flow_id = build_flowid(p.flow_type, __sync_fetch_and_add(p.counter, 1));
+    // Cerca il pacchetto nella mappa
+    packet = bpf_map_lookup_elem(p.map_name, p.new_info);
+    if (!packet) {
+        // Costruisce un nuovo flow_id
+        //flow_id = build_flowid(flow_type, __sync_fetch_and_add(counter, 1));
+        flow_id = build_flowid(p.flow_type, __sync_fetch_and_add(p.counter, 1));
 
-//         // Inizializza una nuova struttura value_packet
-//         struct value_packet new_value = {
-//             .counter = 1,
-//             .bytes_counter = p.packet_length,
-//             .flow_id = flow_id,
-//             .tsw = 0,
-//             .initialized = 0,
-//         };
+        // Inizializza una nuova struttura value_packet
+        struct value_packet new_value = {
+            .counter = 1,
+            .bytes_counter = p.packet_length,
+            .flow_id = flow_id,
+            .tsw = 0,
+            .initialized = 0,
+        };
 
-//         // Inserimento della nuova istanza rappresentante il flusso
-//         ret = bpf_map_update_elem(p.map_name, p.new_info, &new_value, BPF_ANY);
-//         if (ret) {
-//             bpf_printk("Failed to insert new item in map_name\n");
-//             return TC_ACT_OK;
-//         }
+        // Inserimento della nuova istanza rappresentante il flusso
+        ret = bpf_map_update_elem(p.map_name, p.new_info, &new_value, BPF_ANY);
+        if (ret) {
+            bpf_printk("Failed to insert new item in map_name\n");
+            return TC_ACT_OK;
+        }
 
-//         // Inserimento del nuovo flusso nella mappa dei flussi
-//         ret = bpf_map_update_elem(p.map_flow, &flow_id, p.new_info, BPF_ANY);
-//         if (ret) {
-//             bpf_printk("Failed to insert new item in map_flow\n");
-//             return TC_ACT_OK;
-//         }
+        // Inserimento del nuovo flusso nella mappa dei flussi
+        ret = bpf_map_update_elem(p.map_flow, &flow_id, p.new_info, BPF_ANY);
+        if (ret) {
+            bpf_printk("Failed to insert new item in map_flow\n");
+            return TC_ACT_OK;
+        }
 
-//         // Ricarica l'elemento aggiornato dalla mappa per ottenere l'indirizzo corretto del timer
-//         packet = bpf_map_lookup_elem(p.map_name, p.new_info);
-//         if (!packet) {
-//             bpf_printk("Failed to lookup newly inserted item in map_name\n");
-//             return TC_ACT_OK;
-//         }
+        // Ricarica l'elemento aggiornato dalla mappa per ottenere l'indirizzo corretto del timer
+        packet = bpf_map_lookup_elem(p.map_name, p.new_info);
+        if (!packet) {
+            bpf_printk("Failed to lookup newly inserted item in map_name\n");
+            return TC_ACT_OK;
+        }
 
-//         // Inizializzazione del timer
-//         if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) {
-//             int rc = bpf_timer_init(&packet->timer, p.map_name, CLOCK_BOOTTIME);
-//             if (rc) {
-//                 bpf_printk("Failed to initialize timer\n");
-//                 // Se fallisce, ripristina il flag di inizializzazione
-//                 __sync_bool_compare_and_swap(&packet->initialized, 1, 0);
-//                 return TC_ACT_OK;
-//             }
-//         }
-//     } else {
-//         // Gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra
-//         update_window(packet, p.packet_length, bpf_ktime_get_ns(), true);
-//     }
+        // Inizializzazione del timer
+        if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) {
+            int rc = bpf_timer_init(&packet->timer, p.map_name, CLOCK_BOOTTIME);
+            if (rc) {
+                bpf_printk("Failed to initialize timer\n");
+                // Se fallisce, ripristina il flag di inizializzazione
+                __sync_bool_compare_and_swap(&packet->initialized, 1, 0);
+                return TC_ACT_OK;
+            }
+        }
+    } else {
+        // Gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra
+        update_window(packet, p.packet_length, bpf_ktime_get_ns(), true);
+    }
 
-//     return TC_ACT_OK;
-// }
+    return TC_ACT_OK;
+}
 
 
 // classificazione dei pacchetti IPv4
@@ -583,8 +583,8 @@ int tc_ingress(struct __sk_buff *ctx)
                 .packet_length = packet_length,
                 .counter = &counter,
             };
-            classify_packet_and_update_map(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
-            //classify_packet_and_update_map(p);
+
+            classify_packet_and_update_map(p);
             break;
         }
         #endif

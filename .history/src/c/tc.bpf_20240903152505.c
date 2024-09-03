@@ -583,8 +583,8 @@ int tc_ingress(struct __sk_buff *ctx)
                 .packet_length = packet_length,
                 .counter = &counter,
             };
-            classify_packet_and_update_map(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
-            //classify_packet_and_update_map(p);
+
+            classify_packet_and_update_map(p);
             break;
         }
         #endif

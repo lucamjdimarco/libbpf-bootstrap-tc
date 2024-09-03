@@ -331,7 +331,7 @@ int classify_packet_and_update_map(struct param p) {
         }
 
         // Inserimento del nuovo flusso nella mappa dei flussi
-        ret = bpf_map_update_elem(p.map_flow, &flow_id, p.new_info, BPF_ANY);
+        ret = bpf_map_update_elem(p.map_flow, &flow_id, new_info, BPF_ANY);
         if (ret) {
             bpf_printk("Failed to insert new item in map_flow\n");
             return TC_ACT_OK;
@@ -356,7 +356,7 @@ int classify_packet_and_update_map(struct param p) {
         }
     } else {
         // Gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra
-        update_window(packet, p.packet_length, bpf_ktime_get_ns(), true);
+        update_window(packet, packet_length, bpf_ktime_get_ns(), true);
     }
 
     return TC_ACT_OK;

@@ -331,7 +331,7 @@ int classify_packet_and_update_map(struct param p) {
         }
 
         // Inserimento del nuovo flusso nella mappa dei flussi
-        ret = bpf_map_update_elem(p.map_flow, &flow_id, p.new_info, BPF_ANY);
+        ret = bpf_map_update_elem(p.map_flow, &flow_id, new_info, BPF_ANY);
         if (ret) {
             bpf_printk("Failed to insert new item in map_flow\n");
             return TC_ACT_OK;
@@ -346,7 +346,7 @@ int classify_packet_and_update_map(struct param p) {
 
         // Inizializzazione del timer
         if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) {
-            int rc = bpf_timer_init(&packet->timer, p.map_name, CLOCK_BOOTTIME);
+            int rc = bpf_timer_init(&packet->timer, map_name, CLOCK_BOOTTIME);
             if (rc) {
                 bpf_printk("Failed to initialize timer\n");
                 // Se fallisce, ripristina il flag di inizializzazione
@@ -356,7 +356,7 @@ int classify_packet_and_update_map(struct param p) {
         }
     } else {
         // Gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra
-        update_window(packet, p.packet_length, bpf_ktime_get_ns(), true);
+        update_window(packet, packet_length, bpf_ktime_get_ns(), true);
     }
 
     return TC_ACT_OK;

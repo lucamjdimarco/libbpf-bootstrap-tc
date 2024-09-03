@@ -288,15 +288,11 @@ update_win:
 //     } \
 // } while (0)
 
-
-//int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter)
 static __always_inline 
-int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length) {
+int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter) {
     struct value_packet *packet = NULL;
     int ret;
     __u64 flow_id;
-
-    static __u64 *counter = 0;
 
     // Cerca il pacchetto nella mappa
     packet = bpf_map_lookup_elem(map_name, new_info);
@@ -564,8 +560,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
-            //classify_packet_and_update_map(&map_ipv4, &new_info, QUINTUPLA, &ipv4_flow, packet_length, counter);
-            classify_packet_and_update_map(&map_ipv4, &new_info, QUINTUPLA, &ipv4_flow, packet_length);
+            classify_packet_and_update_map(&map_ipv4, &new_info, QUINTUPLA, &ipv4_flow, packet_length, counter);
             break;
         }
         #endif

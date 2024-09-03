@@ -288,15 +288,11 @@ update_win:
 //     } \
 // } while (0)
 
-
-//int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter)
 static __always_inline 
-int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length) {
+int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter) {
     struct value_packet *packet = NULL;
     int ret;
     __u64 flow_id;
-
-    static __u64 *counter = 0;
 
     // Cerca il pacchetto nella mappa
     packet = bpf_map_lookup_elem(map_name, new_info);

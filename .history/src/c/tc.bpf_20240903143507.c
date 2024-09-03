@@ -298,6 +298,8 @@ int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type
 
     static __u64 *counter = 0;
 
+
+
     // Cerca il pacchetto nella mappa
     packet = bpf_map_lookup_elem(map_name, new_info);
     if (!packet) {

@@ -21,10 +21,10 @@ enum FlowIdType {
 };
 
 struct param {
-    int map_name;
-    int new_info; 
+    void *map_name;
+    void *new_info; 
     int flow_type;
-    int map_flow; 
+    void *map_flow; 
     __u64 packet_length;
     __u64 *counter;
 };

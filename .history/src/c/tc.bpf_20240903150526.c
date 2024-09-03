@@ -300,7 +300,7 @@ update_win:
 
 //int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter)
 static __always_inline 
-int classify_packet_and_update_map(struct param p) {
+int classify_packet_and_update_map(struct param p, __u64 *counter) {
     struct value_packet *packet = NULL;
     int ret;
     __u64 flow_id;
@@ -312,7 +312,7 @@ int classify_packet_and_update_map(struct param p) {
     if (!packet) {
         // Costruisce un nuovo flow_id
         //flow_id = build_flowid(flow_type, __sync_fetch_and_add(counter, 1));
-        flow_id = build_flowid(p.flow_type, __sync_fetch_and_add((__u64 *)p.counter, 1));
+        flow_id = build_flowid(p.flow_type, __sync_fetch_and_add(counter, 1));
 
         // Inizializza una nuova struttura value_packet
         struct value_packet new_value = {
@@ -582,11 +582,10 @@ int tc_ingress(struct __sk_buff *ctx)
                 .flow_type = QUINTUPLA,
                 .map_flow = &ipv4_flow,
                 .packet_length = packet_length,
+                .counter = 0,
             };
 
-            *p.counter = 0;
-
-            classify_packet_and_update_map(p);
+            classify_packet_and_update_map(p, counter);
             break;
         }
         #endif

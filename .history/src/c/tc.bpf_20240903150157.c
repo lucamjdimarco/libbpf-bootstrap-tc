@@ -311,7 +311,7 @@ int classify_packet_and_update_map(struct param p, __u64 *counter) {
     if (!packet) {
         // Costruisce un nuovo flow_id
         //flow_id = build_flowid(flow_type, __sync_fetch_and_add(counter, 1));
-        flow_id = build_flowid(p.flow_type, __sync_fetch_and_add(counter, 1));
+        flow_id = build_flowid(p.flow_type, __sync_fetch_and_add(p.counter, 1));
 
         // Inizializza una nuova struttura value_packet
         struct value_packet new_value = {

@@ -288,6 +288,7 @@ update_win:
 //     } \
 // } while (0)
 
+static __always_inline 
 int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter) {
     struct value_packet *packet = NULL;
     int ret;

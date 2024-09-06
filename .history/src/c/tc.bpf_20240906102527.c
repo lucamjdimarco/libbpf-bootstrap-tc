@@ -287,6 +287,7 @@ update_win:
     if (rc)
         return -EINVAL;
 
+send_rbuf:
     //Riserva spazio nel rbuf per poter poi aggiungere l'evento secondo la logica commit/abort
     rc = prepare_ring_buffer_write(&rbuf_events, &event);
     if (rc)
@@ -297,6 +298,9 @@ update_win:
     bpf_ringbuf_submit(event, 0);
 
     return 0;
+
+err:
+    return -EINVAL;
 }
 
 static __always_inline void handle_packet_event(struct value_packet *packet, __u64 flow_id, __u64 packet_length) {

@@ -297,6 +297,9 @@ update_win:
     bpf_ringbuf_submit(event, 0);
 
     return 0;
+
+err:
+    return -EINVAL;
 }
 
 static __always_inline void handle_packet_event(struct value_packet *packet, __u64 flow_id, __u64 packet_length) {

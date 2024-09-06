@@ -300,7 +300,6 @@ update_win:
 //     } \
 // } while (0)
 
-static __always_inline
 int classify_packet_and_update_map(struct classify_packet_args *args) {
     struct value_packet *packet = NULL;
     int ret;

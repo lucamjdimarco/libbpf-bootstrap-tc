@@ -14,6 +14,55 @@
 #define SWIN_SCALER 10000000000ul /* 10 seconds in nanoseconds */
 #define SWIN_TIMER_TIMEOUT	(SWIN_SCALER << 1ul)
 
+typedef __u8  __attribute__((__may_alias__))  __u8_alias_t;
+typedef __u16 __attribute__((__may_alias__)) __u16_alias_t;
+typedef __u32 __attribute__((__may_alias__)) __u32_alias_t;
+typedef __u64 __attribute__((__may_alias__)) __u64_alias_t;
+
+static __always_inline void __read_once_size(const volatile void *p, void *res, int size)
+{
+	switch (size) {
+	case 1: *(__u8_alias_t  *) res = *(volatile __u8_alias_t  *) p; break;
+	case 2: *(__u16_alias_t *) res = *(volatile __u16_alias_t *) p; break;
+	case 4: *(__u32_alias_t *) res = *(volatile __u32_alias_t *) p; break;
+	case 8: *(__u64_alias_t *) res = *(volatile __u64_alias_t *) p; break;
+	default:
+		barrier();
+		__builtin_memcpy((void *)res, (const void *)p, size);
+		barrier();
+	}
+}
+
+#define READ_ONCE(x)					\
+({							\
+	union { typeof(x) __val; char __c[1]; } __u =	\
+		{ .__c = { 0 } };			\
+	__read_once_size(&(x), __u.__c, sizeof(x));	\
+	__u.__val;					\
+})
+
+static __always_inline void __write_once_size(volatile void *p, void *res, int size)
+{
+	switch (size) {
+	case 1: *(volatile  __u8_alias_t *) p = *(__u8_alias_t  *) res; break;
+	case 2: *(volatile __u16_alias_t *) p = *(__u16_alias_t *) res; break;
+	case 4: *(volatile __u32_alias_t *) p = *(__u32_alias_t *) res; break;
+	case 8: *(volatile __u64_alias_t *) p = *(__u64_alias_t *) res; break;
+	default:
+		barrier();
+		__builtin_memcpy((void *)p, (const void *)res, size);
+		barrier();
+	}
+}
+
+#define WRITE_ONCE(x, val)				\
+({							\
+	union { typeof(x) __val; char __c[1]; } __u =	\
+		{ .__val = (val) }; 			\
+	__write_once_size(&(x), __u.__c, sizeof(x));	\
+	__u.__val;					\
+})
+
 #ifdef CLASSIFY_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
@@ -177,6 +226,18 @@ prepare_ring_buffer_write(void *map, struct event_t **pevent)
 	return 0;
 }
 
+
+static __always_inline int swin_timer_init(void *map, struct bpf_timer *timer)
+{
+	int rc;
+
+	rc = bpf_timer_init(timer, map, CLOCK_BOOTTIME);
+	if (rc)
+		return rc;
+
+	return bpf_timer_set_callback(timer, 0);
+}
+
 static __always_inline
 int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts, bool start_timer) {
 
@@ -238,6 +299,19 @@ update_win:
     return 0;
 }
 
+static __always_inline void handle_packet_event(struct value_packet *packet, __u64 flow_id, __u64 packet_length) {
+    // if (packet->counter < MAX_COUNTER) {
+    //     bpf_spin_lock(&packet->lock);
+    //     packet->counter += 1;
+    //     packet->bytes_counter += packet_length;
+    //     bpf_spin_unlock(&packet->lock);
+    // } else {
+    //     bpf_printk("Counter is at maximum value\n");
+    // }
+
+    update_window(packet, packet_length, bpf_ktime_get_ns(), true);
+}
+
 #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
     struct value_packet *packet = NULL; \
     int ret; \
@@ -269,6 +343,12 @@ update_win:
             bpf_printk("Failed to lookup newly inserted item in map_name\n"); \
             return TC_ACT_OK; \
         } \
+        /* Inizializzazione del timer */ \
+        /*int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME);*/ \
+        /*if (rc) { */\
+            /* bpf_printk("Failed to initialize timer\n"); */ \
+            /* return TC_ACT_OK; */\
+        /*} */\
         /* Inizializzazione del timer in modo atomico */ \
         if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) { \
             int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \

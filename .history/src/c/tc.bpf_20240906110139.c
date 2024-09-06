@@ -599,16 +599,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
-            //CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
-            struct classify_packet_args args = {
-                .map_name = &map_name,
-                .new_info = &new_info,
-                .flow_type = flow_type,
-                .map_flow = &map_flow,
-                .packet_length = packet_length,
-                .counter = &counter
-            };
-            classify_packet_and_update_map(&args);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
             break;
         }
         #endif

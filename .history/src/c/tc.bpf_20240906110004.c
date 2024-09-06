@@ -20,15 +20,6 @@ enum FlowIdType {
         ONLY_DEST_ADDRESS = 2
 };
 
-struct classify_packet_args {
-    struct bpf_map_def *map_name;
-    void *new_info;
-    int flow_type;
-    struct bpf_map_def *map_flow;
-    int packet_length;
-    int *counter;
-};
-
 #ifdef CLASSIFY_IPV4
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
@@ -300,65 +291,6 @@ update_win:
 //     } \
 // } while (0)
 
-int classify_packet_and_update_map(struct classify_packet_args *args) {
-    struct value_packet *packet = NULL;
-    int ret;
-
-    // Cerca l'elemento nella mappa
-    packet = bpf_map_lookup_elem(args->map_name, args->new_info);
-    
-    if (!packet) {
-        // Costruisci un nuovo flow_id
-        int flow_id = build_flowid(args->flow_type, __sync_fetch_and_add(args->counter, 1));
-
-        // Crea un nuovo valore per il pacchetto
-        struct value_packet new_value = {
-            .counter = 1,
-            .bytes_counter = args->packet_length,
-            .flow_id = flow_id,
-            .tsw = 0,
-            .initialized = 0,
-        };
-
-        // Inserisci il nuovo valore nella mappa
-        ret = bpf_map_update_elem(args->map_name, args->new_info, &new_value, BPF_ANY);
-        if (ret) {
-            bpf_printk("Failed to insert new item in map_name\n");
-            return TC_ACT_OK;
-        }
-
-        // Aggiorna la mappa dei flussi
-        ret = bpf_map_update_elem(args->map_flow, &flow_id, args->new_info, BPF_ANY);
-        if (ret) {
-            bpf_printk("Failed to insert new item in map_flow\n");
-            return TC_ACT_OK;
-        }
-
-        // Ricarica l'elemento aggiornato dalla mappa
-        packet = bpf_map_lookup_elem(args->map_name, args->new_info);
-        if (!packet) {
-            bpf_printk("Failed to lookup newly inserted item in map_name\n");
-            return TC_ACT_OK;
-        }
-
-        // Inizializza il timer in modo atomico
-        if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) {
-            int rc = bpf_timer_init(&packet->timer, args->map_name, CLOCK_BOOTTIME);
-            if (rc) {
-                bpf_printk("Failed to initialize timer\n");
-                // Se fallisce, ripristina il flag di inizializzazione
-                __sync_bool_compare_and_swap(&packet->initialized, 1, 0);
-                return TC_ACT_OK;
-            }
-        }
-    } else {
-        // Aggiorna i contatori nella finestra temporale
-        update_window(packet, args->packet_length, bpf_ktime_get_ns(), true);
-    }
-
-    return TC_ACT_OK;
-}
-
 
 // classificazione dei pacchetti IPv4
 #ifdef CLASSIFY_IPV4
@@ -599,16 +531,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
-            //CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
-            struct classify_packet_args args = {
-                .map_name = &map_name,
-                .new_info = &new_info,
-                .flow_type = flow_type,
-                .map_flow = &map_flow,
-                .packet_length = packet_length,
-                .counter = &counter
-            };
-            classify_packet_and_update_map(&args);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
             break;
         }
         #endif

@@ -20,14 +20,14 @@ enum FlowIdType {
         ONLY_DEST_ADDRESS = 2
 };
 
-// struct classify_packet_args {
-//     void *map_name;
-//     void *new_info;
-//     int flow_type;
-//     void *map_flow;
-//     int packet_length;
-//     __u64 *counter;
-// };
+struct classify_packet_args {
+    void *map_name;
+    void *new_info;
+    int flow_type;
+    void *map_flow;
+    int packet_length;
+    __u64 *counter;
+};
 
 #ifdef CLASSIFY_IPV4
 struct {

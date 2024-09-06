@@ -282,13 +282,6 @@ update_win:
             bpf_printk("Failed to lookup newly inserted item in map_name\n"); \
             return TC_ACT_OK; \
         } \
-        /* Inizializzazione del timer */ \
-        /*int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME);*/ \
-        /*if (rc) { */\
-            /* bpf_printk("Failed to initialize timer\n"); */ \
-            /* return TC_ACT_OK; */\
-        /*} */\
-        /* Inizializzazione del timer in modo atomico */ \
         if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) { \
             int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
             if (rc) { \
@@ -303,8 +296,6 @@ update_win:
         update_window(packet, packet_length, bpf_ktime_get_ns(), true); \
     } \
 } while (0)
-
-
 
 
 //int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter)

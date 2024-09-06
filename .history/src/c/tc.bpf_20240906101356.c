@@ -300,11 +300,11 @@ update_win:
         } \
     } else { \
         /* gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra */ \
-        update_window(packet, packet_length, bpf_ktime_get_ns(), true); \
+        handle_packet_event(packet, flow_id, packet_length); \
     } \
 } while (0)
 
-
+update_window(packet, packet_length, bpf_ktime_get_ns(), true); \
 
 
 //int classify_packet_and_update_map(void *map_name, void *new_info, int flow_type, void *map_flow, __u64 packet_length, __u64 *counter)

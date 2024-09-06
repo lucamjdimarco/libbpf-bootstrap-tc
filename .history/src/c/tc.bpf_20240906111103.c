@@ -604,7 +604,7 @@ int tc_ingress(struct __sk_buff *ctx)
                 .map_name = map_ipv4,
                 .new_info = new_info,
                 .flow_type = QUINTUPLA,
-                .map_flow = ipv4_flow,
+                .map_flow = &ipv4_flow,
                 .packet_length = packet_length,
                 .counter = &counter
             };

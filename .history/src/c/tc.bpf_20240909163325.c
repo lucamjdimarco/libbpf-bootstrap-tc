@@ -312,9 +312,9 @@ int classify_packet_and_update_map(struct classify_packet_args *args) {
     
     if (!packet) {
         // Costruisci un nuovo flow_id
-        flow_id = build_flowid(args->flow_type, __sync_fetch_and_add(args->counter, 1));
+        int flow_id = build_flowid(args->flow_type, __sync_fetch_and_add(args->counter, 1));
 
-        if(flow_id == NULL) {
+        if(flow_id == -1) {
             bpf_printk("Failed to build flow_id\n");
             return TC_ACT_OK;
         }

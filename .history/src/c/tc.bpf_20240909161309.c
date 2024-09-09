@@ -312,8 +312,6 @@ int classify_packet_and_update_map(struct classify_packet_args *args) {
         // Costruisci un nuovo flow_id
         int flow_id = build_flowid(args->flow_type, __sync_fetch_and_add(args->counter, 1));
 
-        bpf_printk("Flow ID: %d\n", flow_id);
-
         // Crea un nuovo valore per il pacchetto
         struct value_packet new_value = {
             .counter = 1,

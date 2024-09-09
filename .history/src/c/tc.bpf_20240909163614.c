@@ -616,13 +616,14 @@ int tc_ingress(struct __sk_buff *ctx)
         .protocol = 0,
         .padding = {0}
     };
+    }
 
 
     // Process IPv4 and IPv6 packets
     switch (eth_proto) {
         #ifdef CLASSIFY_IPV4
         case bpf_htons(ETH_P_IP): {
-            //struct packet_info new_info = {};
+            struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
             //CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
             // struct classify_packet_args args = {

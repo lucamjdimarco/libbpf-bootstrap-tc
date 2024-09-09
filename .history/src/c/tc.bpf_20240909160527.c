@@ -25,8 +25,8 @@ struct classify_packet_args {
     void *new_info;
     void *map_flow;
     __u64 *counter;
-    __u32 flow_type;
-    __u32 packet_length;
+    int flow_type;
+    __u64 packet_length;
 };
 
 #ifdef CLASSIFY_IPV4

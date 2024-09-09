@@ -300,7 +300,7 @@ update_win:
 //     } \
 // } while (0)
 
-
+static __always_inline
 int classify_packet_and_update_map(struct classify_packet_args *args) {
     struct value_packet *packet = NULL;
     int ret;
@@ -554,7 +554,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
     //long ret;
     /*__u64 packet_length = ctx->data_end - ctx->data;*/
-    __u32 packet_length = ctx->len;
+    __u64 packet_length = ctx->len;
 
 
     // Controllo se il pacchetto è un pacchetto IP

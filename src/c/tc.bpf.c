@@ -305,7 +305,7 @@ int classify_packet_and_update_map(struct classify_packet_args *args) {
     struct value_packet *packet = NULL;
     int ret;
 
-    int flow_id = -1;
+    __u64 flow_id = -1;
 
     // Cerca l'elemento nella mappa
     packet = bpf_map_lookup_elem(args->map_name, args->new_info);
@@ -556,7 +556,7 @@ int tc_ingress(struct __sk_buff *ctx)
     //struct ipv6hdr *ip6;
 
     static __u64 counter = 0;
-    __u64 flow_id = 0;
+    //__u64 flow_id = 0;
 
 
     //long ret;

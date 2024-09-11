@@ -446,13 +446,22 @@ int main(int argc, char **argv)
 	while (!exiting) {
 		if (strcmp(map_type, "ipv4") == 0) {
 			#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-			// Polling ring buffer per processare i dati
-			err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
-			if (err < 0) {
+			// // Polling ring buffer per processare i dati
+			// err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
+			// if (err < 0) {
+			// 	fprintf(stderr, "Error polling ring buffer: %d\n", err);
+			// 	goto cleanup;
+			// }
+			// process_ipv4_map(map_fd, map_type);
+			while ((err = ring_buffer__poll(rb, 5000 /* timeout, ms */)) == -EINTR) {
+				// Retry the polling if interrupted by a signal
+				fprintf(stderr, "Polling interrupted by signal, retrying...\n");
+			}
+
+			if (err < 0 && err != -EINTR) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
 			}
-			process_ipv4_map(map_fd, map_type);
 			#endif
 		} else if (strcmp(map_type, "ipv6") == 0) {
 			#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)

@@ -450,7 +450,8 @@ int main(int argc, char **argv)
 			err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
-				goto cleanup;
+				//goto cleanup;
+				goto print_map;
 			}
 			process_ipv4_map(map_fd, map_type); 
 			#endif
@@ -459,7 +460,8 @@ int main(int argc, char **argv)
 			err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
-				goto cleanup;
+				//goto cleanup;
+				goto print_map;
 			}
 			process_ipv6_map(map_fd, map_type);
 			#endif
@@ -471,6 +473,7 @@ int main(int argc, char **argv)
 		sleep(3);
 	}
 
+print_map:
 	printf("Printing the flow map: \n");
 	if (strcmp(map_type, "ipv4") == 0) {
 		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)

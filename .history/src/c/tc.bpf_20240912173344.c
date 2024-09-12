@@ -568,14 +568,14 @@ int tc_ingress(struct __sk_buff *ctx)
         .packet_length = packet_length
     };
 
-    // struct packet_info new_info = {
-    //     .src_ip = 0,
-    //     .dst_ip = 0,
-    //     .src_port = 0,
-    //     .dst_port = 0,
-    //     .protocol = 0,
-    //     .padding = {0}
-    // };
+    struct packet_info new_info = {
+        .src_ip = 0,
+        .dst_ip = 0,
+        .src_port = 0,
+        .dst_port = 0,
+        .protocol = 0,
+        .padding = {0}
+    };
 
 
     // Controllo se il pacchetto è un pacchetto IP
@@ -618,7 +618,7 @@ int tc_ingress(struct __sk_buff *ctx)
     switch (eth_proto) {
         #ifdef CLASSIFY_IPV4
         case bpf_htons(ETH_P_IP): {
-            struct packet_info new_info = {};
+            //struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
             //CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
             // struct classify_packet_args args = {
@@ -642,12 +642,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
             classify_ONLY_ADDRESS_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
-            //CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_addr_ipv4, new_info_only_addr_ipv4, ONLY_ADDRESS, ipv4_flow);
-            args.map_name = &map_only_addr_ipv4;
-            args.new_info = &new_info_only_addr_ipv4;
-            args.map_flow = &ipv4_flow;
-            args.flow_type = ONLY_ADDRESS;
-            classify_packet_and_update_map(&args);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_addr_ipv4, new_info_only_addr_ipv4, ONLY_ADDRESS, ipv4_flow);
             break;
         }
         #endif
@@ -656,12 +651,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IP): {
             struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
             classify_ONLY_DEST_ADDRESS_ipv4_packet(&new_info_only_dest_ipv4, data_end, data);
-            //CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv4, new_info_only_dest_ipv4, ONLY_DEST_ADDRESS, ipv4_flow);
-            args.map_name = &map_only_dest_ipv4;
-            args.new_info = &new_info_only_dest_ipv4;
-            args.map_flow = &ipv4_flow;
-            args.flow_type = ONLY_DEST_ADDRESS;
-            classify_packet_and_update_map(&args);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv4, new_info_only_dest_ipv4, ONLY_DEST_ADDRESS, ipv4_flow);
             break;
         }
         #endif
@@ -670,12 +660,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IPV6): {
             struct packet_info_ipv6 new_info_ipv6 = {};
             classify_ipv6_packet(&new_info_ipv6, data_end, data);
-            //CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv6, new_info_ipv6, QUINTUPLA, ipv6_flow);
-            args.map_name = &map_ipv6;
-            args.new_info = &new_info_ipv6;
-            args.map_flow = &ipv6_flow;
-            args.flow_type = QUINTUPLA;
-            classify_packet_and_update_map(&args);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv6, new_info_ipv6, QUINTUPLA, ipv6_flow);
             break;
         }
         #endif
@@ -684,12 +669,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IPV6): {
             struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
             classify_ONLY_ADDRESS_ipv6_packet(&new_info_only_addr_ipv6, data_end, data);
-            //CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_addr_ipv6, new_info_only_addr_ipv6, ONLY_ADDRESS, ipv6_flow);
-            args.map_name = &map_only_addr_ipv6;
-            args.new_info = &new_info_only_addr_ipv6;
-            args.map_flow = &ipv6_flow;
-            args.flow_type = ONLY_ADDRESS;
-            classify_packet_and_update_map(&args);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_addr_ipv6, new_info_only_addr_ipv6, ONLY_ADDRESS, ipv6_flow);
             break;
         }
         #endif
@@ -699,12 +679,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IPV6): {
             struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
             classify_ONLY_DEST_ADDRESS_ipv6_packet(&new_info_only_dest_ipv6, data_end, data);
-            //CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv6, new_info_only_dest_ipv6, ONLY_DEST_ADDRESS, ipv6_flow);
-            args.map_name = &map_only_dest_ipv6;
-            args.new_info = &new_info_only_dest_ipv6;
-            args.map_flow = &ipv6_flow;
-            args.flow_type = ONLY_DEST_ADDRESS;
-            classify_packet_and_update_map(&args);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv6, new_info_only_dest_ipv6, ONLY_DEST_ADDRESS, ipv6_flow);
             break;
         }
         #endif

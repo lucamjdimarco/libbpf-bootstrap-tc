@@ -699,12 +699,7 @@ int tc_ingress(struct __sk_buff *ctx)
         case bpf_htons(ETH_P_IPV6): {
             struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
             classify_ONLY_DEST_ADDRESS_ipv6_packet(&new_info_only_dest_ipv6, data_end, data);
-            //CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv6, new_info_only_dest_ipv6, ONLY_DEST_ADDRESS, ipv6_flow);
-            args.map_name = &map_only_dest_ipv6;
-            args.new_info = &new_info_only_dest_ipv6;
-            args.map_flow = &ipv6_flow;
-            args.flow_type = ONLY_DEST_ADDRESS;
-            classify_packet_and_update_map(&args);
+            CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv6, new_info_only_dest_ipv6, ONLY_DEST_ADDRESS, ipv6_flow);
             break;
         }
         #endif

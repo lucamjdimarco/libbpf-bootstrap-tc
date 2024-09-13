@@ -198,7 +198,6 @@ int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts, bo
     const __u64 cur_tsw = ts / SWIN_SCALER;
     struct event_t *event = NULL;
     __u32 counter_val;
-
     int rc;
 
     bpf_spin_lock(&packet->lock);
@@ -371,7 +370,9 @@ int classify_packet_and_update_map(struct classify_packet_args *args) {
 // classificazione dei pacchetti IPv4
 #ifdef CLASSIFY_IPV4
 static __always_inline int classify_ipv4_packet(struct packet_info *info, void *data_end, void *data) {
+
     struct iphdr *ip = (struct iphdr *)data;
+
     if ((void *)(ip + 1) > data_end) {
         bpf_printk("IPv4 header is not complete\n");
         return TC_ACT_OK;
@@ -429,7 +430,9 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 // classificazione dei pacchetti IPv6
 #ifdef CLASSIFY_IPV6
 static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, void *data_end, void *data) {
+
     struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
+    
     if ((void *)(ip6 + 1) > data_end) {
         bpf_printk("IPv6 header is not complete\n");
         return TC_ACT_OK;

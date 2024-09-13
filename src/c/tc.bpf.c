@@ -438,9 +438,28 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
         return TC_ACT_OK;
     }
 
+    __u8 temp_src_ip[16];
+    __u8 temp_dst_ip[16];
+
+    memcpy(temp_src_ip, ip6->saddr.in6_u.u6_addr8, 16);
+    memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
+
+    // Controllo se l'indirizzo sorgente o destinazione è link-local (fe80::/10)
+    if (temp_src_ip[0] == 0xfe && temp_src_ip[1] == 0x80) {
+        bpf_printk("Packet with link-local source address fe80::/10\n");
+        return TC_ACT_OK;
+    }
+
+    if (temp_dst_ip[0] == 0xfe && temp_dst_ip[1] == 0x80) {
+        bpf_printk("Packet with link-local destination address fe80::/10\n");
+        return TC_ACT_OK;
+    }
+
     memcpy(&info->src_ip, ip6->saddr.in6_u.u6_addr8, 16);
     memcpy(&info->dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
     info->protocol = ip6->nexthdr;
+
+    
 
     __u8 protocol = ip6->nexthdr;
 

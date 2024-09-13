@@ -445,13 +445,13 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
     memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
 
     // Controllo se l'indirizzo sorgente o destinazione è link-local (fe80::/10)
-    if (temp_src_ip[0] == 0xfe && temp_src_ip[1] == 0x80) {
-        bpf_printk("Packet with link-local source address fe80::/10\n");
+    if ((temp_src_ip[0] == 0xfe && temp_src_ip[1] == 0x80)||(temp_src_ip[0] == 0x00 && temp_src_ip[1] == 0x00)) {
+        bpf_printk("Packet with link-local source address fe80::/10 or broadcast address 0000::\n");
         return TC_ACT_OK;
     }
 
-    if (temp_dst_ip[0] == 0xfe && temp_dst_ip[1] == 0x80) {
-        bpf_printk("Packet with link-local destination address fe80::/10\n");
+    if ((temp_dst_ip[0] == 0xfe && temp_dst_ip[1] == 0x80)||(temp_dst_ip[0] == 0x00 && temp_dst_ip[1] == 0x00)) {   
+        bpf_printk("Packet with link-local destination address fe80::/10 or broadcast address 0000::\n");
         return TC_ACT_OK;
     }
 

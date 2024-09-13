@@ -458,7 +458,7 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
     // Controllo se l'indirizzo sorgente o destinazione è unspecified (::/128)
     __u8 zero_addr[16] = {0}; // Indirizzo "unspecified" è tutto zero
     // bpf_printk("Zero address: %u\n", zero_addr[0]);
-    // bpf_printk("Temp source address: %u\n", temp_src_ip[0]);
+    bpf_printk("Temp source address: %u\n", temp_src_ip[0]);
     // if (memcmp(temp_src_ip, zero_addr, 16) == 0) {
     //     //TODO: non entra mai in questo if
     //     bpf_printk("Packet with unspecified source address ::\n");

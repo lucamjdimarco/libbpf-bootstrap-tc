@@ -14,8 +14,6 @@
 #define SWIN_SCALER 10000000000ul /* 10 seconds in nanoseconds */
 #define SWIN_TIMER_TIMEOUT	(SWIN_SCALER << 1ul)
 
-__u64 counter = 0;
-
 enum FlowIdType {
         QUINTUPLA = 0,
         ONLY_ADDRESS = 1,
@@ -230,6 +228,7 @@ update_win:
     bpf_spin_unlock(&packet->lock);
 
     if (!start_timer)
+        //goto update;
         return 0;
 
     /* Avvia il timer associato a questa finestra */
@@ -596,9 +595,12 @@ int tc_ingress(struct __sk_buff *ctx)
 	void *data_end = (void *)(__u64)ctx->data_end;
 	void *data = (void *)(__u64)ctx->data;
 	struct ethhdr *eth;
+	//struct iphdr *ip;
     struct vlan_hdr *vlan;
+    //struct ipv6hdr *ip6;
 
-    //static __u64 counter = 0;
+    static __u64 counter = 0;
+    //__u64 flow_id = 0;
     __u32 packet_length = ctx->len;
 
     struct classify_packet_args args = {
@@ -609,6 +611,16 @@ int tc_ingress(struct __sk_buff *ctx)
         .flow_type = 0,
         .packet_length = packet_length
     };
+
+    // struct packet_info new_info = {
+    //     .src_ip = 0,
+    //     .dst_ip = 0,
+    //     .src_port = 0,
+    //     .dst_port = 0,
+    //     .protocol = 0,
+    //     .padding = {0}
+    // };
+
 
     // Controllo se il pacchetto è un pacchetto IP
 	if (ctx->protocol != bpf_htons(ETH_P_IP) && ctx->protocol != bpf_htons(ETH_P_IPV6)) {
@@ -653,6 +665,14 @@ int tc_ingress(struct __sk_buff *ctx)
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
             //CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
+            // struct classify_packet_args args = {
+            //     .map_name = &map_ipv4,
+            //     .new_info = &new_info,
+            //     .flow_type = QUINTUPLA,
+            //     .map_flow = &ipv4_flow,
+            //     .packet_length = packet_length,
+            //     .counter = &counter
+            // };
             args.map_name = &map_ipv4;
             args.new_info = &new_info;
             args.map_flow = &ipv4_flow;

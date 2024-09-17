@@ -14,8 +14,6 @@
 #define SWIN_SCALER 10000000000ul /* 10 seconds in nanoseconds */
 #define SWIN_TIMER_TIMEOUT	(SWIN_SCALER << 1ul)
 
-__u64 counter = 0;
-
 enum FlowIdType {
         QUINTUPLA = 0,
         ONLY_ADDRESS = 1,
@@ -597,8 +595,10 @@ int tc_ingress(struct __sk_buff *ctx)
 	void *data = (void *)(__u64)ctx->data;
 	struct ethhdr *eth;
     struct vlan_hdr *vlan;
+    //struct ipv6hdr *ip6;
 
     //static __u64 counter = 0;
+    //__u64 flow_id = 0;
     __u32 packet_length = ctx->len;
 
     struct classify_packet_args args = {

@@ -200,6 +200,7 @@ int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts, bo
     const __u64 cur_tsw = ts / SWIN_SCALER;
     struct event_t *event = NULL;
     __u32 counter_val;
+
     int rc;
 
     bpf_spin_lock(&packet->lock);
@@ -207,6 +208,9 @@ int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts, bo
         packet->counter += 1;
         packet->bytes_counter += packet_length;
     }
+    // } else {
+    //     bpf_printk("Counter is at maximum value\n");
+    // }
 
     __u64 tsw = packet->tsw;
     __u32 *counter = &packet->counter;
@@ -226,10 +230,12 @@ int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts, bo
     goto update_win;
 
 update_win:
+    //bpf_spin_lock(&packet->lock);
     packet->tsw = cur_tsw;
     bpf_spin_unlock(&packet->lock);
 
     if (!start_timer)
+        //goto update;
         return 0;
 
     /* Avvia il timer associato a questa finestra */
@@ -367,9 +373,7 @@ int classify_packet_and_update_map(struct classify_packet_args *args) {
 // classificazione dei pacchetti IPv4
 #ifdef CLASSIFY_IPV4
 static __always_inline int classify_ipv4_packet(struct packet_info *info, void *data_end, void *data) {
-
     struct iphdr *ip = (struct iphdr *)data;
-
     if ((void *)(ip + 1) > data_end) {
         bpf_printk("IPv4 header is not complete\n");
         return TC_ACT_OK;
@@ -427,62 +431,15 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 // classificazione dei pacchetti IPv6
 #ifdef CLASSIFY_IPV6
 static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, void *data_end, void *data) {
-
     struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
-    
     if ((void *)(ip6 + 1) > data_end) {
         bpf_printk("IPv6 header is not complete\n");
-        return TC_ACT_OK;
-    }
-
-    __u8 temp_src_ip[16];
-    __u8 temp_dst_ip[16];
-
-    memcpy(temp_src_ip, ip6->saddr.in6_u.u6_addr8, 16);
-    memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
-
-    // Controllo se l'indirizzo sorgente o destinazione è link-local (fe80::/10)
-    if (temp_src_ip[0] == 0xfe && temp_src_ip[1] == 0x80) {
-        bpf_printk("Packet with link-local source address fe80::/10\n");
-        return TC_ACT_OK;
-    }
-
-    if (temp_dst_ip[0] == 0xfe && temp_dst_ip[1] == 0x80) {
-        bpf_printk("Packet with link-local destination address fe80::/10\n");
-        return TC_ACT_OK;
-    }
-
-    // Controllo se l'indirizzo sorgente o destinazione è unspecified (::/128)
-    __u8 zero_addr[16] = {0}; // Indirizzo "unspecified" è tutto zero
-    // bpf_printk("Zero address: %u\n", zero_addr[0]);
-    bpf_printk("Temp source address: %u\n", temp_src_ip[0]);
-    // if (memcmp(temp_src_ip, zero_addr, 16) == 0) {
-    //     //TODO: non entra mai in questo if
-    //     bpf_printk("Packet with unspecified source address ::\n");
-    //     return TC_ACT_OK;
-    // }
-
-    // if (memcmp(temp_dst_ip, zero_addr, 16) == 0) {
-    //     bpf_printk("Packet with unspecified destination address ::\n");
-    //     return TC_ACT_OK;
-    // }
-
-    if (temp_src_ip[0] == 0x00) {
-        bpf_printk("Packet with unspecified source address ::\n");
-        
-        return TC_ACT_OK;
-    }
-
-    if (temp_dst_ip[0] == 0x00) {
-        bpf_printk("Packet with unspecified destination address ::\n");
         return TC_ACT_OK;
     }
 
     memcpy(&info->src_ip, ip6->saddr.in6_u.u6_addr8, 16);
     memcpy(&info->dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
     info->protocol = ip6->nexthdr;
-
-    
 
     __u8 protocol = ip6->nexthdr;
 
@@ -653,6 +610,14 @@ int tc_ingress(struct __sk_buff *ctx)
             struct packet_info new_info = {};
             classify_ipv4_packet(&new_info, data_end, data);
             //CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
+            // struct classify_packet_args args = {
+            //     .map_name = &map_ipv4,
+            //     .new_info = &new_info,
+            //     .flow_type = QUINTUPLA,
+            //     .map_flow = &ipv4_flow,
+            //     .packet_length = packet_length,
+            //     .counter = &counter
+            // };
             args.map_name = &map_ipv4;
             args.new_info = &new_info;
             args.map_flow = &ipv4_flow;

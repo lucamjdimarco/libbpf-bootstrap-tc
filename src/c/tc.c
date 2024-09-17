@@ -6,7 +6,7 @@
 #include <bpf/bpf.h>
 #include <bpf/bpf_endian.h>
 #include <bpf/libbpf.h>
-#include <net/if.h>  // for if_nametoindex
+#include <net/if.h> // for if_nametoindex
 #include "tc.skel.h"
 #include "common.h"
 //#include "../../influxdb-connector/influxdb_wrapper_int.h"
@@ -14,41 +14,46 @@
 
 //make -j6 CFLAGS_EXTRA="-DCLASS=1"
 
-#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-	#define INFLUXDB_URL "http://influxdb:8086?db=tc_db"
-#elif defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-	#define INFLUXDB_URL "http://10.89.0.30:8086?db=tc_db"
+#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+#define INFLUXDB_URL "http://influxdb:8086?db=tc_db"
+#elif defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+#define INFLUXDB_URL "http://10.89.0.30:8086?db=tc_db"
 #endif
 
-#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-void print_ipv4_address(__u32 ip) {
-    __u8 byte1 = ip & 0xFF;
-    __u8 byte2 = (ip >> 8) & 0xFF;
-    __u8 byte3 = (ip >> 16) & 0xFF;
-    __u8 byte4 = (ip >> 24) & 0xFF;
-    printf("%u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
+#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+void print_ipv4_address(__u32 ip)
+{
+	__u8 byte1 = ip & 0xFF;
+	__u8 byte2 = (ip >> 8) & 0xFF;
+	__u8 byte3 = (ip >> 16) & 0xFF;
+	__u8 byte4 = (ip >> 24) & 0xFF;
+	printf("%u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
 }
 
-void print_ipv4_flow_details(__u64 key, struct packet_info *value) {
-    printf("Flow: %llu\n", key);
-    printf("---------------\n");
-    printf("Key: Source IP: ");
-	#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
-    print_ipv4_address(value->src_ip);
-	#endif
-    printf("Key: Destination IP: ");
-    print_ipv4_address(value->dst_ip);
-	#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
-    printf("Key: Source Port: %u\n", value->src_port);
-    printf("Key: Destination Port: %u\n", value->dst_port);
-    printf("Key: Protocol: %u\n", value->protocol);
-	#endif
-    printf("---------------\n");
+void print_ipv4_flow_details(__u64 key, struct packet_info *value)
+{
+	printf("Flow: %llu\n", key);
+	printf("---------------\n");
+	printf("Key: Source IP: ");
+#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
+	print_ipv4_address(value->src_ip);
+#endif
+	printf("Key: Destination IP: ");
+	print_ipv4_address(value->dst_ip);
+#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
+	printf("Key: Source Port: %u\n", value->src_port);
+	printf("Key: Destination Port: %u\n", value->dst_port);
+	printf("Key: Protocol: %u\n", value->protocol);
+#endif
+	printf("---------------\n");
 }
 
 // Funzione per stampare il contenuto della mappa ipv4_flow
-void print_ipv4_flow(int fd) {
-
+void print_ipv4_flow(int fd)
+{
 	__u64 *key, *prev_key;
 	struct packet_info *value;
 	int err;
@@ -57,9 +62,9 @@ void print_ipv4_flow(int fd) {
 	prev_key = NULL;
 	value = malloc(sizeof(struct packet_info));
 
-    printf("IPv4 Flow Map:\n");
+	printf("IPv4 Flow Map:\n");
 
-	while(true) {
+	while (true) {
 		err = bpf_map_get_next_key(fd, prev_key, key);
 		if (err) {
 			if (errno == ENOENT)
@@ -76,31 +81,31 @@ void print_ipv4_flow(int fd) {
 
 	free(key);
 	free(value);
-
 }
 
 //funzione principale per il processamento in caso di utilizzo del filtro in IPv4
-void process_ipv4_map(int fd, const char* map_type) {
+void process_ipv4_map(int fd, const char *map_type)
+{
 	int counter = 0;
 	struct value_packet *value;
-	#ifdef CLASSIFY_IPV4
+#ifdef CLASSIFY_IPV4
 	struct packet_info *key, *prev_key;
 	key = malloc(sizeof(struct packet_info));
-	#endif
-	#ifdef CLASSIFY_ONLY_ADDRESS_IPV4
+#endif
+#ifdef CLASSIFY_ONLY_ADDRESS_IPV4
 	struct only_addr_ipv4 *key, *prev_key;
 	key = malloc(sizeof(struct only_addr_ipv4));
-	#endif
-	#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
+#endif
+#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
 	struct only_dest_ipv4 *key, *prev_key;
 	key = malloc(sizeof(struct only_dest_ipv4));
-	#endif
+#endif
 
 	prev_key = NULL;
 	value = malloc(sizeof(struct value_packet));
 	int err;
 
-	while(true){
+	while (true) {
 		err = bpf_map_get_next_key(fd, prev_key, key);
 		if (err) {
 			if (errno == ENOENT)
@@ -122,15 +127,14 @@ void process_ipv4_map(int fd, const char* map_type) {
 			printf("Value: Counter: %u\n", value->counter);
 			printf("Value: Bytes Counter: %llu\n", value->bytes_counter);*/
 
-			#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
+#if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
 			printf("Source IP: ");
 			print_ipv4_address(key->src_ip);
-			#endif
+#endif
 			printf("Destination IP: ");
 			print_ipv4_address(key->dst_ip);
 			printf("Value: Counter: %u\n", value->counter);
 			printf("Value: Bytes Counter: %llu\n", value->bytes_counter);
-
 
 			printf("---------------\n");
 		} else {
@@ -147,56 +151,57 @@ void process_ipv4_map(int fd, const char* map_type) {
 }
 #endif
 
-
 // Funzione per stampare l'indirizzo IPv6
-#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-void print_ipv6_address(uint8_t *addr) {
-    printf("IPv6 Address: ");
-    for (int i = 0; i < 16; i++) {
-        printf("%02x", addr[i]);
-        if (i % 2 == 1 && i < 15) {
-            printf(":");
-        }
-    }
-    printf("\n");
+#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+void print_ipv6_address(uint8_t *addr)
+{
+	printf("IPv6 Address: ");
+	for (int i = 0; i < 16; i++) {
+		printf("%02x", addr[i]);
+		if (i % 2 == 1 && i < 15) {
+			printf(":");
+		}
+	}
+	printf("\n");
 }
 
 // Funzione per stampare il contenuto della mappa ipv6_flow
-void print_ipv6_flow(int map_fd) {
-    __u64 *key, *prev_key;
+void print_ipv6_flow(int map_fd)
+{
+	__u64 *key, *prev_key;
 
-    struct packet_info_ipv6 *value;
+	struct packet_info_ipv6 *value;
 	int err;
 
 	key = malloc(sizeof(__u64));
 	prev_key = NULL;
 	value = malloc(sizeof(struct packet_info_ipv6));
 
+	printf("IPv6 Flow Map:\n");
 
-    printf("IPv6 Flow Map:\n");
-
-	while(true) {
+	while (true) {
 		err = bpf_map_get_next_key(map_fd, prev_key, key);
 		if (err) {
 			if (errno == ENOENT)
 				err = 0;
 			break;
 		}
-		
+
 		if (!bpf_map_lookup_elem(map_fd, key, value)) {
 			printf("Flow: %llu\n", *key);
 			printf("---------------\n");
-			#if defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_IPV6)
+#if defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_IPV6)
 			printf("Key: Source IP: ");
 			print_ipv6_address(value->src_ip);
-			#endif
+#endif
 			printf("Key: Destination IP: ");
 			print_ipv6_address(value->dst_ip);
-			#if defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_IPV6)
+#if defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_IPV6)
 			printf("Key: Source Port: %u\n", value->src_port);
 			printf("Key: Destination Port: %u\n", value->dst_port);
 			printf("Key: Protocol: %u\n", value->protocol);
-			#endif
+#endif
 			printf("---------------\n");
 		} else {
 			printf("Valore non trovato\n");
@@ -209,31 +214,32 @@ void print_ipv6_flow(int map_fd) {
 }
 
 // Funzione per processare la mappa in caso di utilizzo del filtro in IPv6
-void process_ipv6_map(int map_fd, const char* map_type) {
+void process_ipv6_map(int map_fd, const char *map_type)
+{
 	int counter = 0;
 	struct value_packet *value;
 
 	int err;
 
-	#ifdef CLASSIFY_IPV6
+#ifdef CLASSIFY_IPV6
 	struct packet_info_ipv6 *key, *prev_key;
 	key = malloc(sizeof(struct packet_info_ipv6));
-	#endif
+#endif
 
-	#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
+#ifdef CLASSIFY_ONLY_ADDRESS_IPV6
 	struct only_addr_ipv6 *key, *prev_key;
 	key = malloc(sizeof(struct only_addr_ipv6));
-	#endif
+#endif
 
-	#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
+#ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 	struct only_dest_ipv6 *key, *prev_key;
 	key = malloc(sizeof(struct only_dest_ipv6));
-	#endif
+#endif
 
 	prev_key = NULL;
 	value = malloc(sizeof(struct value_packet));
 
-	while(true){
+	while (true) {
 		err = bpf_map_get_next_key(map_fd, prev_key, key);
 		if (err) {
 			if (errno == ENOENT)
@@ -242,10 +248,10 @@ void process_ipv6_map(int map_fd, const char* map_type) {
 		}
 		if (!bpf_map_lookup_elem(map_fd, key, value)) {
 			printf("---------------\n");
-			#if defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_IPV6)
+#if defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_IPV6)
 			printf("Key: Source IP: ");
 			print_ipv6_address(key->src_ip);
-			#endif
+#endif
 			printf("Key: Destination IP: ");
 			print_ipv6_address(key->dst_ip);
 			printf("Value: Counter: %u\n", value->counter);
@@ -263,29 +269,30 @@ void process_ipv6_map(int map_fd, const char* map_type) {
 #endif
 
 // Funzione per inizializzare i file descriptor delle mappe
-int initialize_map_fd(const char* map_type, struct tc_bpf *skel, int* map_fd, int* map_fd_flow) {
+int initialize_map_fd(const char *map_type, struct tc_bpf *skel, int *map_fd, int *map_fd_flow)
+{
 	if (strcmp(map_type, "ipv4") == 0) {
-		#ifdef CLASSIFY_IPV4
+#ifdef CLASSIFY_IPV4
 		*map_fd = bpf_map__fd(skel->maps.map_ipv4);
 		*map_fd_flow = bpf_map__fd(skel->maps.ipv4_flow);
-		#elif defined(CLASSIFY_ONLY_ADDRESS_IPV4)
+#elif defined(CLASSIFY_ONLY_ADDRESS_IPV4)
 		*map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv4);
 		*map_fd_flow = bpf_map__fd(skel->maps.ipv4_flow);
-		#elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+#elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 		*map_fd = bpf_map__fd(skel->maps.map_only_dest_ipv4);
 		*map_fd_flow = bpf_map__fd(skel->maps.ipv4_flow);
-		#endif
+#endif
 	} else if (strcmp(map_type, "ipv6") == 0) {
-		#ifdef CLASSIFY_IPV6
+#ifdef CLASSIFY_IPV6
 		*map_fd = bpf_map__fd(skel->maps.map_ipv6);
 		*map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
-		#elif defined(CLASSIFY_ONLY_ADDRESS_IPV6)
+#elif defined(CLASSIFY_ONLY_ADDRESS_IPV6)
 		*map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv6);
 		*map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
-		#elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+#elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 		*map_fd = bpf_map__fd(skel->maps.map_only_dest_ipv6);
 		*map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
-		#endif
+#endif
 	} else {
 		fprintf(stderr, "Invalid map type\n");
 		return -1;
@@ -316,29 +323,28 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 // Funzione per scrivere i dati in InfluxDB
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
-    struct event_t *event = data;
-	
-    MHandler_t *influx_handler = (MHandler_t *)ctx;
+	struct event_t *event = data;
 
-	if(!influx_handler) {
+	MHandler_t *influx_handler = (MHandler_t *)ctx;
+
+	if (!influx_handler) {
 		fprintf(stderr, "Error: influx_handler is NULL\n");
 	}
 
-    printf("Event: ts=%llu flowid=%llu counter=%llu\n", event->ts, event->flowid, event->counter);
+	printf("Event: ts=%llu flowid=%llu counter=%llu\n", event->ts, event->flowid,
+	       event->counter);
 
-    // Write data to InfluxDB
-    int ret = write_data_influxdb(influx_handler, event->ts, event->flowid, event->counter);
-    if (ret != 0) {
-        fprintf(stderr, "Failed to write data to InfluxDB\n");
-    }
+	// Write data to InfluxDB
+	int ret = write_data_influxdb(influx_handler, event->ts, event->flowid, event->counter);
+	if (ret != 0) {
+		fprintf(stderr, "Failed to write data to InfluxDB\n");
+	}
 
-    return 0;
+	return 0;
 }
-
 
 int main(int argc, char **argv)
 {
-
 	if (argc != 3) {
 		fprintf(stderr, "Usage: %s <interface> <ipv4|ipv6>\n", argv[0]);
 		return 1;
@@ -346,7 +352,6 @@ int main(int argc, char **argv)
 
 	/*-----------------------*/
 
-	
 	//MHandler_t *h = create_influxdb("http://localhost:8086?db=tc_db");
 
 	// #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
@@ -363,7 +368,7 @@ int main(int argc, char **argv)
 	}
 
 	show_databases_influxdb(h);
-	
+
 	/*write_temp_influxdb(h, "Rome", 14.1);
 
 	destroy_influxdb(h);
@@ -381,9 +386,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	//DECLARE_LIBBPF_OPTS(bpf_tc_hook, tc_hook, .ifindex = LO_IFINDEX,
-			    //.attach_point = BPF_TC_INGRESS);
-	DECLARE_LIBBPF_OPTS(bpf_tc_hook, tc_hook, .ifindex = index,
-			    .attach_point = BPF_TC_INGRESS);
+	//.attach_point = BPF_TC_INGRESS);
+	DECLARE_LIBBPF_OPTS(bpf_tc_hook, tc_hook, .ifindex = index, .attach_point = BPF_TC_INGRESS);
 	DECLARE_LIBBPF_OPTS(bpf_tc_opts, tc_opts, .handle = 1, .priority = 1);
 	bool hook_created = false;
 	struct tc_bpf *skel;
@@ -436,35 +440,34 @@ int main(int argc, char **argv)
 
 	struct ring_buffer *rb = NULL;
 	rb = ring_buffer__new(bpf_map__fd(skel->maps.rbuf_events), handle_event, h, NULL);
-    if (!rb) {
-        fprintf(stderr, "Failed to create ring buffer\n");
-        goto cleanup;
-    }
-
+	if (!rb) {
+		fprintf(stderr, "Failed to create ring buffer\n");
+		goto cleanup;
+	}
 
 	// Main loop per processare i dati
 	while (!exiting) {
 		if (strcmp(map_type, "ipv4") == 0) {
-			#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 			// Polling ring buffer per processare i dati
 			err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
-				//goto cleanup;
-				goto print_map;
+				goto cleanup;
 			}
-			process_ipv4_map(map_fd, map_type); 
-			#endif
+			process_ipv4_map(map_fd, map_type);
+#endif
 		} else if (strcmp(map_type, "ipv6") == 0) {
-			#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 			err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
-				//goto cleanup;
-				goto print_map;
+				goto cleanup;
 			}
 			process_ipv6_map(map_fd, map_type);
-			#endif
+#endif
 		} else {
 			fprintf(stderr, "Invalid map type\n");
 			goto detach;
@@ -473,23 +476,24 @@ int main(int argc, char **argv)
 		sleep(3);
 	}
 
-print_map:
 	printf("Printing the flow map: \n");
 	if (strcmp(map_type, "ipv4") == 0) {
-		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 		print_ipv4_flow(map_fd_flow);
-		#endif
+#endif
 	} else if (strcmp(map_type, "ipv6") == 0) {
-		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 		print_ipv6_flow(map_fd_flow);
-		#endif
+#endif
 	} else {
 		fprintf(stderr, "Invalid map type\n");
 		goto detach;
 	}
 
 	//show_data_influxdb(h, "flow_data");
-	
+
 // funzione per detachment del programma BPF
 detach:
 	tc_opts.flags = tc_opts.prog_fd = tc_opts.prog_id = 0;

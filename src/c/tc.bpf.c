@@ -206,6 +206,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u32 *counter = &packet->counter;
 
 	if (cur_tsw <= tsw) {
+        bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
 		bpf_spin_unlock(&packet->lock);
 		//goto update;
 		return 0;
@@ -229,11 +230,13 @@ update_win:
 	/* Avvia il timer associato a questa finestra */
 	rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
 	if (rc)
+        bpf_printk("Failed to start timer\n");
 		return -EINVAL;
 
 	//Riserva spazio nel rbuf per poter poi aggiungere l'evento secondo la logica commit/abort
 	rc = prepare_ring_buffer_write(&rbuf_events, &event);
 	if (rc)
+        bpf_printk("Failed to reserve space in ring buffer\n");
 		goto update_win;
 
 	bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);

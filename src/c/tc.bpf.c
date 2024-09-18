@@ -205,7 +205,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u64 tsw = packet->tsw;
 	__u32 *counter = &packet->counter;
 
-    bpf_printk("cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
 
 	if (cur_tsw <= tsw) {
 		bpf_spin_unlock(&packet->lock);

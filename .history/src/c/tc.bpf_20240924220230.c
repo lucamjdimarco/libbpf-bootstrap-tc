@@ -209,7 +209,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u64 cur_tsw_test;
 
 
-	if (tsw != 0 && cur_tsw <= tsw) {
+	if (cur_tsw <= tsw) {
 		tsw_test = tsw;
 		cur_tsw_test = cur_tsw;
 		bpf_spin_unlock(&packet->lock);

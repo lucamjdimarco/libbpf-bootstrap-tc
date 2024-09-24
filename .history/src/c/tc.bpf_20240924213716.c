@@ -252,12 +252,7 @@ update_win:
 
 	bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
 
-	rc = bpf_ringbuf_submit(event, 0);
-
-	if(rc) {
-		bpf_printk("Failed to submit event to ring buffer\n");
-		return 0;
-	}
+	bpf_ringbuf_submit(event, 0);
 
 	return 0;
 }

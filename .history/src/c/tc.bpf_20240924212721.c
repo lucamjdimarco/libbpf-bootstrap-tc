@@ -248,7 +248,8 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 			return 0;
 		return 0;
 	}
-        //bpf_printk("Failed to reserve space in ring buffer\n");
+        bpf_printk("Failed to reserve space in ring buffer\n");
+		return 0;
 		//goto update_win;
 
 	bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);

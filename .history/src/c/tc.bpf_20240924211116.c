@@ -207,7 +207,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	if(true) {
 		bpf_spin_unlock(&packet->lock);
-		bpf_printk("BEFORE cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
+		bpf_printk("cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
 	}
 
 

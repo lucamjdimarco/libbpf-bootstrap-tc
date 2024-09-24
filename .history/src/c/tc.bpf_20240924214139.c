@@ -254,6 +254,11 @@ update_win:
 
 	bpf_ringbuf_submit(event, 0);
 
+	if(rc) {
+		bpf_printk("Failed to submit event to ring buffer\n");
+		return 0;
+	}
+
 	return 0;
 }
 

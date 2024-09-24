@@ -212,12 +212,12 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	// }
 
 
-	// if (cur_tsw <= tsw) {
-	// 	bpf_spin_unlock(&packet->lock);
-    //     bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
-	// 	//goto update;
-	// 	return 0;
-	// }
+	if (cur_tsw <= tsw) {
+		bpf_spin_unlock(&packet->lock);
+        bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
+		//goto update;
+		return 0;
+	}
 
 	counter_val = *counter;
 

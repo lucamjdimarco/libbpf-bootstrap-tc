@@ -210,11 +210,8 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 
 	if (cur_tsw <= tsw) {
-		tsw_test = tsw;
-		cur_tsw_test = cur_tsw;
 		bpf_spin_unlock(&packet->lock);
-        //bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
-		bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw_test, tsw_test);
+        bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
 		//goto update;
 		return 0;
 	}

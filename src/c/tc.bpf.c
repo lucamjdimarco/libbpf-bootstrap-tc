@@ -232,6 +232,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	counter_val = *counter;
 
+    event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
 	if (!event) {
 		bpf_spin_unlock(&packet->lock);
         bpf_printk("Event is null, cannot process\n");

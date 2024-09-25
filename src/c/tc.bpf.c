@@ -211,11 +211,11 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	/*--------*/
 	bpf_spin_unlock(&packet->lock);
 	bpf_printk("cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
-
+	
 	/*-------------*/
 	if (cur_tsw <= tsw) {
-		//bpf_spin_unlock(&packet->lock);
-		bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
+        //bpf_spin_unlock(&packet->lock);
+        bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
 		return 0;
 	}
 
@@ -232,10 +232,10 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	counter_val = *counter;
 
-	event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
+    event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
 	if (!event) {
 		//bpf_spin_unlock(&packet->lock);
-		bpf_printk("Event is null, cannot process\n");
+        bpf_printk("Event is null, cannot process\n");
 		return -EINVAL;
 	}
 	bpf_spin_lock(&packet->lock);
@@ -260,11 +260,11 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	}
 
 	//Riserva spazio nel rbuf per poter poi aggiungere l'evento secondo la logica commit/abort
-	rc = prepare_ring_buffer_write(&rbuf_events, &event);
-	if (rc) {
-		bpf_printk("Failed to reserve space in ring buffer\n");
-		return 0;
-	}
+	// rc = prepare_ring_buffer_write(&rbuf_events, &event);
+	// if (rc) {
+	// 	bpf_printk("Failed to reserve space in ring buffer\n");
+	// 	return 0;
+	// }
 	//bpf_printk("Failed to reserve space in ring buffer\n");
 	//goto update_win;
 

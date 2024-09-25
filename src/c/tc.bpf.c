@@ -228,9 +228,9 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	event->flowid = packet->flow_id;
 	event->counter = counter_val;
 
-	//goto update_win;
+	goto update_win;
 
-//update_win:
+update_win:
 	packet->tsw = cur_tsw;
 	bpf_spin_unlock(&packet->lock);
 
@@ -251,7 +251,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 		return 0;
 	}
         //bpf_printk("Failed to reserve space in ring buffer\n");
-		//goto update_win;
+		goto update_win;
 
 	bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
 

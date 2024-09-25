@@ -233,7 +233,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	counter_val = *counter;
 
     //bpf_spin_unlock(&packet->lock);
-    //event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
+    event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
 	//bpf_spin_lock(&packet->lock);
     // if (!event) {
 	// 	bpf_spin_unlock(&packet->lock);
@@ -241,9 +241,9 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	// 	return -EINVAL;
 	// }
 	//bpf_spin_lock(&packet->lock);
-	// event->ts = tsw;
-	// event->flowid = packet->flow_id;
-	// event->counter = counter_val;
+	event->ts = tsw;
+	event->flowid = packet->flow_id;
+	event->counter = counter_val;
 
 	//goto update_win;
 

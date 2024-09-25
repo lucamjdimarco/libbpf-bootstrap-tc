@@ -235,26 +235,21 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
     //bpf_spin_unlock(&packet->lock);
     //event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
 	//bpf_spin_lock(&packet->lock);
-    // if (!event) {
-	// 	bpf_spin_unlock(&packet->lock);
-    //     bpf_printk("Event is null, cannot process\n");
-	// 	return -EINVAL;
-	// }
+    if (!event) {
+		bpf_spin_unlock(&packet->lock);
+        bpf_printk("Event is null, cannot process\n");
+		return -EINVAL;
+	}
 	//bpf_spin_lock(&packet->lock);
-	// event->ts = tsw;
-	// event->flowid = packet->flow_id;
-	// event->counter = counter_val;
+	event->ts = tsw;
+	event->flowid = packet->flow_id;
+	event->counter = counter_val;
 
 	//goto update_win;
 
 	//update_win:
 	packet->tsw = cur_tsw;
 	bpf_spin_unlock(&packet->lock);
-
-	event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
-	event->ts = tsw;
-	event->flowid = packet->flow_id;
-	event->counter = counter_val;
 
 	if (!start_timer)
 		return 0;

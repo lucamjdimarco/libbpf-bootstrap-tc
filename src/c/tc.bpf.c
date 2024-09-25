@@ -255,7 +255,7 @@ update_win:
 		return 0;
 	}
 	//bpf_printk("Failed to reserve space in ring buffer\n");
-	goto update_win;
+	//goto update_win;
 
 	bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
 

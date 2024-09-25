@@ -232,8 +232,8 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	counter_val = *counter;
 
 	if (!event) {
-		bpf_printk("Event is null, cannot process\n");
 		bpf_spin_unlock(&packet->lock);
+        bpf_printk("Event is null, cannot process\n");
 		return -EINVAL;
 	}
 	event->ts = tsw;

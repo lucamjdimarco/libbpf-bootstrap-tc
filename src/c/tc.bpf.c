@@ -208,16 +208,19 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u64 tsw_test;
 	__u64 cur_tsw_test;
 
-    
 	/*--------*/
 	bpf_spin_unlock(&packet->lock);
 	bpf_printk("cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
 	bpf_spin_lock(&packet->lock);
 	/*-------------*/
+	if (cur_tsw <= tsw) {
+		bpf_spin_unlock(&packet->lock);
+		return 0;
+	}
 
 	//if (tsw != 0 && cur_tsw <= tsw) {
 	// if(tsw == 1000) {
-    // 	tsw_test = tsw;
+	// 	tsw_test = tsw;
 	// 	cur_tsw_test = cur_tsw;
 	// 	bpf_spin_unlock(&packet->lock);
 	// 	//bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
@@ -228,13 +231,18 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	counter_val = *counter;
 
+	if (!event) {
+		bpf_printk("Event is null, cannot process\n");
+		bpf_spin_unlock(&packet->lock);
+		return -EINVAL;
+	}
 	event->ts = tsw;
 	event->flowid = packet->flow_id;
 	event->counter = counter_val;
 
-	goto update_win;
+	//goto update_win;
 
-update_win:
+	//update_win:
 	packet->tsw = cur_tsw;
 	bpf_spin_unlock(&packet->lock);
 

@@ -207,16 +207,19 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	__u64 tsw_test;
 	__u64 cur_tsw_test;
-    bpf_spin_unlock(&packet->lock);
-    bpf_printk("cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
-    bpf_spin_lock(&packet->lock);
 
 
-	if (tsw != 0 && cur_tsw <= tsw) {
+	/*--------*/
+	bpf_spin_unlock(&packet->lock);
+	bpf_printk("cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
+	bpf_spin_lock(&packet->lock);
+	/*-------------*/
+
+	if (0) {
 		tsw_test = tsw;
 		cur_tsw_test = cur_tsw;
 		bpf_spin_unlock(&packet->lock);
-        //bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
+		//bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
 		bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw_test, tsw_test);
 		//goto update;
 		return 0;
@@ -240,7 +243,7 @@ update_win:
 	/* Avvia il timer associato a questa finestra */
 	rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
 	if (rc) {
-        bpf_printk("Failed to start timer\n");
+		bpf_printk("Failed to start timer\n");
 		return -EINVAL;
 	}
 
@@ -250,8 +253,8 @@ update_win:
 		bpf_printk("Failed to reserve space in ring buffer\n");
 		return 0;
 	}
-        //bpf_printk("Failed to reserve space in ring buffer\n");
-		goto update_win;
+	//bpf_printk("Failed to reserve space in ring buffer\n");
+	goto update_win;
 
 	bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
 

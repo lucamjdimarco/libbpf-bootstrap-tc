@@ -211,7 +211,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	/*--------*/
 	bpf_spin_unlock(&packet->lock);
 	bpf_printk("cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
-	bpf_spin_lock(&packet->lock);
+	
 	/*-------------*/
 	if (cur_tsw <= tsw) {
         bpf_spin_unlock(&packet->lock);
@@ -238,6 +238,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
         bpf_printk("Event is null, cannot process\n");
 		return -EINVAL;
 	}
+    bpf_spin_lock(&packet->lock);
 	event->ts = tsw;
 	event->flowid = packet->flow_id;
 	event->counter = counter_val;

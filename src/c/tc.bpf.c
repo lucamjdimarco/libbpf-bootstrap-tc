@@ -196,7 +196,12 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u32 counter_val;
 	int rc;
 
-	event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
+	
+	rc = prepare_ring_buffer_write(&rbuf_events, &event);
+	if (rc) {
+		bpf_printk("Failed to reserve space in ring buffer\n");
+		return 0;
+	}
 
 	bpf_spin_lock(&packet->lock);
 	if (packet->counter < MAX_COUNTER) {

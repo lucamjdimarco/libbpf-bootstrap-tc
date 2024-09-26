@@ -223,6 +223,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	/*-------------*/
 	if (cur_tsw <= tsw) {
         bpf_spin_unlock(&packet->lock);
+		bpf_ringbuf_discard(event, 0);
         bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
 		return 0;
 	}
@@ -249,6 +250,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	//bpf_spin_lock(&packet->lock);
 	if (!event) {
 		bpf_spin_unlock(&packet->lock);
+		bpf_ringbuf_discard(event, 0);
 		bpf_printk("Event is null, cannot process\n");
 		return -EINVAL;
 	}
@@ -270,6 +272,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	/* Avvia il timer associato a questa finestra */
 	rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
 	if (rc) {
+		bpf_ringbuf_discard(event, 0);
 		bpf_printk("Failed to start timer\n");
 		return -EINVAL;
 	}

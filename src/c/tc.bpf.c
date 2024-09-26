@@ -270,11 +270,11 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	}
 
 	//Riserva spazio nel rbuf per poter poi aggiungere l'evento secondo la logica commit/abort
-	rc = prepare_ring_buffer_write(&rbuf_events, &event);
-	if (rc) {
-		bpf_printk("Failed to reserve space in ring buffer\n");
-		return 0;
-	}
+	// rc = prepare_ring_buffer_write(&rbuf_events, &event);
+	// if (rc) {
+	// 	bpf_printk("Failed to reserve space in ring buffer\n");
+	// 	return 0;
+	// }
 	//bpf_printk("Failed to reserve space in ring buffer\n");
 	//goto update_win;
 

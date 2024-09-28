@@ -147,7 +147,8 @@ static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter)
 	return ((__u64)first_byte << 56) | (counter & 0x00FFFFFFFFFFFFFF);
 }
 
-static __always_inline int update_window_start_timer(struct bpf_timer *timer, __u64 timeout)
+// static __always_inline int update_window_start_timer(struct bpf_timer *timer, __u64 timeout)
+static __always_inline int update_window_start_timer(struct value_packet *packet, __u64 timeout)
 {
 	int rc;
 
@@ -277,7 +278,8 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 		return 0;
 
 	/* Avvia il timer associato a questa finestra */
-	rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
+	//rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
+	rc = update_window_start_timer(packet, SWIN_TIMER_TIMEOUT);	
 	if (rc) {
 		bpf_ringbuf_discard(event, 0);
 		bpf_printk("Failed to start timer\n");

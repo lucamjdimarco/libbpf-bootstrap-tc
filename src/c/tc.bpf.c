@@ -151,9 +151,19 @@ static __always_inline int update_window_start_timer(struct bpf_timer *timer, __
 {
 	int rc;
 
+	// Controlla se il timer è già stato avviato da un'altra CPU
+	if (!__sync_bool_compare_and_swap(&packet->timer_started, 0, 1)) {
+		// Se il timer è già avviato, stampa un messaggio e ritorna
+		bpf_printk("Timer already started by another CPU\n");
+		return 0;
+	}
+
 	rc = bpf_timer_start(timer, timeout, 0);
 	if (!rc)
-		return 0;
+		// Se fallisce l'avvio del timer, ripristina lo stato del flag
+		__sync_bool_compare_and_swap(&packet->timer_started, 1, 0);
+
+	return 0;
 
 	if (rc == -EINVAL) {
 		/* This use case can be tolerated, as it is very rare.
@@ -196,7 +206,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u32 counter_val;
 	int rc;
 
-	
 	rc = prepare_ring_buffer_write(&rbuf_events, &event);
 	if (rc) {
 		bpf_printk("Failed to reserve space in ring buffer\n");
@@ -212,7 +221,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u64 tsw = packet->tsw;
 	__u32 *counter = &packet->counter;
 
-	
 	// __u64 tsw_test;
 	// __u64 cur_tsw_test;
 
@@ -222,9 +230,9 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	//bpf_spin_lock(&packet->lock);
 	/*-------------*/
 	if (cur_tsw <= tsw) {
-        bpf_spin_unlock(&packet->lock);
+		bpf_spin_unlock(&packet->lock);
 		bpf_ringbuf_discard(event, 0);
-        bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
+		bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
 		return 0;
 	}
 
@@ -245,8 +253,8 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	event->flowid = packet->flow_id;
 	event->counter = counter_val;
 
-    //bpf_spin_unlock(&packet->lock);
-    //event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
+	//bpf_spin_unlock(&packet->lock);
+	//event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
 	//bpf_spin_lock(&packet->lock);
 	if (!event) {
 		bpf_spin_unlock(&packet->lock);
@@ -264,8 +272,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	//update_win:
 	packet->tsw = cur_tsw;
 	bpf_spin_unlock(&packet->lock);
-
-
 
 	if (!start_timer)
 		return 0;

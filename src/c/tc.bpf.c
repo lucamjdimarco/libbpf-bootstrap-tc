@@ -159,7 +159,7 @@ static __always_inline int update_window_start_timer(struct value_packet *packet
 		return 0;
 	}
 
-	rc = bpf_timer_start(timer, timeout, 0);
+	rc = bpf_timer_start(&packet->timer, timeout, 0);
 	if (!rc)
 		// Se fallisce l'avvio del timer, ripristina lo stato del flag
 		__sync_bool_compare_and_swap(&packet->timer_started, 1, 0);

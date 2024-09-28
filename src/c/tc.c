@@ -323,7 +323,8 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 // Funzione per scrivere i dati in InfluxDB
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
-	printf("Received event\n");
+	printf("**********\n");
+	printf("Received event in the ring buffer\n");
 	struct event_t *event = data;
 
 	MHandler_t *influx_handler = (MHandler_t *)ctx;
@@ -335,6 +336,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	printf("Event: ts=%llu flowid=%llu counter=%llu\n", event->ts, event->flowid,
 	       event->counter);
 
+	printf("**********\n");
 	// Write data to InfluxDB
 	int ret = write_data_influxdb(influx_handler, event->ts, event->flowid, event->counter);
 	if (ret != 0) {

@@ -83,7 +83,7 @@ struct value_packet {
 	__u64 bytes_counter;
 	__u64 flow_id;
 	//struct bpf_timer timer;
-
+};
 	//__u64 sync;
 	__u64 init;
 	__u64 tsw;

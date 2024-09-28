@@ -89,7 +89,7 @@ struct value_packet {
 	//__u64 cnt;
 	__u64 initialized;
 	struct bpf_timer timer;
-	__u32 timer_started;
+	__u64 timer_started;
 };
 
 #endif // COMMON_HEADER_H

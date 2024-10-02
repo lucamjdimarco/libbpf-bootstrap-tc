@@ -279,7 +279,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	/* Avvia il timer associato a questa finestra */
 	//rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
-	rc = update_window_start_timer(packet, SWIN_TIMER_TIMEOUT);	
+	rc = update_window_start_timer(packet, SWIN_TIMER_TIMEOUT);
 	if (rc) {
 		bpf_ringbuf_discard(event, 0);
 		bpf_printk("Failed to start timer\n");

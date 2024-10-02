@@ -166,23 +166,23 @@ static __always_inline int update_window_start_timer(struct value_packet *packet
 
 	return 0;
 
-	if (rc == -EINVAL) {
-		/* This use case can be tolerated, as it is very rare.
-		 * If we have arrived at this point, it indicates that
-		 * two packets are being processed simultaneously on
-		 * two different CPUs, and both are attempting to
-		 * initialize the corresponding element. However, the
-		 * operation is intended to be performed by only one
-		 * CPU.
-		 * Therefore, it is possible that while one CPU is
-		 * initializing the timer, the completed operation may
-		 * not yet be visible on the current CPU.
-		 */
-		bpf_printk("bpf_timer is not initialized yet");
-		return 0;
-	}
+	// if (rc == -EINVAL) {
+	// 	/* This use case can be tolerated, as it is very rare.
+	// 	 * If we have arrived at this point, it indicates that
+	// 	 * two packets are being processed simultaneously on
+	// 	 * two different CPUs, and both are attempting to
+	// 	 * initialize the corresponding element. However, the
+	// 	 * operation is intended to be performed by only one
+	// 	 * CPU.
+	// 	 * Therefore, it is possible that while one CPU is
+	// 	 * initializing the timer, the completed operation may
+	// 	 * not yet be visible on the current CPU.
+	// 	 */
+	// 	bpf_printk("bpf_timer is not initialized yet");
+	// 	return 0;
+	// }
 
-	return rc;
+	// return rc;
 }
 
 static __always_inline int prepare_ring_buffer_write(void *map, struct event_t **pevent)

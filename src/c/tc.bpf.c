@@ -444,9 +444,9 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 	}
 
 	// Controllo se l'indirizzo sorgente o destinazione è unspecified (::/128)
-	__u8 zero_addr[16] = { 0 }; // Indirizzo "unspecified" è tutto zero
+	//__u8 zero_addr[16] = { 0 }; // Indirizzo "unspecified" è tutto zero
 	// bpf_printk("Zero address: %u\n", zero_addr[0]);
-	bpf_printk("Temp source address: %u\n", temp_src_ip[0]);
+	//bpf_printk("Temp source address: %u\n", temp_src_ip[0]);
 
 	//TO FIX: elimminare la cattura dei pacchetti con indirizzo sorgente o destinazione unspecified (0::/128)
 
@@ -507,7 +507,7 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 			bpf_printk("ICMPv6 header is not complete\n");
 			return TC_ACT_OK;
 		}
-		bpf_printk("ICMPv6 packet\n");
+		//bpf_printk("ICMPv6 packet\n");
 		break;
 	}
 	default: {

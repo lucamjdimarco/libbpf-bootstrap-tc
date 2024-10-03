@@ -438,7 +438,7 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 		return TC_ACT_OK;
 	}
 
-	if (temp_dst_ip[0] == 0xfe && (temp_src_ip[1] & 192) == 0x80) {
+	if (temp_dst_ip[0] == 0xfe && (temp_dst_ip[1] & 192) == 0x80) {
 		bpf_printk("Packet with link-local destination address fe80::/10\n");
 		return TC_ACT_OK;
 	}

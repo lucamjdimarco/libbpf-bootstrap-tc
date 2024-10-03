@@ -222,14 +222,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u64 tsw = packet->tsw;
 	__u32 *counter = &packet->counter;
 
-	// __u64 tsw_test;
-	// __u64 cur_tsw_test;
-
-	/*--------*/
-	//bpf_spin_unlock(&packet->lock);
-	//bpf_printk("cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
-	//bpf_spin_lock(&packet->lock);
-	/*-------------*/
+	
 	if (cur_tsw <= tsw) {
 		bpf_spin_unlock(&packet->lock);
 		bpf_ringbuf_discard(event, 0);
@@ -237,16 +230,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 		return 0;
 	}
 
-	//if (tsw != 0 && cur_tsw <= tsw) {
-	// if(tsw == 1000) {
-	// 	tsw_test = tsw;
-	// 	cur_tsw_test = cur_tsw;
-	// 	bpf_spin_unlock(&packet->lock);
-	// 	//bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
-	// 	bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw_test, tsw_test);
-	// 	//goto update;
-	// 	return 0;
-	// }
 
 	counter_val = *counter;
 
@@ -254,16 +237,14 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	event->flowid = packet->flow_id;
 	event->counter = counter_val;
 
-	//bpf_spin_unlock(&packet->lock);
-	//event = bpf_ringbuf_reserve(&rbuf_events, sizeof(*event), 0);
-	//bpf_spin_lock(&packet->lock);
+
 	if (!event) {
 		bpf_spin_unlock(&packet->lock);
 		bpf_ringbuf_discard(event, 0);
 		bpf_printk("Event is null, cannot process\n");
 		return -EINVAL;
 	}
-	//bpf_spin_lock(&packet->lock);
+
 	event->ts = tsw;
 	event->flowid = packet->flow_id;
 	event->counter = counter_val;
@@ -278,7 +259,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 		return 0;
 
 	/* Avvia il timer associato a questa finestra */
-	//rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
+
 	rc = update_window_start_timer(packet, SWIN_TIMER_TIMEOUT);
 	if (rc) {
 		bpf_ringbuf_discard(event, 0);

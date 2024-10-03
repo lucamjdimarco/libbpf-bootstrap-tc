@@ -113,19 +113,6 @@ void process_ipv4_map(int fd, const char *map_type)
 			break;
 		}
 		if (!bpf_map_lookup_elem(fd, key, value)) {
-			/*__u8 byte1 = key->src_ip & 0xFF;
-			__u8 byte2 = (key->src_ip >> 8) & 0xFF;
-			__u8 byte3 = (key->src_ip >> 16) & 0xFF;
-			__u8 byte4 = (key->src_ip >> 24) & 0xFF;
-			printf("---------------\n");
-			printf("Key: Source IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
-			byte1 = key->dst_ip & 0xFF;
-			byte2 = (key->dst_ip >> 8) & 0xFF;
-			byte3 = (key->dst_ip >> 16) & 0xFF;
-			byte4 = (key->dst_ip >> 24) & 0xFF;
-			printf("Key: Destination IP: %u.%u.%u.%u\n", byte1, byte2, byte3, byte4);
-			printf("Value: Counter: %u\n", value->counter);
-			printf("Value: Bytes Counter: %llu\n", value->bytes_counter);*/
 
 #if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
 			printf("Source IP: ");

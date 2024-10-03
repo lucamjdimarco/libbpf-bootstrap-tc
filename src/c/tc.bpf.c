@@ -206,6 +206,9 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u32 counter_val;
 	int rc;
 
+
+	//questo prova a mettere giu
+	// puo accadere che se il buffer è pieno non faccio mai la logica sotto
 	rc = prepare_ring_buffer_write(&rbuf_events, &event);
 	if (rc) {
 		bpf_printk("Failed to reserve space in ring buffer\n");
@@ -219,7 +222,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	}
 
 	__u64 tsw = packet->tsw;
-	__u32 *counter = &packet->counter;
+	__u32 *counter = &packet->counter; //no puntatore
 
 	
 	if (cur_tsw <= tsw) {
@@ -229,12 +232,12 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 		return 0;
 	}
 
-
+	//scompare
 	counter_val = *counter;
 
-	event->ts = tsw;
-	event->flowid = packet->flow_id;
-	event->counter = counter_val;
+	// event->ts = tsw;
+	// event->flowid = packet->flow_id;
+	// event->counter = counter_val;
 
 
 	if (!event) {
@@ -430,7 +433,7 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 	memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
 
 	// Controllo se l'indirizzo sorgente o destinazione è link-local (fe80::/10)
-	if (temp_src_ip[0] == 0xfe && temp_src_ip[1] == 0x80) {
+	if (temp_src_ip[0] == 0xfe && (temp_src_ip[1] & 192) == 0x80) { //corretto bug altrimenti controllava una /12
 		bpf_printk("Packet with link-local source address fe80::/10\n");
 		return TC_ACT_OK;
 	}

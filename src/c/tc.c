@@ -14,7 +14,7 @@
 
 //make -j6 CFLAGS_EXTRA="-DCLASS=1"
 
-#define BATCH_SIZE 10
+#define BATCH_SIZE 3
 struct event_t events_buffer[BATCH_SIZE];
 int events_count = 0;
 
@@ -326,6 +326,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 
 	if (events_count < BATCH_SIZE){
 		events_buffer[events_count] = *event;
+		events_count++;
 	}else{
 		for (int i = 0; i < events_count; i++){
 			int ret = write_data_influxdb(influx_handler, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);

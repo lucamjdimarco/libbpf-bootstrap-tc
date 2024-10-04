@@ -14,6 +14,10 @@
 
 //make -j6 CFLAGS_EXTRA="-DCLASS=1"
 
+#define BATCH_SIZE 10
+struct event_t events_buffer[BATCH_SIZE];
+int events_count = 0;
+
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
 	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 #define INFLUXDB_URL "http://influxdb:8086?db=tc_db"
@@ -320,15 +324,29 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		fprintf(stderr, "Error: influx_handler is NULL\n");
 	}
 
-	printf("Event: ts=%llu flowid=%llu counter=%llu\n", event->ts, event->flowid,
-	       event->counter);
+	if (events_count < BATCH_SIZE){
+		events_buffer[events_count] = *event;
+	}else{
+		for (int i = 0; i < events_count; i++){
+			int ret = write_data_influxdb(influx_handler, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
+			if (ret != 0) {
+				fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
+			}
+		}
+		printf("Events written to InfluxDB\n");
+		events_count = 0;
+	}
+
+
+	// printf("Event: ts=%llu flowid=%llu counter=%llu\n", event->ts, event->flowid,
+	//        event->counter);
 
 	printf("**********\n");
 	// Write data to InfluxDB
-	int ret = write_data_influxdb(influx_handler, event->ts, event->flowid, event->counter);
-	if (ret != 0) {
-		fprintf(stderr, "Failed to write data to InfluxDB\n");
-	}
+	// int ret = write_data_influxdb(influx_handler, event->ts, event->flowid, event->counter);
+	// if (ret != 0) {
+	// 	fprintf(stderr, "Failed to write data to InfluxDB\n");
+	// }
 
 	return 0;
 }

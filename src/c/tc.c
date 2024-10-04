@@ -495,6 +495,8 @@ int main(int argc, char **argv)
 				goto cleanup;
 			}
 			current_time = time(NULL);
+			printf("Current time: %d\n", current_time);
+			printf("Last send time: %d\n", last_send_time);
 			if (current_time - last_send_time >= TIMEOUT_SEC && events_count > 0){
 				for (int i = 0; i < events_count; i++){
 					int ret = write_data_influxdb(h, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);

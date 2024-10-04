@@ -435,8 +435,6 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 	// Controllo se l'indirizzo sorgente o destinazione è link-local (fe80::/10)
 	if (temp_src_ip[0] == 0xfe && (temp_src_ip[1] & 192) == 0x80) { //corretto bug altrimenti controllava una /12
 		bpf_printk("Packet with link-local source address fe80::/10\n");
-		bpf_printk("Source address: %02x\n", temp_src_ip[0]);
-		bpf_printk("Source address: %02x\n", temp_src_ip[1]);
 		return -1;
 	}
 

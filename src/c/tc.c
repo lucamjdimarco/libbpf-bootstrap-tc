@@ -9,6 +9,7 @@
 #include <net/if.h> // for if_nametoindex
 #include "tc.skel.h"
 #include "common.h"
+#include <time.h>
 //#include "../../influxdb-connector/influxdb_wrapper_int.h"
 #include "influxdb_wrapper_int.h"
 

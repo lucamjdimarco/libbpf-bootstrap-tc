@@ -19,7 +19,7 @@
 #define TIMEOUT_SEC 40
 struct event_t events_buffer[BATCH_SIZE];
 int events_count = 0;
-int last_send_time;
+int last_watched_event_time;
 int current_time;
 
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
@@ -328,7 +328,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		fprintf(stderr, "Error: influx_handler is NULL\n");
 	}
 	current_time = time(NULL);
-	last_send_time = time(NULL);
+	last_watched_event_time = time(NULL);
 	if (events_count < BATCH_SIZE){
 		events_buffer[events_count] = *event;
 		events_count++;
@@ -341,7 +341,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		}
 		printf("Events written to InfluxDB\n");
 		events_count = 0;
-		last_send_time = current_time;
+		last_watched_event_time = current_time;
 	}
 
 
@@ -365,7 +365,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	last_send_time = time(NULL);
+	last_watched_event_time = time(NULL);
 
 	/*-----------------------*/
 
@@ -474,7 +474,7 @@ int main(int argc, char **argv)
 				goto cleanup;
 			}
 			current_time = time(NULL);
-			if (current_time - last_send_time >= TIMEOUT_SEC && events_count > 0){
+			if (current_time - last_watched_event_time >= TIMEOUT_SEC && events_count > 0){
 				for (int i = 0; i < events_count; i++){
 					int ret = write_data_influxdb(h, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 					if (ret != 0) {
@@ -483,7 +483,7 @@ int main(int argc, char **argv)
 				}
 				printf("Events written to InfluxDB for timeout\n");
 				events_count = 0;
-				last_send_time = current_time;
+				last_watched_event_time = current_time;
 			}
 			process_ipv4_map(map_fd, map_type);
 #endif
@@ -497,8 +497,8 @@ int main(int argc, char **argv)
 			}
 			current_time = time(NULL);
 			printf("Current time: %d\n", current_time);
-			printf("Last send time: %d\n", last_send_time);
-			if (current_time - last_send_time >= TIMEOUT_SEC && events_count > 0){
+			printf("Last send time: %d\n", last_watched_event_time);
+			if (current_time - last_watched_event_time >= TIMEOUT_SEC && events_count > 0){
 				for (int i = 0; i < events_count; i++){
 					int ret = write_data_influxdb(h, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 					if (ret != 0) {
@@ -507,7 +507,7 @@ int main(int argc, char **argv)
 				}
 				printf("\n\n\n\nEvents written to InfluxDB for timeout\n\n\n\n");
 				events_count = 0;
-				last_send_time = current_time;
+				last_watched_event_time = current_time;
 			}
 			process_ipv6_map(map_fd, map_type);
 #endif

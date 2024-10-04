@@ -16,7 +16,7 @@
 //make -j6 CFLAGS_EXTRA="-DCLASS=1"
 
 #define BATCH_SIZE 3
-#define TIMEOUT_SEC 5
+#define TIMEOUT_SEC 15
 struct event_t events_buffer[BATCH_SIZE];
 int events_count = 0;
 int last_send_time;

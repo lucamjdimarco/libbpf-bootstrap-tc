@@ -436,6 +436,7 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 	if (temp_src_ip[0] == 0xfe && (temp_src_ip[1] & 192) == 0x80) { //corretto bug altrimenti controllava una /12
 		bpf_printk("Packet with link-local source address fe80::/10\n");
 		bpf_printk("Source address: %02x\n", temp_src_ip[0]);
+		bpf_printk("Source address: %02x\n", temp_src_ip[1]);
 		return TC_ACT_OK;
 	}
 
@@ -462,16 +463,16 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 	//     return TC_ACT_OK;
 	// }
 
-	if (temp_src_ip[0] == 0x00) {
-		bpf_printk("Packet with unspecified source address ::\n");
+	// if (temp_src_ip[0] == 0x00) {
+	// 	bpf_printk("Packet with unspecified source address ::\n");
 
-		return TC_ACT_OK;
-	}
+	// 	return TC_ACT_OK;
+	// }
 
-	if (temp_dst_ip[0] == 0x00) {
-		bpf_printk("Packet with unspecified destination address ::\n");
-		return TC_ACT_OK;
-	}
+	// if (temp_dst_ip[0] == 0x00) {
+	// 	bpf_printk("Packet with unspecified destination address ::\n");
+	// 	return TC_ACT_OK;
+	// }
 
 	memcpy(&info->src_ip, ip6->saddr.in6_u.u6_addr8, 16);
 	memcpy(&info->dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
@@ -685,7 +686,9 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_IPV6
 	case bpf_htons(ETH_P_IPV6): {
 		struct packet_info_ipv6 new_info_ipv6 = {};
-		classify_ipv6_packet(&new_info_ipv6, data_end, data);
+		if(classify_ipv6_packet(&new_info_ipv6, data_end, data) == TC_ACT_OK){
+			return TC_ACT_OK;
+		}
 		args.map_name = &map_ipv6;
 		args.new_info = &new_info_ipv6;
 		args.map_flow = &ipv6_flow;

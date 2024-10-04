@@ -483,6 +483,7 @@ int main(int argc, char **argv)
 			current_time = time(NULL);
 			if (current_time - last_watched_event_time >= TIMEOUT_SEC && events_count > 0){
 				for (int i = 0; i < events_count; i++){
+					printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 					int ret = write_data_influxdb(h, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 					if (ret != 0) {
 						fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);

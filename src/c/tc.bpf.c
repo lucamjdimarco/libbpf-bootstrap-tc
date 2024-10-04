@@ -437,12 +437,12 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 		bpf_printk("Packet with link-local source address fe80::/10\n");
 		bpf_printk("Source address: %02x\n", temp_src_ip[0]);
 		bpf_printk("Source address: %02x\n", temp_src_ip[1]);
-		return TC_ACT_OK;
+		return -1;
 	}
 
 	if (temp_dst_ip[0] == 0xfe && (temp_dst_ip[1] & 192) == 0x80) {
 		bpf_printk("Packet with link-local destination address fe80::/10\n");
-		return TC_ACT_OK;
+		return -1;
 	}
 
 	// Controllo se l'indirizzo sorgente o destinazione è unspecified (::/128)
@@ -686,7 +686,7 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_IPV6
 	case bpf_htons(ETH_P_IPV6): {
 		struct packet_info_ipv6 new_info_ipv6 = {};
-		if(classify_ipv6_packet(&new_info_ipv6, data_end, data) == TC_ACT_OK){
+		if(classify_ipv6_packet(&new_info_ipv6, data_end, data) == -1){
 			return TC_ACT_OK;
 		}
 		args.map_name = &map_ipv6;

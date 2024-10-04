@@ -328,6 +328,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		fprintf(stderr, "Error: influx_handler is NULL\n");
 	}
 	current_time = time(NULL);
+	last_send_time = time(NULL);
 	if (events_count < BATCH_SIZE){
 		events_buffer[events_count] = *event;
 		events_count++;

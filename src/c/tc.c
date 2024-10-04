@@ -19,7 +19,7 @@
 #define TIMEOUT_SEC 5
 struct event_t events_buffer[BATCH_SIZE];
 int events_count = 0;
-int last_send_time = time(NULL);
+int last_send_time;
 int current_time;
 
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
@@ -363,6 +363,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Usage: %s <interface> <ipv4|ipv6>\n", argv[0]);
 		return 1;
 	}
+
+	last_send_time = time(NULL);
 
 	/*-----------------------*/
 

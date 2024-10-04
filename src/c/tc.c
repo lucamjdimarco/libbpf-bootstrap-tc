@@ -484,7 +484,7 @@ int main(int argc, char **argv)
 			if (current_time - last_watched_event_time >= TIMEOUT_SEC && events_count > 0){
 				printf("events_count=%d\n", events_count);
 				for (int i = 0; i < events_count; i++){
-					printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
+					//printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 					int ret = write_data_influxdb(h, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 					if (ret != 0) {
 						fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
@@ -505,8 +505,8 @@ int main(int argc, char **argv)
 				goto cleanup;
 			}
 			current_time = time(NULL);
-			printf("Current time: %d\n", current_time);
-			printf("Last send time: %d\n", last_watched_event_time);
+			// printf("Current time: %d\n", current_time);
+			// printf("Last send time: %d\n", last_watched_event_time);
 			if (current_time - last_watched_event_time >= TIMEOUT_SEC && events_count > 0){
 				for (int i = 0; i < events_count; i++){
 					int ret = write_data_influxdb(h, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
@@ -514,7 +514,7 @@ int main(int argc, char **argv)
 						fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
 					}
 				}
-				printf("\n\n\n\nEvents written to InfluxDB for timeout\n\n\n\n");
+				printf("Events written to InfluxDB for timeout\n");
 				events_count = 0;
 				last_watched_event_time = current_time;
 			}

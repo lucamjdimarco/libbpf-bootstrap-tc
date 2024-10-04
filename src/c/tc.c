@@ -335,7 +335,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	}else{
 		events_buffer[events_count] = *event;
 		for (int i = 0; i < events_count; i++){
-			printf("Event: ts=%llu flowid=%llu counter=%llu\n", events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
+			printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 			int ret = write_data_influxdb(influx_handler, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 			if (ret != 0) {
 				fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);

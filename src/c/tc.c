@@ -327,7 +327,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	if (!influx_handler) {
 		fprintf(stderr, "Error: influx_handler is NULL\n");
 	}
-
+	last_send_time = current_time;
 	if (events_count < BATCH_SIZE){
 		events_buffer[events_count] = *event;
 		events_count++;
@@ -340,7 +340,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		}
 		printf("Events written to InfluxDB\n");
 		events_count = 0;
-		last_send_time = current_time;
+		
 	}
 
 

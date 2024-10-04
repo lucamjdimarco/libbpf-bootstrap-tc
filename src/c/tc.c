@@ -494,6 +494,18 @@ int main(int argc, char **argv)
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
 			}
+			current_time = time(NULL);
+			if (current_time - last_send_time >= TIMEOUT_SEC && events_count > 0){
+				for (int i = 0; i < events_count; i++){
+					int ret = write_data_influxdb(h, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
+					if (ret != 0) {
+						fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
+					}
+				}
+				printf("Events written to InfluxDB for timeout\n");
+				events_count = 0;
+				last_send_time = current_time;
+			}
 			process_ipv6_map(map_fd, map_type);
 #endif
 		} else {

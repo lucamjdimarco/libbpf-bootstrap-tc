@@ -345,7 +345,7 @@ void free_influxdb_point(InfluxDBPoint *point) {
     }
 }
 
-InfluxDBPoint **create_points_batch(Event *events_buffer, int events_count) {
+InfluxDBPoint **create_points_batch(event_t *events_buffer, int events_count) {
     InfluxDBPoint **points_batch = (InfluxDBPoint **)malloc(events_count * sizeof(InfluxDBPoint *));
     if (!points_batch) {
         fprintf(stderr, "Memory allocation failed for points batch\n");

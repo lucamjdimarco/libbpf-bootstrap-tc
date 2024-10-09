@@ -248,6 +248,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	}
 
 	//event->ts = tsw;
+	bpf_printk("the time is %llu\n", ts);
 	event->ts = ts;
 	event->flowid = packet->flow_id;
 	event->counter = counter_val;

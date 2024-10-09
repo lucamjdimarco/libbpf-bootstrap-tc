@@ -90,9 +90,9 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, uint64_t *flowid, uin
         return -EINVAL;
     }
 	    // Converti gli array C in vettori C++ per passarli alla funzione
-    std::vector<uint64_t> ts_vec(timestamps, timestamps + count);
-    std::vector<uint64_t> flowid_vec(flowids, flowids + count);
-    std::vector<uint64_t> counter_vec(counters, counters + count);
+    std::vector<uint64_t> ts_vec(ts, ts + count);
+    std::vector<uint64_t> flowid_vec(flowid, flowid + count);
+    std::vector<uint64_t> counter_vec(counter, counter + count);
 
     obj = static_cast<InfluxDBWrapper *>(h->obj);
     

@@ -22,6 +22,14 @@ int events_count = 0;
 int last_watched_event_time;
 int current_time;
 
+typedef struct {
+    char *measurement;   // Ad esempio, "rate"
+    uint64_t flowid;     // L'identificatore dell'evento
+    double counter;      // Il valore del contatore
+    uint64_t timestamp;  // Il timestamp dell'evento
+} InfluxDBPoint;
+
+
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
 	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 #define INFLUXDB_URL "http://influxdb:8086?db=tc_db"
@@ -315,6 +323,55 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 
 // --------------------------------------------
 
+InfluxDBPoint *create_influxdb_point(const char *measurement, uint64_t flowid, double counter, uint64_t timestamp) {
+    InfluxDBPoint *point = (InfluxDBPoint *)malloc(sizeof(InfluxDBPoint));
+    if (!point) {
+        fprintf(stderr, "Memory allocation failed for InfluxDBPoint\n");
+        return NULL;
+    }
+
+    point->measurement = strdup(measurement);
+    point->flowid = flowid;
+    point->counter = counter;
+    point->timestamp = timestamp;
+
+    return point;
+}
+
+void free_influxdb_point(InfluxDBPoint *point) {
+    if (point) {
+		free(point->measurement);
+        free(point);
+    }
+}
+
+InfluxDBPoint **create_points_batch(Event *events_buffer, int events_count) {
+    InfluxDBPoint **points_batch = (InfluxDBPoint **)malloc(events_count * sizeof(InfluxDBPoint *));
+    if (!points_batch) {
+        fprintf(stderr, "Memory allocation failed for points batch\n");
+        return NULL;
+    }
+
+    for (int i = 0; i < events_count; i++) {
+        points_batch[i] = create_influxdb_point("rate", events_buffer[i].flowid,
+                                                (double)events_buffer[i].counter, events_buffer[i].ts);
+        if (!points_batch[i]) {
+            fprintf(stderr, "Failed to create point for event %d\n", i);
+            // Free any previously allocated points in case of error
+            for (int j = 0; j < i; j++) {
+                free_influxdb_point(points_batch[j]);
+            }
+            free(points_batch);
+            return NULL;
+        }
+    }
+
+    return points_batch;
+}
+
+
+
+
 // Funzione per scrivere i dati in InfluxDB
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
@@ -335,16 +392,40 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	}else{
 		events_buffer[events_count] = *event;
 		events_count++;
-		for (int i = 0; i < events_count; i++){
-			//printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
-			int ret = write_data_influxdb(influx_handler, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
-			if (ret != 0) {
-				fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
-			}
+		// for (int i = 0; i < events_count; i++){
+		// 	//printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
+		// 	int ret = write_data_influxdb(influx_handler, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
+		// 	if (ret != 0) {
+		// 		fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
+		// 	}
+		// }
+
+
+		// Array per contenere i dati del buffer
+        uint64_t timestamps[BATCH_SIZE];
+        uint64_t flowids[BATCH_SIZE];
+        uint64_t counters[BATCH_SIZE];
+
+        // Copia i dati dal buffer negli array
+        for (int i = 0; i < events_count; i++) {
+            timestamps[i] = events_buffer[i].ts;
+            flowids[i] = events_buffer[i].flowid;
+            counters[i] = events_buffer[i].counter;
+        }
+
+		// Scrivi i dati in InfluxDB
+		int ret = write_data_influxdb_batch(influx_handler, timestamps, flowids, counters, events_count);
+		if (ret != 0) {
+			fprintf(stderr, "Failed to write data to InfluxDB\n");
+		} else {
+			printf("Events written to InfluxDB\n");
 		}
-		printf("Events written to InfluxDB\n");
 		events_count = 0;
 		memset(events_buffer, 0, sizeof(events_buffer));
+
+		// printf("Events written to InfluxDB\n");
+		// events_count = 0;
+		// memset(events_buffer, 0, sizeof(events_buffer));
 
 
 

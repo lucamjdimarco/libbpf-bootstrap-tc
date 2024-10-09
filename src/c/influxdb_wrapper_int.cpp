@@ -1,6 +1,7 @@
 
 #include "influxdb_wrapper.hpp"
 #include "influxdb_wrapper_int.h"
+#include <vector>
 
 /* declared in magic_interface.h but defined here */
 struct MHandler {
@@ -74,6 +75,30 @@ int write_data_influxdb(MHandler_t *h,
 	obj = static_cast<InfluxDBWrapper *>(h->obj);
 	return obj->writeData(ts, flowid, counter);
 }
+
+
+int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, uint64_t *flowid, uint64_t *counter, size_t count) {
+    InfluxDBWrapper *obj;
+
+    if (h == nullptr || ts == nullptr || flowid == nullptr || counter == nullptr) {
+        std::cerr << "Error: null pointer passed to write_data_influx_batch." << std::endl;
+        return -EINVAL;
+    }
+
+    if (h->obj == nullptr) {
+        std::cerr << "Error: h->obj is null." << std::endl;
+        return -EINVAL;
+    }
+	    // Converti gli array C in vettori C++ per passarli alla funzione
+    std::vector<uint64_t> ts_vec(timestamps, timestamps + count);
+    std::vector<uint64_t> flowid_vec(flowids, flowids + count);
+    std::vector<uint64_t> counter_vec(counters, counters + count);
+
+    obj = static_cast<InfluxDBWrapper *>(h->obj);
+    
+	return obj->writeDataBatch(ts_vec, flowid_vec, counter_vec);
+}
+
 
 /*void show_data_influxdb(MHandler_t *h, const char *measurement)
 {

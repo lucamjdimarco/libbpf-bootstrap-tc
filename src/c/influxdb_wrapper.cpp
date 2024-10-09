@@ -2,6 +2,7 @@
 #include "influxdb_wrapper.hpp"
 #include <sstream> 
 #include <stdint.h>
+#include <vector>
 
 /* con l'URI viene creato il DB se non esiste */
 InfluxDBWrapper::InfluxDBWrapper(const char *uri) {
@@ -74,6 +75,40 @@ int InfluxDBWrapper::writeData(uint64_t ts, uint64_t flowid, uint64_t counter) {
 	} catch (...) { /* do nothing */ }
 
 	return -EINVAL;
+}
+
+
+
+int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
+                                    const std::vector<uint64_t>& flowids,
+                                    const std::vector<uint64_t>& counters) {
+    if (timestamps.size() != flowids.size() || flowids.size() != counters.size()) {
+        std::cerr << "Error: Mismatched sizes of input vectors." << std::endl;
+        return -EINVAL;
+    }
+
+    if (db == nullptr) {
+        std::cerr << "Error: db pointer is null." << std::endl;
+        return -EINVAL;
+    }
+
+    try {
+        std::vector<influxdb::Point> points;
+
+        for (size_t i = 0; i < timestamps.size(); ++i) {
+            influxdb::Point point("rate");
+            point.addTag("flowid", std::to_string(flowids[i]));
+            point.addField("value", static_cast<double>(counters[i]));
+            point.setTimestamp(std::chrono::milliseconds(timestamps[i]));
+            points.push_back(std::move(point));
+        }
+
+        db->write(points);  // Scrivi tutti i punti in un'unica richiesta batch
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << "Exception while writing data to InfluxDB: " << e.what() << std::endl;
+        return -EINVAL;
+    }
 }
 
 /*void InfluxDBWrapper::showData(const std::string& measurement) {

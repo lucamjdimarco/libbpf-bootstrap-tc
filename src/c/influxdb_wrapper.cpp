@@ -94,16 +94,20 @@ int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
 
     try {
         std::vector<influxdb::Point> points;
+		
 
         for (size_t i = 0; i < timestamps.size(); ++i) {
             influxdb::Point point("rate");
             point.addTag("flowid", std::to_string(flowids[i]));
             point.addField("value", static_cast<double>(counters[i]));
-            point.setTimestamp(std::chrono::milliseconds(timestamps[i]));
-            points.push_back(std::move(point));
+            //point.setTimestamp(std::chrono::milliseconds(timestamps[i]));
+            std::chrono::time_point<std::chrono::system_clock> timestamp_point = 
+				std::chrono::system_clock::time_point(std::chrono::milliseconds(timestamps[i]));
+			point.setTimestamp(timestamp_point);
+			points.push_back(std::move(point));
         }
 
-        db->write(points);  // Scrivi tutti i punti in un'unica richiesta batch
+        db->write(std::move(points));  // Scrivi tutti i punti in un'unica richiesta batch
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "Exception while writing data to InfluxDB: " << e.what() << std::endl;

@@ -347,6 +347,23 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 		}
 	} else {
 
+		/* --- */
+		__u64 ns_since_epoch = bpf_ktime_get_ns(); // Timestamp in nanosecondi
+		__u64 seconds_since_epoch = ns_since_epoch / 1000000000; // Converti in secondi
+
+		// Ottieni l'epoca Unix (1 gennaio 1970)
+		struct timespec64 ts;
+		bpf_ktime_get_real_ts(&ts); // Funzione per ottenere il timestamp attuale
+		__u64 unix_epoch_seconds = ts.tv_sec; // Tempo in secondi dal 1 gennaio 1970
+
+		// Calcola il timestamp assoluto
+		__u64 absolute_timestamp = unix_epoch_seconds + seconds_since_epoch;
+
+		// Log del timestamp assoluto
+		bpf_printk("Absolute timestamp: %llu seconds since Unix epoch\n", absolute_timestamp);
+
+		/* --- */
+
 		// Aggiorna i contatori nella finestra temporale
 		update_window(packet, args->packet_length, bpf_ktime_get_ns(), true);
 	}

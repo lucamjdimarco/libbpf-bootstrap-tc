@@ -388,7 +388,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	last_watched_event_time = time(NULL);
 	if (events_count < BATCH_SIZE - 1){
 		events_buffer[events_count] = *event;
-		fprintf(stderr, "Event:i=%d ts=%llu flowid=%llu counter=%llu\n",events_count, events_buffer[events_count].ts, events_buffer[events_count].flowid, events_buffer[events_count].counter);
+		//fprintf(stderr, "Event:i=%d ts=%llu flowid=%llu counter=%llu\n",events_count, events_buffer[events_count].ts, events_buffer[events_count].flowid, events_buffer[events_count].counter);
 		events_count++;
 	}else{
 		events_buffer[events_count] = *event;

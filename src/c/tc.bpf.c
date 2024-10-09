@@ -205,7 +205,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	struct event_t *event = NULL;
 	__u32 counter_val;
 	int rc;
-
+	bpf_printk("the time is %llu\n", ts);
 
 	//questo prova a mettere giu
 	// puo accadere che se il buffer è pieno non faccio mai la logica sotto
@@ -248,7 +248,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	}
 
 	//event->ts = tsw;
-	bpf_printk("the time is %llu\n", ts);
+	
 	event->ts = ts;
 	event->flowid = packet->flow_id;
 	event->counter = counter_val;

@@ -599,7 +599,6 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct ethhdr *eth;
 	struct vlan_hdr *vlan;
 
-	/* -------- */
 	__u8 isFirst = 0;
 
 	//controllo se è la prima volta che tc ingress viene chiamato
@@ -622,7 +621,6 @@ int tc_ingress(struct __sk_buff *ctx)
 		//porto isFirst a 1 così da non eseguire più questa parte di codice
 		isFirst = 1;
 	}
-	/* -------- */
 
 	__u32 packet_length = ctx->len;
 

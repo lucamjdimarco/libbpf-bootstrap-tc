@@ -29,14 +29,6 @@ typedef struct {
     uint64_t timestamp;  // Il timestamp dell'evento
 } InfluxDBPoint;
 
-/* -------- */
-int isFirst = 0;
-long long kernel_time; // Tempo del kernel
-struct timespec ts;
-long long abs_time;
-/* -------- */
-
-
 
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
 	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
@@ -386,15 +378,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	printf("**********\n");
 	printf("Received event in the ring buffer\n");
 	struct event_t *event = data;
-
-	if(isFirst == 0{
-		kernel_time = event->ts;
-		clock_gettime(CLOCK_REALTIME, &ts);
-		long long abs_time = ts.tv_sec * 1000000000LL + ts.tv_nsec;
-		printf("Kernel time: %lld\n", kernel_time);
-		printf("Real time: %lld\n", abs_time);
-		isFirst = 1;
-	}
 
 	MHandler_t *influx_handler = (MHandler_t *)ctx;
 

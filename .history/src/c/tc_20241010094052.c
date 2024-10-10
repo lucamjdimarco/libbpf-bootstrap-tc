@@ -30,10 +30,7 @@ typedef struct {
 } InfluxDBPoint;
 
 /* -------- */
-int isFirst = 0;
-long long kernel_time; // Tempo del kernel
-struct timespec ts;
-long long abs_time;
+__u8 isFirst = 0;
 /* -------- */
 
 
@@ -388,11 +385,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	struct event_t *event = data;
 
 	if(isFirst == 0{
-		kernel_time = event->ts;
-		clock_gettime(CLOCK_REALTIME, &ts);
-		long long abs_time = ts.tv_sec * 1000000000LL + ts.tv_nsec;
-		printf("Kernel time: %lld\n", kernel_time);
-		printf("Real time: %lld\n", abs_time);
+		
 		isFirst = 1;
 	}
 

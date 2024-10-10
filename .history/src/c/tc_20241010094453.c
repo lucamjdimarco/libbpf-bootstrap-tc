@@ -390,9 +390,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	if(isFirst == 0{
 		kernel_time = event->ts;
 		clock_gettime(CLOCK_REALTIME, &ts);
-		long long abs_time = ts.tv_sec * 1000000000LL + ts.tv_nsec;
-		printf("Kernel time: %lld\n", kernel_time);
-		printf("Real time: %lld\n", abs_time);
+		long long abs_time = ts.tv_sec * 1000000000LL + ts.tv_nsec
 		isFirst = 1;
 	}
 

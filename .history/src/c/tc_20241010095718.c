@@ -31,10 +31,9 @@ typedef struct {
 
 /* -------- */
 int isFirst = 0;
-long long kernel_time; // Tempo relativo del kernel
+long long kernel_time; // Tempo del kernel
 struct timespec ts;
 long long abs_time;
-long long start_of_the_kernel_abs; //tempo assoluto del kernel 
 /* -------- */
 
 
@@ -392,10 +391,9 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		kernel_time = event->ts;
 		clock_gettime(CLOCK_REALTIME, &ts);
 		long long abs_time = ts.tv_sec * 1000000000LL + ts.tv_nsec;
-		// printf("Kernel time: %lld\n", kernel_time);
-		// printf("Real time: %lld\n", abs_time);
-		// printf("Difference: %lld\n", abs_time - kernel_time);
-		start_of_the_kernel_abs = abs_time - kernel_time;
+		printf("Kernel time: %lld\n", kernel_time);
+		printf("Real time: %lld\n", abs_time);
+		printf("Difference: %lld\n", abs_time - kernel_time);
 		isFirst = 1;
 		return 0;
 	}
@@ -416,9 +414,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		/*-------------------invio dati singolarmente-------------------*/
 		for (int i = 0; i < events_count; i++){
 			//printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
-			/* ----- */
-			int ret = write_data_influxdb(influx_handler, (events_buffer[i].ts + start_of_the_kernel_abs), events_buffer[i].flowid, events_buffer[i].counter);
-			/* ----- */
+			int ret = write_data_influxdb(influx_handler, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 			if (ret != 0) {
 				fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
 			}

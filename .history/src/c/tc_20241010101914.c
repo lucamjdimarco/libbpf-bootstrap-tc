@@ -31,10 +31,10 @@ typedef struct {
 
 /* -------- */
 int isFirst = 0;
-unsigned long long kernel_time; // Tempo relativo del kernel
+long long kernel_time; // Tempo relativo del kernel
 struct timespec ts;
-unsigned long long abs_time;
-unsigned long long start_of_the_kernel_abs; //tempo assoluto del kernel 
+long long abs_time;
+long long start_of_the_kernel_abs; //tempo assoluto del kernel 
 /* -------- */
 
 

@@ -394,7 +394,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		printf("Kernel time: %lld\n", kernel_time);
 		printf("Real time: %lld\n", abs_time);
 		isFirst = 1;
-		return 0;
 	}
 
 	MHandler_t *influx_handler = (MHandler_t *)ctx;

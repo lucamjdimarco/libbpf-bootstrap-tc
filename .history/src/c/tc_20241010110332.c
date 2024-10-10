@@ -414,23 +414,23 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		events_buffer[events_count] = *event;
 		events_count++;
 		/*-------------------invio dati singolarmente-------------------*/
-		for (int i = 0; i < events_count; i++){
-			//printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
-			/* ----- */
-			int ret = write_data_influxdb(influx_handler, (events_buffer[i].ts + start_of_the_kernel_abs), events_buffer[i].flowid, events_buffer[i].counter);
-			printf("Start kernel time relative: %llu\n", kernel_time);
-			//printf("Time absolute: %llu\n", abs_time);
-			printf("Start kernel time absolute: %llu\n", start_of_the_kernel_abs);
-			printf("Time of the packet: %llu\n", events_buffer[i].ts);
-			printf("Abs time of the packet: %llu\n", (events_buffer[i].ts + start_of_the_kernel_abs));
-			/* ----- */
-			if (ret != 0) {
-				fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
-			}
-		}
-		printf("Events written to InfluxDB\n");
-		events_count = 0;
-		memset(events_buffer, 0, sizeof(events_buffer));
+		// for (int i = 0; i < events_count; i++){
+		// 	//printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
+		// 	/* ----- */
+		// 	int ret = write_data_influxdb(influx_handler, (events_buffer[i].ts + start_of_the_kernel_abs), events_buffer[i].flowid, events_buffer[i].counter);
+		// 	printf("Start kernel time relative: %llu\n", kernel_time);
+		// 	//printf("Time absolute: %llu\n", abs_time);
+		// 	printf("Start kernel time absolute: %llu\n", start_of_the_kernel_abs);
+		// 	printf("Time of the packet: %llu\n", events_buffer[i].ts);
+		// 	printf("Abs time of the packet: %llu\n", (events_buffer[i].ts + start_of_the_kernel_abs));
+		// 	/* ----- */
+		// 	if (ret != 0) {
+		// 		fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
+		// 	}
+		// }
+		// printf("Events written to InfluxDB\n");
+		// events_count = 0;
+		// memset(events_buffer, 0, sizeof(events_buffer));
 		/*------------------- fine invio dati singolarmente-------------------*/
 
 		/*-------------------invio dati batch-------------------*/

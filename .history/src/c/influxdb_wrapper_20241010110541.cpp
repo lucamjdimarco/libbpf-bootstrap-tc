@@ -65,7 +65,6 @@ int InfluxDBWrapper::writeData(uint64_t ts, uint64_t flowid, uint64_t counter) {
 	std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> timestamp(
         std::chrono::nanoseconds(ts)
     );
-	point.setTimestamp(timestamp);
 	
 	if (db == nullptr) {
 		std::cerr << "Error: db pointer is null." << std::endl;

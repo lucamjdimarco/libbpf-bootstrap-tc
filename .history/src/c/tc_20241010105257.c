@@ -434,27 +434,27 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		/*------------------- fine invio dati singolarmente-------------------*/
 
 		/*-------------------invio dati batch-------------------*/
-		Array per contenere i dati del buffer
-        uint64_t timestamps[BATCH_SIZE];
-        uint64_t flowids[BATCH_SIZE];
-        uint64_t counters[BATCH_SIZE];
+		// Array per contenere i dati del buffer
+        // uint64_t timestamps[BATCH_SIZE];
+        // uint64_t flowids[BATCH_SIZE];
+        // uint64_t counters[BATCH_SIZE];
 
-        // Copia i dati dal buffer negli array
-        for (int i = 0; i < events_count; i++) {
-            timestamps[i] = (events_buffer[i].ts + start_of_the_kernel_abs);
-            flowids[i] = events_buffer[i].flowid;
-            counters[i] = events_buffer[i].counter;
-        }
+        // // Copia i dati dal buffer negli array
+        // for (int i = 0; i < events_count; i++) {
+        //     timestamps[i] = (events_buffer[i].ts + start_of_the_kernel_abs);
+        //     flowids[i] = events_buffer[i].flowid;
+        //     counters[i] = events_buffer[i].counter;
+        // }
 
-		// Scrivi i dati in InfluxDB
-		int ret = write_data_influxdb_batch(influx_handler, timestamps, flowids, counters, events_count);
-		if (ret != 0) {
-			fprintf(stderr, "Failed to write data to InfluxDB\n");
-		} else {
-			printf("Events written to InfluxDB\n");
-		}
-		events_count = 0;
-		memset(events_buffer, 0, sizeof(events_buffer));
+		// // Scrivi i dati in InfluxDB
+		// int ret = write_data_influxdb_batch(influx_handler, timestamps, flowids, counters, events_count);
+		// if (ret != 0) {
+		// 	fprintf(stderr, "Failed to write data to InfluxDB\n");
+		// } else {
+		// 	printf("Events written to InfluxDB\n");
+		// }
+		// events_count = 0;
+		// memset(events_buffer, 0, sizeof(events_buffer));
 		/*------------------- fine invio dati batch-------------------*/
 		
 

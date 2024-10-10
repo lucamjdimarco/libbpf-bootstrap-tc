@@ -422,7 +422,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 			printf("Time absolute: %llu\n", abs_time);
 			printf("Start kernel time absolute: %llu\n", start_of_the_kernel_abs);
 			printf("Time of the packet: %llu\n", events_buffer[i].ts);
-			printf("Abs time of the packet: %llu\n", (events_buffer[i].ts + start_of_the_kernel_abs));
+			printf("Abs time of the packet: %llu\n", ((events_buffer[i].ts + start_of_the_kernel_abs));
 			/* ----- */
 			if (ret != 0) {
 				fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);

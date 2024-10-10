@@ -418,7 +418,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 			//printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 			/* ----- */
 			int ret = write_data_influxdb(influx_handler, (events_buffer[i].ts + start_of_the_kernel_abs), events_buffer[i].flowid, events_buffer[i].counter);
-			printf("Abs time of the packet: %llu\n", (events_buffer[i].ts + start_of_the_kernel_abs));
+			printf("Time of the packet: %llu\n", (events_buffer[i].ts + start_of_the_kernel_abs));
 			/* ----- */
 			if (ret != 0) {
 				fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);

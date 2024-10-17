@@ -207,7 +207,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u32 counter_val;
 	int rc;
 
-
 	//questo prova a mettere giu
 	// puo accadere che se il buffer è pieno non faccio mai la logica sotto
 	rc = prepare_ring_buffer_write(&rbuf_events, &event);
@@ -225,7 +224,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u64 tsw = packet->tsw;
 	__u32 *counter = &packet->counter; //no puntatore
 
-	
 	if (cur_tsw <= tsw) {
 		bpf_spin_unlock(&packet->lock);
 		bpf_ringbuf_discard(event, 0);
@@ -239,7 +237,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	// event->ts = tsw;
 	// event->flowid = packet->flow_id;
 	// event->counter = counter_val;
-
 
 	if (!event) {
 		bpf_spin_unlock(&packet->lock);
@@ -289,7 +286,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	return 0;
 }
 
-
 static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args)
 {
 	struct value_packet *packet = NULL;
@@ -306,7 +302,7 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		if (flow_id == -1) {
 			bpf_printk("Failed to build flow_id\n");
-			return -EFAULT; 
+			return -EFAULT;
 		}
 
 		// Crea un nuovo valore per il pacchetto
@@ -350,7 +346,6 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 			}
 		}
 	} else {
-
 		// Aggiorna i contatori nella finestra temporale
 		update_window(packet, args->packet_length, bpf_ktime_get_ns(), true);
 	}
@@ -438,7 +433,8 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 	memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
 
 	// Controllo se l'indirizzo sorgente o destinazione è link-local (fe80::/10)
-	if (temp_src_ip[0] == 0xfe && (temp_src_ip[1] & 192) == 0x80) { //corretto bug altrimenti controllava una /12
+	if (temp_src_ip[0] == 0xfe &&
+	    (temp_src_ip[1] & 192) == 0x80) { //corretto bug altrimenti controllava una /12
 		bpf_printk("Packet with link-local source address fe80::/10\n");
 		return -EFAULT;
 	}
@@ -549,8 +545,26 @@ static __always_inline int classify_ONLY_ADDRESS_ipv6_packet(struct only_addr_ip
 							     void *data_end, void *data)
 {
 	struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
+	__u8 temp_src_ip[16];
+	__u8 temp_dst_ip[16];
+
 	if ((void *)(ip6 + 1) > data_end) {
 		bpf_printk("IPv6 header is not complete\n");
+		return -EFAULT;
+	}
+
+	memcpy(temp_src_ip, ip6->saddr.in6_u.u6_addr8, 16);
+	memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
+
+	// Controllo se l'indirizzo sorgente o destinazione è link-local (fe80::/10)
+	if (temp_src_ip[0] == 0xfe &&
+	    (temp_src_ip[1] & 192) == 0x80) { //corretto bug altrimenti controllava una /12
+		bpf_printk("Packet with link-local source address fe80::/10\n");
+		return -EFAULT;
+	}
+
+	if (temp_dst_ip[0] == 0xfe && (temp_dst_ip[1] & 192) == 0x80) {
+		bpf_printk("Packet with link-local destination address fe80::/10\n");
 		return -EFAULT;
 	}
 
@@ -567,6 +581,8 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv4_packet(struct only_de
 								  void *data_end, void *data)
 {
 	struct iphdr *ip = (struct iphdr *)data;
+	__u8 temp_dst_ip[16];
+
 	if ((void *)(ip + 1) > data_end) {
 		bpf_printk("IPv4 header is not complete\n");
 		return -EFAULT;
@@ -586,6 +602,13 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv6_packet(struct only_de
 	struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
 	if ((void *)(ip6 + 1) > data_end) {
 		bpf_printk("IPv6 header is not complete\n");
+		return -EFAULT;
+	}
+
+	memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
+
+	if (temp_dst_ip[0] == 0xfe && (temp_dst_ip[1] & 192) == 0x80) {
+		bpf_printk("Packet with link-local destination address fe80::/10\n");
 		return -EFAULT;
 	}
 
@@ -684,7 +707,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.map_flow = &ipv4_flow;
 		args.flow_type = QUINTUPLA;
 		ret = classify_packet_and_update_map(&args);
-		if (ret < 0){
+		if (ret < 0) {
 			return TC_ACT_OK;
 		}
 		break;
@@ -703,7 +726,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.map_flow = &ipv4_flow;
 		args.flow_type = ONLY_ADDRESS;
 		ret = classify_packet_and_update_map(&args);
-		if (ret < 0){
+		if (ret < 0) {
 			return TC_ACT_OK;
 		}
 		break;
@@ -713,7 +736,8 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
 	case bpf_htons(ETH_P_IP): {
 		struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
-		ret = classify_ONLY_DEST_ADDRESS_ipv4_packet(&new_info_only_dest_ipv4, data_end, data);
+		ret = classify_ONLY_DEST_ADDRESS_ipv4_packet(&new_info_only_dest_ipv4, data_end,
+							     data);
 		if (ret < 0) {
 			return TC_ACT_OK;
 		}
@@ -722,7 +746,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.map_flow = &ipv4_flow;
 		args.flow_type = ONLY_DEST_ADDRESS;
 		ret = classify_packet_and_update_map(&args);
-		if (ret < 0){
+		if (ret < 0) {
 			return TC_ACT_OK;
 		}
 		break;
@@ -733,7 +757,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	case bpf_htons(ETH_P_IPV6): {
 		struct packet_info_ipv6 new_info_ipv6 = {};
 		ret = classify_ipv6_packet(&new_info_ipv6, data_end, data);
-		if(ret < 0){
+		if (ret < 0) {
 			return TC_ACT_OK;
 		}
 		args.map_name = &map_ipv6;
@@ -741,7 +765,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.map_flow = &ipv6_flow;
 		args.flow_type = QUINTUPLA;
 		ret = classify_packet_and_update_map(&args);
-		if (ret < 0){
+		if (ret < 0) {
 			return TC_ACT_OK;
 		}
 		break;
@@ -760,7 +784,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.map_flow = &ipv6_flow;
 		args.flow_type = ONLY_ADDRESS;
 		ret = classify_packet_and_update_map(&args);
-		if (ret < 0){
+		if (ret < 0) {
 			return TC_ACT_OK;
 		}
 		break;
@@ -771,7 +795,8 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 	case bpf_htons(ETH_P_IPV6): {
 		struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
-		ret = classify_ONLY_DEST_ADDRESS_ipv6_packet(&new_info_only_dest_ipv6, data_end, data);
+		ret = classify_ONLY_DEST_ADDRESS_ipv6_packet(&new_info_only_dest_ipv6, data_end,
+							     data);
 		if (ret < 0) {
 			return TC_ACT_OK;
 		}
@@ -780,7 +805,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.map_flow = &ipv6_flow;
 		args.flow_type = ONLY_DEST_ADDRESS;
 		ret = classify_packet_and_update_map(&args);
-		if (ret < 0){
+		if (ret < 0) {
 			return TC_ACT_OK;
 		}
 		break;

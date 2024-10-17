@@ -781,7 +781,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.flow_type = ONLY_DEST_ADDRESS;
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0){
-			return TC_ACT_OK
+			return TC_ACT_OK;
 		}
 		break;
 	}

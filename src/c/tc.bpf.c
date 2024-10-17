@@ -581,8 +581,6 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv4_packet(struct only_de
 								  void *data_end, void *data)
 {
 	struct iphdr *ip = (struct iphdr *)data;
-	__u8 temp_dst_ip[16];
-
 	if ((void *)(ip + 1) > data_end) {
 		bpf_printk("IPv4 header is not complete\n");
 		return -EFAULT;
@@ -600,6 +598,8 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv6_packet(struct only_de
 								  void *data_end, void *data)
 {
 	struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
+	__u8 temp_dst_ip[16];
+
 	if ((void *)(ip6 + 1) > data_end) {
 		bpf_printk("IPv6 header is not complete\n");
 		return -EFAULT;

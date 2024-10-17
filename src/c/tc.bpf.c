@@ -306,7 +306,7 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		if (flow_id == -1) {
 			bpf_printk("Failed to build flow_id\n");
-			return TC_ACT_OK;
+			return -EFAULT; 
 		}
 
 		// Crea un nuovo valore per il pacchetto
@@ -322,21 +322,21 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 		ret = bpf_map_update_elem(args->map_name, args->new_info, &new_value, BPF_ANY);
 		if (ret) {
 			bpf_printk("Failed to insert new item in map_name\n");
-			return TC_ACT_OK;
+			return -ENOMEM;
 		}
 
 		// Aggiorna la mappa dei flussi
 		ret = bpf_map_update_elem(args->map_flow, &flow_id, args->new_info, BPF_ANY);
 		if (ret) {
 			bpf_printk("Failed to insert new item in map_flow\n");
-			return TC_ACT_OK;
+			return -ENOMEM;
 		}
 
 		// Ricarica l'elemento aggiornato dalla mappa
 		packet = bpf_map_lookup_elem(args->map_name, args->new_info);
 		if (!packet) {
 			bpf_printk("Failed to lookup newly inserted item in map_name\n");
-			return TC_ACT_OK;
+			return -ENOENT;
 		}
 
 		// Inizializza il timer in modo atomico
@@ -346,7 +346,7 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 				bpf_printk("Failed to initialize timer\n");
 				// Se fallisce, ripristina il flag di inizializzazione
 				__sync_bool_compare_and_swap(&packet->initialized, 1, 0);
-				return TC_ACT_OK;
+				return -EFAULT;
 			}
 		}
 	} else {
@@ -367,7 +367,7 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 
 	if ((void *)(ip + 1) > data_end) {
 		bpf_printk("IPv4 header is not complete\n");
-		return TC_ACT_OK;
+		return -EFAULT;
 	}
 
 	__u8 protocol = ip->protocol;
@@ -383,7 +383,7 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 		struct tcphdr *tcph = (struct tcphdr *)(ip + 1);
 		if ((void *)(tcph + 1) > data_end) {
 			bpf_printk("TCP header is not complete\n");
-			return TC_ACT_OK;
+			return -EFAULT;
 		}
 
 		info->src_port = bpf_ntohs(tcph->source);
@@ -394,7 +394,7 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 		struct udphdr *udph = (struct udphdr *)(ip + 1);
 		if ((void *)(udph + 1) > data_end) {
 			bpf_printk("UDP header is not complete\n");
-			return TC_ACT_OK;
+			return -EFAULT;
 		}
 
 		info->src_port = bpf_ntohs(udph->source);
@@ -405,13 +405,13 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 		struct icmphdr *icmph = (struct icmphdr *)(ip + 1);
 		if ((void *)(icmph + 1) > data_end) {
 			bpf_printk("ICMP header is not complete\n");
-			return TC_ACT_OK;
+			return -EFAULT;
 		}
 		break;
 	}
 	default: {
 		bpf_printk("Unknown protocol\n");
-		return TC_ACT_OK;
+		return -EFAULT;
 	}
 	}
 
@@ -602,6 +602,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	void *data = (void *)(__u64)ctx->data;
 	struct ethhdr *eth;
 	struct vlan_hdr *vlan;
+	int ret;
 
 	/* -------- */
 
@@ -674,12 +675,18 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_IPV4
 	case bpf_htons(ETH_P_IP): {
 		struct packet_info new_info = {};
-		classify_ipv4_packet(&new_info, data_end, data);
+		ret = classify_ipv4_packet(&new_info, data_end, data);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		args.map_name = &map_ipv4;
 		args.new_info = &new_info;
 		args.map_flow = &ipv4_flow;
 		args.flow_type = QUINTUPLA;
-		classify_packet_and_update_map(&args);
+		ret = classify_packet_and_update_map(&args);
+		if (ret < 0){
+			return TC_ACT_OK
+		}
 		break;
 	}
 #endif

@@ -13,7 +13,7 @@
 //#include "../../influxdb-connector/influxdb_wrapper_int.h"
 #include "influxdb_wrapper_int.h"
 
-#define BATCH_SIZE  3
+#define BATCH_SIZE 3
 #define TIMEOUT_SEC 40
 struct event_t events_buffer[BATCH_SIZE];
 int events_count = 0;
@@ -21,10 +21,10 @@ int last_watched_event_time;
 int current_time;
 
 typedef struct {
-	char *measurement; // Ad esempio, "rate"
-	uint64_t flowid; // L'identificatore dell'evento
-	double counter; // Il valore del contatore
-	uint64_t timestamp; // Il timestamp dell'evento
+    char *measurement;   // Ad esempio, "rate"
+    uint64_t flowid;     // L'identificatore dell'evento
+    double counter;      // Il valore del contatore
+    uint64_t timestamp;  // Il timestamp dell'evento
 } InfluxDBPoint;
 
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
@@ -126,6 +126,7 @@ void process_ipv4_map(int fd, const char *map_type)
 			break;
 		}
 		if (!bpf_map_lookup_elem(fd, key, value)) {
+
 #if defined(CLASSIFY_ONLY_ADDRESS_IPV4) || defined(CLASSIFY_IPV4)
 			printf("Source IP: ");
 			print_ipv4_address(key->src_ip);
@@ -319,57 +320,54 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 
 // --------------------------------------------
 
-InfluxDBPoint *create_influxdb_point(const char *measurement, uint64_t flowid, double counter,
-				     uint64_t timestamp)
-{
-	InfluxDBPoint *point = (InfluxDBPoint *)malloc(sizeof(InfluxDBPoint));
-	if (!point) {
-		fprintf(stderr, "Memory allocation failed for InfluxDBPoint\n");
-		return NULL;
-	}
+InfluxDBPoint *create_influxdb_point(const char *measurement, uint64_t flowid, double counter, uint64_t timestamp) {
+    InfluxDBPoint *point = (InfluxDBPoint *)malloc(sizeof(InfluxDBPoint));
+    if (!point) {
+        fprintf(stderr, "Memory allocation failed for InfluxDBPoint\n");
+        return NULL;
+    }
 
-	point->measurement = strdup(measurement);
-	point->flowid = flowid;
-	point->counter = counter;
-	point->timestamp = timestamp;
+    point->measurement = strdup(measurement);
+    point->flowid = flowid;
+    point->counter = counter;
+    point->timestamp = timestamp;
 
-	return point;
+    return point;
 }
 
-void free_influxdb_point(InfluxDBPoint *point)
-{
-	if (point) {
+void free_influxdb_point(InfluxDBPoint *point) {
+    if (point) {
 		free(point->measurement);
-		free(point);
-	}
+        free(point);
+    }
 }
 
-InfluxDBPoint **create_points_batch(struct event_t *events_buffer, int events_count)
-{
-	InfluxDBPoint **points_batch =
-		(InfluxDBPoint **)malloc(events_count * sizeof(InfluxDBPoint *));
-	if (!points_batch) {
-		fprintf(stderr, "Memory allocation failed for points batch\n");
-		return NULL;
-	}
+InfluxDBPoint **create_points_batch(struct event_t *events_buffer, int events_count) {
+    InfluxDBPoint **points_batch = (InfluxDBPoint **)malloc(events_count * sizeof(InfluxDBPoint *));
+    if (!points_batch) {
+        fprintf(stderr, "Memory allocation failed for points batch\n");
+        return NULL;
+    }
 
-	for (int i = 0; i < events_count; i++) {
-		points_batch[i] = create_influxdb_point("rate", events_buffer[i].flowid,
-							(double)events_buffer[i].counter,
-							events_buffer[i].ts);
-		if (!points_batch[i]) {
-			fprintf(stderr, "Failed to create point for event %d\n", i);
-			// Free any previously allocated points in case of error
-			for (int j = 0; j < i; j++) {
-				free_influxdb_point(points_batch[j]);
-			}
-			free(points_batch);
-			return NULL;
-		}
-	}
+    for (int i = 0; i < events_count; i++) {
+        points_batch[i] = create_influxdb_point("rate", events_buffer[i].flowid,
+                                                (double)events_buffer[i].counter, events_buffer[i].ts);
+        if (!points_batch[i]) {
+            fprintf(stderr, "Failed to create point for event %d\n", i);
+            // Free any previously allocated points in case of error
+            for (int j = 0; j < i; j++) {
+                free_influxdb_point(points_batch[j]);
+            }
+            free(points_batch);
+            return NULL;
+        }
+    }
 
-	return points_batch;
+    return points_batch;
 }
+
+
+
 
 // Funzione per scrivere i dati in InfluxDB
 static int handle_event(void *ctx, void *data, size_t data_sz)
@@ -394,10 +392,10 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	}
 	//current_time = time(NULL);
 	last_watched_event_time = time(NULL);
-	if (events_count < BATCH_SIZE - 1) {
+	if (events_count < BATCH_SIZE - 1){
 		events_buffer[events_count] = *event;
 		events_count++;
-	} else {
+	}else{
 		events_buffer[events_count] = *event;
 		events_count++;
 		/*-------------------invio dati singolarmente-------------------*/
@@ -417,20 +415,19 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 
 		/*-------------------invio dati batch-------------------*/
 		//Array per contenere i dati del buffer
-		uint64_t timestamps[BATCH_SIZE];
-		uint64_t flowids[BATCH_SIZE];
-		uint64_t counters[BATCH_SIZE];
+        uint64_t timestamps[BATCH_SIZE];
+        uint64_t flowids[BATCH_SIZE];
+        uint64_t counters[BATCH_SIZE];
 
-		// Copia i dati dal buffer negli array
-		for (int i = 0; i < events_count; i++) {
+        // Copia i dati dal buffer negli array
+        for (int i = 0; i < events_count; i++) {
 			timestamps[i] = events_buffer[i].ts;
-			flowids[i] = events_buffer[i].flowid;
-			counters[i] = events_buffer[i].counter;
-		}
+            flowids[i] = events_buffer[i].flowid;
+            counters[i] = events_buffer[i].counter;
+        }
 
 		// Scrivi i dati in InfluxDB
-		int ret = write_data_influxdb_batch(influx_handler, timestamps, flowids, counters,
-						    events_count);
+		int ret = write_data_influxdb_batch(influx_handler, timestamps, flowids, counters, events_count);
 		if (ret != 0) {
 			fprintf(stderr, "Failed to write data to InfluxDB\n");
 		} else {
@@ -439,6 +436,9 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		events_count = 0;
 		memset(events_buffer, 0, sizeof(events_buffer));
 		/*------------------- fine invio dati batch-------------------*/
+		
+
+		
 
 		last_watched_event_time = current_time;
 	}
@@ -457,6 +457,7 @@ int main(int argc, char **argv)
 
 	last_watched_event_time = time(NULL);
 
+
 	MHandler_t *h = create_influxdb(INFLUXDB_URL);
 	if (!h) {
 		printf("Cannot create MHandler\n");
@@ -472,7 +473,7 @@ int main(int argc, char **argv)
 		perror("if_nametoindex");
 		return 1;
 	}
-
+	
 	DECLARE_LIBBPF_OPTS(bpf_tc_hook, tc_hook, .ifindex = index, .attach_point = BPF_TC_INGRESS);
 	DECLARE_LIBBPF_OPTS(bpf_tc_opts, tc_opts, .handle = 1, .priority = 1);
 	bool hook_created = false;
@@ -482,6 +483,7 @@ int main(int argc, char **argv)
 	int map_fd;
 	int map_fd_flow;
 
+	
 	libbpf_set_print(libbpf_print_fn);
 
 	skel = tc_bpf__open_and_load();
@@ -531,6 +533,7 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
+
 	// Main loop per processare i dati
 	while (!exiting) {
 		if (strcmp(map_type, "ipv4") == 0) {
@@ -541,35 +544,28 @@ int main(int argc, char **argv)
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
-			} else if (err == 0) {
-				/* se err == 0 allora è scaduto il timeout --> nessun dato è passato nel ring_buff */
+			} else if(err == 0){
 				printf("No events in the ring buffer\n");
 				continue;
 			} else {
 				printf("Events in the ring buffer\n");
 				current_time = time(NULL);
-				if (current_time - last_watched_event_time >= TIMEOUT_SEC &&
-				    events_count > 0) {
-					printf("events_count=%d\n", events_count);
-					for (int i = 0; i < events_count; i++) {
-						//printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
-						int ret = write_data_influxdb(
-							h, events_buffer[i].ts,
-							events_buffer[i].flowid,
-							events_buffer[i].counter);
-						if (ret != 0) {
-							fprintf(stderr,
-								"Failed to write event %d to InfluxDB\n",
-								i);
-						}
+			if (current_time - last_watched_event_time >= TIMEOUT_SEC && events_count > 0){
+				printf("events_count=%d\n", events_count);
+				for (int i = 0; i < events_count; i++){
+					//printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
+					int ret = write_data_influxdb(h, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
+					if (ret != 0) {
+						fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
 					}
-					printf("Events written to InfluxDB for timeout\n");
-					events_count = 0;
-					last_watched_event_time = current_time;
 				}
-				process_ipv4_map(map_fd, map_type);
+				printf("Events written to InfluxDB for timeout\n");
+				events_count = 0;
+				last_watched_event_time = current_time;
 			}
-
+			process_ipv4_map(map_fd, map_type);
+			}
+			
 #endif
 		} else if (strcmp(map_type, "ipv6") == 0) {
 #if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
@@ -578,31 +574,22 @@ int main(int argc, char **argv)
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
-			} else if (err == 0) {
-				printf("No events in the ring buffer\n");
-				continue;
-			} else {
-				printf("Events in the ring buffer\n");
-				current_time = time(NULL);
-				if (current_time - last_watched_event_time >= TIMEOUT_SEC &&
-				    events_count > 0) {
-					for (int i = 0; i < events_count; i++) {
-						int ret = write_data_influxdb(
-							h, events_buffer[i].ts,
-							events_buffer[i].flowid,
-							events_buffer[i].counter);
-						if (ret != 0) {
-							fprintf(stderr,
-								"Failed to write event %d to InfluxDB\n",
-								i);
-						}
-					}
-					printf("Events written to InfluxDB for timeout\n");
-					events_count = 0;
-					last_watched_event_time = current_time;
-				}
-				process_ipv6_map(map_fd, map_type);
 			}
+			current_time = time(NULL);
+			// printf("Current time: %d\n", current_time);
+			// printf("Last send time: %d\n", last_watched_event_time);
+			if (current_time - last_watched_event_time >= TIMEOUT_SEC && events_count > 0){
+				for (int i = 0; i < events_count; i++){
+					int ret = write_data_influxdb(h, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
+					if (ret != 0) {
+						fprintf(stderr, "Failed to write event %d to InfluxDB\n", i);
+					}
+				}
+				printf("Events written to InfluxDB for timeout\n");
+				events_count = 0;
+				last_watched_event_time = current_time;
+			}
+			process_ipv6_map(map_fd, map_type);
 #endif
 		} else {
 			fprintf(stderr, "Invalid map type\n");

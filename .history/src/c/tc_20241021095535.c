@@ -541,8 +541,7 @@ int main(int argc, char **argv)
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
-			} else if (err == 0) {
-				/* se err == 0 allora è scaduto il timeout --> nessun dato è passato nel ring_buff */
+			} else if (err == 0) /* se err == 0 allora è scaduto il timeout --> nessun dato è passato nel ring_buff */ {
 				printf("No events in the ring buffer\n");
 				continue;
 			} else {
@@ -578,30 +577,11 @@ int main(int argc, char **argv)
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
-			} else if (err == 0) {
-				printf("No events in the ring buffer\n");
-				continue;
+			} else if(err == 0) {
+
 			} else {
 				printf("Events in the ring buffer\n");
-				current_time = time(NULL);
-				if (current_time - last_watched_event_time >= TIMEOUT_SEC &&
-				    events_count > 0) {
-					for (int i = 0; i < events_count; i++) {
-						int ret = write_data_influxdb(
-							h, events_buffer[i].ts,
-							events_buffer[i].flowid,
-							events_buffer[i].counter);
-						if (ret != 0) {
-							fprintf(stderr,
-								"Failed to write event %d to InfluxDB\n",
-								i);
-						}
-					}
-					printf("Events written to InfluxDB for timeout\n");
-					events_count = 0;
-					last_watched_event_time = current_time;
-				}
-				process_ipv6_map(map_fd, map_type);
+				
 			}
 #endif
 		} else {

@@ -541,8 +541,9 @@ int main(int argc, char **argv)
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
-			} else if (err == 0) {
-				/* se err == 0 allora è scaduto il timeout --> nessun dato è passato nel ring_buff */
+			} else if (err ==
+				   0) /* se err == 0 allora è scaduto il timeout --> nessun dato è passato nel ring_buff */
+			{
 				printf("No events in the ring buffer\n");
 				continue;
 			} else {
@@ -579,8 +580,6 @@ int main(int argc, char **argv)
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
 			} else if (err == 0) {
-				printf("No events in the ring buffer\n");
-				continue;
 			} else {
 				printf("Events in the ring buffer\n");
 				current_time = time(NULL);

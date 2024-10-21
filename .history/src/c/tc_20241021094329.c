@@ -13,6 +13,8 @@
 //#include "../../influxdb-connector/influxdb_wrapper_int.h"
 #include "influxdb_wrapper_int.h"
 
+//make -j6 CFLAGS_EXTRA="-DCLASS=1"
+
 #define BATCH_SIZE 3
 #define TIMEOUT_SEC 40
 struct event_t events_buffer[BATCH_SIZE];
@@ -457,6 +459,7 @@ int main(int argc, char **argv)
 
 	last_watched_event_time = time(NULL);
 
+	/*-----------------------*/
 
 	MHandler_t *h = create_influxdb(INFLUXDB_URL);
 	if (!h) {
@@ -466,6 +469,15 @@ int main(int argc, char **argv)
 
 	show_databases_influxdb(h);
 
+	/*write_temp_influxdb(h, "Rome", 14.1);
+
+	destroy_influxdb(h);
+	h = NULL;
+
+	printf(" *** Done ***\n");*/
+
+	/*-----------------------*/
+
 	const char *interface_name = argv[1];
 	const char *map_type = argv[2];
 	int index = if_nametoindex(interface_name);
@@ -473,7 +485,8 @@ int main(int argc, char **argv)
 		perror("if_nametoindex");
 		return 1;
 	}
-	
+	//DECLARE_LIBBPF_OPTS(bpf_tc_hook, tc_hook, .ifindex = LO_IFINDEX,
+	//.attach_point = BPF_TC_INGRESS);
 	DECLARE_LIBBPF_OPTS(bpf_tc_hook, tc_hook, .ifindex = index, .attach_point = BPF_TC_INGRESS);
 	DECLARE_LIBBPF_OPTS(bpf_tc_opts, tc_opts, .handle = 1, .priority = 1);
 	bool hook_created = false;
@@ -532,6 +545,15 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to create ring buffer\n");
 		goto cleanup;
 	}
+
+	/* -------- */
+	//recupero il tempo iniziale
+	//err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
+	/*if (err < 0) {
+		fprintf(stderr, "Error polling ring buffer: %d\n", err);
+		goto cleanup;
+	}*/
+	/* -------- */
 
 
 	// Main loop per processare i dati

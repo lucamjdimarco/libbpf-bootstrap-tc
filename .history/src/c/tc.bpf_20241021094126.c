@@ -607,6 +607,30 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct vlan_hdr *vlan;
 	int ret;
 
+	/* -------- */
+
+	//controllo se è la prima volta che tc ingress viene chiamato
+	/*if (isFirst == 0) {
+		//recupero il primissimo tempo in ns
+		__u64 ts = bpf_ktime_get_ns();
+		//muovo il tempo in ns verso il lato utente
+		struct event_t *event = NULL;
+		int rc = prepare_ring_buffer_write(&rbuf_events, &event);
+		if (rc) {
+			bpf_printk("Failed to reserve space in ring buffer\n");
+			return 0;
+		}
+		//inizializzo l'evento
+		event->ts = ts;
+		event->flowid = 0;
+		event->counter = 0;
+		//mando l'evento
+		bpf_ringbuf_submit(event, 0);
+		//porto isFirst a 1 così da non eseguire più questa parte di codice
+		isFirst = 1;
+	}*/
+	/* -------- */
+
 	__u32 packet_length = ctx->len;
 
 	struct classify_packet_args args = { .map_name = NULL,

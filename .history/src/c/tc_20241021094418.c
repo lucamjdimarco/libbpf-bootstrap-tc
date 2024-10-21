@@ -13,6 +13,8 @@
 //#include "../../influxdb-connector/influxdb_wrapper_int.h"
 #include "influxdb_wrapper_int.h"
 
+//make -j6 CFLAGS_EXTRA="-DCLASS=1"
+
 #define BATCH_SIZE 3
 #define TIMEOUT_SEC 40
 struct event_t events_buffer[BATCH_SIZE];

@@ -578,6 +578,7 @@ int main(int argc, char **argv)
 			} else if (err == 0) {
 				continue;
 			} else {
+				printf("Events in the ring buffer\n");
 				current_time = time(NULL);
 				if (current_time - last_watched_event_time >= TIMEOUT_SEC &&
 				    events_count > 0) {

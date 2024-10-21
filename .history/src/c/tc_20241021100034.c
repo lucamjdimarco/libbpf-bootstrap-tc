@@ -545,11 +545,13 @@ int main(int argc, char **argv)
 				/* se err == 0 allora è scaduto il timeout --> nessun dato è passato nel ring_buff */
 				continue;
 			} else {
+				printf("Events in the ring buffer\n");
 				current_time = time(NULL);
 				if (current_time - last_watched_event_time >= TIMEOUT_SEC &&
 				    events_count > 0) {
 					printf("events_count=%d\n", events_count);
 					for (int i = 0; i < events_count; i++) {
+						//printf("Event:i=%d ts=%llu flowid=%llu counter=%llu\n",i, events_buffer[i].ts, events_buffer[i].flowid, events_buffer[i].counter);
 						int ret = write_data_influxdb(
 							h, events_buffer[i].ts,
 							events_buffer[i].flowid,
@@ -576,8 +578,10 @@ int main(int argc, char **argv)
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
 			} else if (err == 0) {
+				printf("No events in the ring buffer\n");
 				continue;
 			} else {
+				printf("Events in the ring buffer\n");
 				current_time = time(NULL);
 				if (current_time - last_watched_event_time >= TIMEOUT_SEC &&
 				    events_count > 0) {

@@ -576,8 +576,10 @@ int main(int argc, char **argv)
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
 				goto cleanup;
 			} else if (err == 0) {
+				printf("No events in the ring buffer\n");
 				continue;
 			} else {
+				printf("Events in the ring buffer\n");
 				current_time = time(NULL);
 				if (current_time - last_watched_event_time >= TIMEOUT_SEC &&
 				    events_count > 0) {

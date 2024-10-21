@@ -388,14 +388,14 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	printf("Received event in the ring buffer\n");
 	struct event_t *event = data;
 
-	/*if(isFirst == 0){
+	if(isFirst == 0){
 		kernel_time = event->ts;
 		clock_gettime(CLOCK_REALTIME, &ts);
 		long long abs_time = ts.tv_sec * 1000000000LL + ts.tv_nsec;
 		start_of_the_kernel_abs = abs_time - kernel_time;
 		isFirst = 1;
 		return 0;
-	}*/
+	}
 
 	MHandler_t *influx_handler = (MHandler_t *)ctx;
 
@@ -438,8 +438,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 
         // Copia i dati dal buffer negli array
         for (int i = 0; i < events_count; i++) {
-            //timestamps[i] = (events_buffer[i].ts + start_of_the_kernel_abs);
-			timestamps[i] = events_buffer[i].ts;
+            timestamps[i] = (events_buffer[i].ts + start_of_the_kernel_abs);
             flowids[i] = events_buffer[i].flowid;
             counters[i] = events_buffer[i].counter;
         }
@@ -582,11 +581,11 @@ int main(int argc, char **argv)
 
 	/* -------- */
 	//recupero il tempo iniziale
-	//err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
-	/*if (err < 0) {
+	err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
+	if (err < 0) {
 		fprintf(stderr, "Error polling ring buffer: %d\n", err);
 		goto cleanup;
-	}*/
+	}
 	/* -------- */
 
 

@@ -15,7 +15,7 @@
 #define SWIN_TIMER_TIMEOUT (SWIN_SCALER << 1ul)
 
 __u64 counter = 0;
-//__u8 isFirst = 0;
+__u8 isFirst = 0;
 
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };
 

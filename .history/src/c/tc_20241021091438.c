@@ -439,7 +439,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
         // Copia i dati dal buffer negli array
         for (int i = 0; i < events_count; i++) {
             //timestamps[i] = (events_buffer[i].ts + start_of_the_kernel_abs);
-			timestamps[i] = events_buffer[i].ts;
+			timestamps[i] = (events_buffer[i]);
             flowids[i] = events_buffer[i].flowid;
             counters[i] = events_buffer[i].counter;
         }

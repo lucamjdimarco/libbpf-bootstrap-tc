@@ -17,7 +17,11 @@
 __u64 counter = 0;
 
 /* ---- */
+
+#define MACHINE_ID_FILE "/etc/machine-id"
+#define MACHINE_ID_SIZE 33
 __u64 flow_id = -1;
+char machine_id[MACHINE_ID_SIZE];
 /* ---- */
 
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };
@@ -31,14 +35,12 @@ struct classify_packet_args {
 	__u32 packet_length;
 };
 
-/* ---- */
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__uint(max_entries, 1);
 	__type(key, __u32);
 	__type(value, __u64);
 } flowpy_map SEC(".maps");
-/* ---- */
 
 #ifdef CLASSIFY_IPV4
 struct {
@@ -611,6 +613,30 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv6_packet(struct only_de
 }
 #endif
 
+
+/* ------ */
+static __always_inline int get_machine_id(char *machine_id) {
+    FILE *file = fopen(MACHINE_ID_FILE, "r");
+    if (file == NULL) {
+        perror("Errore nell'aprire il file machine-id");
+        return -1;
+    }
+
+    //legge l'ID (32 caratteri + newline finale)
+    if (fgets(machine_id, MACHINE_ID_SIZE, file) == NULL) {
+        perror("Errore nel leggere il machine-id");
+        fclose(file);
+        return -1;
+    }
+
+    //rimuove eventuale newline alla fine
+    machine_id[strcspn(machine_id, "\n")] = 0;
+
+    fclose(file);
+    return 0;
+}
+/* ------ */
+
 SEC("tc")
 int tc_ingress(struct __sk_buff *ctx)
 {
@@ -620,27 +646,14 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct vlan_hdr *vlan;
 	int ret;
 
-	/* ---- */
-
-	u32 key = 0; 
-	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
-
-	if(flow_id_ret == NULL){
-		bpf_printk("flow_id not found\n");
+	ret = get_machine_id(machine_id);
+	if(ret < 0) {
+		bpf_printk("Failed to get machine id\n");
 		return TC_ACT_OK;
-	} else {
-		flow_id = *flow_id_ret;
-		temp = flow_id + 1;
-		ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
-		if(ret){
-			bpf_printk("Failed to update flow_id\n");
-			return TC_ACT_OK;
-		}
-
 	}
 
-	/* ---- */
-	
+
+
 
 	__u32 packet_length = ctx->len;
 

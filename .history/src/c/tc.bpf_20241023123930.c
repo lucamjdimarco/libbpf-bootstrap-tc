@@ -630,13 +630,6 @@ int tc_ingress(struct __sk_buff *ctx)
 		return TC_ACT_OK;
 	} else {
 		flow_id = *flow_id_ret;
-		temp = flow_id + 1;
-		ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
-		if(ret){
-			bpf_printk("Failed to update flow_id\n");
-			return TC_ACT_OK;
-		}
-
 	}
 
 	/* ---- */

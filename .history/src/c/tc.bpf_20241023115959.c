@@ -16,10 +16,6 @@
 
 __u64 counter = 0;
 
-/* ---- */
-__u64 flow_id = -1;
-/* ---- */
-
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };
 
 struct classify_packet_args {
@@ -31,14 +27,12 @@ struct classify_packet_args {
 	__u32 packet_length;
 };
 
-/* ---- */
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__uint(max_entries, 1);
 	__type(key, __u32);
 	__type(value, __u64);
 } flowpy_map SEC(".maps");
-/* ---- */
 
 #ifdef CLASSIFY_IPV4
 struct {
@@ -284,7 +278,7 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 	struct value_packet *packet = NULL;
 	int ret;
 
-	//__u64 flow_id = -1;
+	__u64 flow_id = -1;
 
 	// Cerca l'elemento nella mappa
 	packet = bpf_map_lookup_elem(args->map_name, args->new_info);
@@ -619,28 +613,6 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct ethhdr *eth;
 	struct vlan_hdr *vlan;
 	int ret;
-
-	/* ---- */
-
-	u32 key = 0; 
-	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
-
-	if(flow_id_ret == NULL){
-		bpf_printk("flow_id not found\n");
-		return TC_ACT_OK;
-	} else {
-		flow_id = *flow_id_ret;
-		temp = flow_id + 1;
-		ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
-		if(ret){
-			bpf_printk("Failed to update flow_id\n");
-			return TC_ACT_OK;
-		}
-
-	}
-
-	/* ---- */
-	
 
 	__u32 packet_length = ctx->len;
 

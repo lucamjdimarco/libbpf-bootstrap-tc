@@ -24,7 +24,7 @@ if r.get(machine_id) is None:
 # Funzione per recuperare l'ultimo flow_id dalla mappa eBPF
 def get_current_flow_id():
     try:
-        value = b.get_map("flowpy_map").get(0)  # Accede alla chiave fissa 0 nella mappa
+        value = b.get_map("flow_map").get(0)  # Accede alla chiave fissa 0 nella mappa
         return value
     except KeyError:
         # Se la chiave non esiste, restituisce None

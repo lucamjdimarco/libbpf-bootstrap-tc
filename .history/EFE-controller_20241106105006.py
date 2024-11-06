@@ -8,7 +8,7 @@ r = redis.Redis(host='redis', port=6379, db=0)
 machine_id = os.popen("cat /etc/machine-id").read().strip()
 
 # Inizializza BPF senza compilare il codice, solo per interagire con la mappa
-b = BPF(src_file="src/c/tc.bpf.c")
+b = BPF(text="int _start() { return 0; }")
 
 # Verifica se la mappa è presente
 try:

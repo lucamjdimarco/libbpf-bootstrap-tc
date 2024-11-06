@@ -16,6 +16,10 @@
 
 __u64 counter = 0;
 
+/* ---- */
+__u64 flow_id = -1;
+/* ---- */
+
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };
 
 struct classify_packet_args {
@@ -26,6 +30,15 @@ struct classify_packet_args {
 	__u32 flow_type;
 	__u32 packet_length;
 };
+
+/* ---- */
+struct {
+	__uint(type, BPF_MAP_TYPE_HASH);
+	__uint(max_entries, 1);
+	__type(key, __u32);
+	__type(value, __u64);
+} flowpy_map SEC(".maps");
+/* ---- */
 
 #ifdef CLASSIFY_IPV4
 struct {
@@ -147,31 +160,41 @@ static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter)
 	return ((__u64)first_byte << 56) | (counter & 0x00FFFFFFFFFFFFFF);
 }
 
-static __always_inline int update_window_start_timer(struct bpf_timer *timer, __u64 timeout)
+static __always_inline int update_window_start_timer(struct value_packet *packet, __u64 timeout)
 {
 	int rc;
 
-	rc = bpf_timer_start(timer, timeout, 0);
-	if (!rc)
-		return 0;
-
-	if (rc == -EINVAL) {
-		/* This use case can be tolerated, as it is very rare.
-		 * If we have arrived at this point, it indicates that
-		 * two packets are being processed simultaneously on
-		 * two different CPUs, and both are attempting to
-		 * initialize the corresponding element. However, the
-		 * operation is intended to be performed by only one
-		 * CPU.
-		 * Therefore, it is possible that while one CPU is
-		 * initializing the timer, the completed operation may
-		 * not yet be visible on the current CPU.
-		 */
-		bpf_printk("bpf_timer is not initialized yet");
+	// Controlla se il timer è già stato avviato da un'altra CPU
+	if (!__sync_bool_compare_and_swap(&packet->timer_started, 0, 1)) {
+		// Se il timer è già avviato, stampa un messaggio e ritorna
+		bpf_printk("Timer already started by another CPU\n");
 		return 0;
 	}
 
-	return rc;
+	rc = bpf_timer_start(&packet->timer, timeout, 0);
+	if (!rc)
+		// Se fallisce l'avvio del timer, ripristina lo stato del flag
+		__sync_bool_compare_and_swap(&packet->timer_started, 1, 0);
+
+	return 0;
+
+	// if (rc == -EINVAL) {
+	// 	/* This use case can be tolerated, as it is very rare.
+	// 	 * If we have arrived at this point, it indicates that
+	// 	 * two packets are being processed simultaneously on
+	// 	 * two different CPUs, and both are attempting to
+	// 	 * initialize the corresponding element. However, the
+	// 	 * operation is intended to be performed by only one
+	// 	 * CPU.
+	// 	 * Therefore, it is possible that while one CPU is
+	// 	 * initializing the timer, the completed operation may
+	// 	 * not yet be visible on the current CPU.
+	// 	 */
+	// 	bpf_printk("bpf_timer is not initialized yet");
+	// 	return 0;
+	// }
+
+	// return rc;
 }
 
 static __always_inline int prepare_ring_buffer_write(void *map, struct event_t **pevent)
@@ -196,6 +219,14 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	__u32 counter_val;
 	int rc;
 
+	//questo prova a mettere giu
+	// puo accadere che se il buffer è pieno non faccio mai la logica sotto
+	rc = prepare_ring_buffer_write(&rbuf_events, &event);
+	if (rc) {
+		bpf_printk("Failed to reserve space in ring buffer\n");
+		return 0;
+	}
+
 	bpf_spin_lock(&packet->lock);
 	if (packet->counter < MAX_COUNTER) {
 		packet->counter += 1;
@@ -203,31 +234,29 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	}
 
 	__u64 tsw = packet->tsw;
-	__u32 *counter = &packet->counter;
+	__u32 *counter = &packet->counter; //no puntatore
 
-	// if(true) {
-	// 	bpf_spin_unlock(&packet->lock);
-	// 	bpf_printk("BEFORE cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
-	// 	return 0;
-	// }
-
-
-	// if (cur_tsw <= tsw) {
-	// 	bpf_spin_unlock(&packet->lock);
-    //     bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
-	// 	//goto update;
-	// 	return 0;
-	// }
+	if (cur_tsw <= tsw) {
+		bpf_spin_unlock(&packet->lock);
+		bpf_ringbuf_discard(event, 0);
+		bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
+		return 0;
+	}
 
 	counter_val = *counter;
 
-	event->ts = tsw;
+	if (!event) {
+		bpf_spin_unlock(&packet->lock);
+		bpf_ringbuf_discard(event, 0);
+		bpf_printk("Event is null, cannot process\n");
+		return -EINVAL;
+	}
+
+	event->ts = ts;
 	event->flowid = packet->flow_id;
 	event->counter = counter_val;
 
-	//goto update_win;
 
-//update_win:
 	packet->tsw = cur_tsw;
 	bpf_spin_unlock(&packet->lock);
 
@@ -235,78 +264,27 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 		return 0;
 
 	/* Avvia il timer associato a questa finestra */
-	rc = update_window_start_timer(&packet->timer, SWIN_TIMER_TIMEOUT);
-	if (rc)
-        bpf_printk("Failed to start timer\n");
+
+	rc = update_window_start_timer(packet, SWIN_TIMER_TIMEOUT);
+	if (rc) {
+		bpf_ringbuf_discard(event, 0);
+		bpf_printk("Failed to start timer\n");
 		return -EINVAL;
+	}
 
-	//Riserva spazio nel rbuf per poter poi aggiungere l'evento secondo la logica commit/abort
-	rc = prepare_ring_buffer_write(&rbuf_events, &event);
-	if (rc)
-        bpf_printk("Failed to reserve space in ring buffer\n");
-		return 0;
-		//goto update_win;
-
-	bpf_printk("Event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
+	bpf_printk("Sending event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
 
 	bpf_ringbuf_submit(event, 0);
 
 	return 0;
 }
 
-// #define CLASSIFY_PACKET_AND_UPDATE_MAP(map_name, new_info, flow_type, map_flow) do { \
-//     struct value_packet *packet = NULL; \
-//     int ret; \
-//     packet = bpf_map_lookup_elem(&map_name, &new_info); \
-//     if (!packet) { \
-//         flow_id = build_flowid(flow_type, __sync_fetch_and_add(&counter, 1)); \
-//         struct value_packet new_value = { \
-//             .counter = 1, \
-//             .bytes_counter = packet_length, \
-//             .flow_id = flow_id, \
-//             .tsw = 0, \
-//             .initialized = 0, \
-//         }; \
-//         /* inserimento della nuova istanza rappresentante il flusso */ \
-//         ret = bpf_map_update_elem(&map_name, &new_info, &new_value, BPF_ANY); \
-//         if (ret) { \
-//             bpf_printk("Failed to insert new item in map_name\n"); \
-//             return TC_ACT_OK; \
-//         } \
-//         /* inserimento del nuovo flusso nella mappa dei flussi */ \
-//         ret = bpf_map_update_elem(&map_flow, &flow_id, &new_info, BPF_ANY); \
-//         if (ret) { \
-//             bpf_printk("Failed to insert new item in map_flow\n"); \
-//             return TC_ACT_OK; \
-//         } \
-//         /* Ricarica l'elemento aggiornato dalla mappa per ottenere l'indirizzo corretto del timer */ \
-//         packet = bpf_map_lookup_elem(&map_name, &new_info); \
-//         if (!packet) { \
-//             bpf_printk("Failed to lookup newly inserted item in map_name\n"); \
-//             return TC_ACT_OK; \
-//         } \
-//         /* Inizializzazione del timer in modo atomico */ \
-//         if (__sync_bool_compare_and_swap(&packet->initialized, 0, 1)) { \
-//             int rc = bpf_timer_init(&packet->timer, &map_name, CLOCK_BOOTTIME); \
-//             if (rc) { \
-//                 bpf_printk("Failed to initialize timer\n"); \
-//                 /* Se fallisce, ripristina il flag di inizializzazione */ \
-//                 __sync_bool_compare_and_swap(&packet->initialized, 1, 0); \
-//                 return TC_ACT_OK; \
-//             } \
-//         } \
-//     } else { \
-//         /* gestione del flusso già esistente. Aggiornamento dei contatori nella mappa e controllo finestra */ \
-//         update_window(packet, packet_length, bpf_ktime_get_ns(), true); \
-//     } \
-// } while (0)
-
 static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args)
 {
 	struct value_packet *packet = NULL;
 	int ret;
 
-	__u64 flow_id = -1;
+	//__u64 flow_id = -1;
 
 	// Cerca l'elemento nella mappa
 	packet = bpf_map_lookup_elem(args->map_name, args->new_info);
@@ -317,7 +295,7 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		if (flow_id == -1) {
 			bpf_printk("Failed to build flow_id\n");
-			return TC_ACT_OK;
+			return -EFAULT;
 		}
 
 		// Crea un nuovo valore per il pacchetto
@@ -333,21 +311,21 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 		ret = bpf_map_update_elem(args->map_name, args->new_info, &new_value, BPF_ANY);
 		if (ret) {
 			bpf_printk("Failed to insert new item in map_name\n");
-			return TC_ACT_OK;
+			return -ENOMEM;
 		}
 
 		// Aggiorna la mappa dei flussi
 		ret = bpf_map_update_elem(args->map_flow, &flow_id, args->new_info, BPF_ANY);
 		if (ret) {
 			bpf_printk("Failed to insert new item in map_flow\n");
-			return TC_ACT_OK;
+			return -ENOMEM;
 		}
 
 		// Ricarica l'elemento aggiornato dalla mappa
 		packet = bpf_map_lookup_elem(args->map_name, args->new_info);
 		if (!packet) {
 			bpf_printk("Failed to lookup newly inserted item in map_name\n");
-			return TC_ACT_OK;
+			return -ENOENT;
 		}
 
 		// Inizializza il timer in modo atomico
@@ -357,12 +335,12 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 				bpf_printk("Failed to initialize timer\n");
 				// Se fallisce, ripristina il flag di inizializzazione
 				__sync_bool_compare_and_swap(&packet->initialized, 1, 0);
-				return TC_ACT_OK;
+				return -EFAULT;
 			}
 		}
 	} else {
 		// Aggiorna i contatori nella finestra temporale
-		update_window(packet, args->packet_length, bpf_ktime_get_ns(), true);
+		update_window(packet, args->packet_length, bpf_ktime_get_tai_ns(), true);
 	}
 
 	return TC_ACT_OK;
@@ -377,7 +355,7 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 
 	if ((void *)(ip + 1) > data_end) {
 		bpf_printk("IPv4 header is not complete\n");
-		return TC_ACT_OK;
+		return -EFAULT;
 	}
 
 	__u8 protocol = ip->protocol;
@@ -393,7 +371,7 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 		struct tcphdr *tcph = (struct tcphdr *)(ip + 1);
 		if ((void *)(tcph + 1) > data_end) {
 			bpf_printk("TCP header is not complete\n");
-			return TC_ACT_OK;
+			return -EFAULT;
 		}
 
 		info->src_port = bpf_ntohs(tcph->source);
@@ -404,7 +382,7 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 		struct udphdr *udph = (struct udphdr *)(ip + 1);
 		if ((void *)(udph + 1) > data_end) {
 			bpf_printk("UDP header is not complete\n");
-			return TC_ACT_OK;
+			return -EFAULT;
 		}
 
 		info->src_port = bpf_ntohs(udph->source);
@@ -415,13 +393,13 @@ static __always_inline int classify_ipv4_packet(struct packet_info *info, void *
 		struct icmphdr *icmph = (struct icmphdr *)(ip + 1);
 		if ((void *)(icmph + 1) > data_end) {
 			bpf_printk("ICMP header is not complete\n");
-			return TC_ACT_OK;
+			return -EFAULT;
 		}
 		break;
 	}
 	default: {
 		bpf_printk("Unknown protocol\n");
-		return TC_ACT_OK;
+		return -EFAULT;
 	}
 	}
 
@@ -438,7 +416,7 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 
 	if ((void *)(ip6 + 1) > data_end) {
 		bpf_printk("IPv6 header is not complete\n");
-		return TC_ACT_OK;
+		return -EFAULT;
 	}
 
 	__u8 temp_src_ip[16];
@@ -448,20 +426,24 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 	memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
 
 	// Controllo se l'indirizzo sorgente o destinazione è link-local (fe80::/10)
-	if (temp_src_ip[0] == 0xfe && temp_src_ip[1] == 0x80) {
+	if (temp_src_ip[0] == 0xfe &&
+	    (temp_src_ip[1] & 192) == 0x80) { //corretto bug altrimenti controllava una /12
 		bpf_printk("Packet with link-local source address fe80::/10\n");
-		return TC_ACT_OK;
+		return -EFAULT;
 	}
 
-	if (temp_dst_ip[0] == 0xfe && temp_dst_ip[1] == 0x80) {
+	if (temp_dst_ip[0] == 0xfe && (temp_dst_ip[1] & 192) == 0x80) {
 		bpf_printk("Packet with link-local destination address fe80::/10\n");
-		return TC_ACT_OK;
+		return -EFAULT;
 	}
 
 	// Controllo se l'indirizzo sorgente o destinazione è unspecified (::/128)
-	__u8 zero_addr[16] = { 0 }; // Indirizzo "unspecified" è tutto zero
+	//__u8 zero_addr[16] = { 0 }; // Indirizzo "unspecified" è tutto zero
 	// bpf_printk("Zero address: %u\n", zero_addr[0]);
-	bpf_printk("Temp source address: %u\n", temp_src_ip[0]);
+	//bpf_printk("Temp source address: %u\n", temp_src_ip[0]);
+
+	//TO FIX: elimminare la cattura dei pacchetti con indirizzo sorgente o destinazione unspecified (0::/128)
+
 	// if (memcmp(temp_src_ip, zero_addr, 16) == 0) {
 	//     //TODO: non entra mai in questo if
 	//     bpf_printk("Packet with unspecified source address ::\n");
@@ -473,16 +455,16 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 	//     return TC_ACT_OK;
 	// }
 
-	if (temp_src_ip[0] == 0x00) {
-		bpf_printk("Packet with unspecified source address ::\n");
+	// if (temp_src_ip[0] == 0x00) {
+	// 	bpf_printk("Packet with unspecified source address ::\n");
 
-		return TC_ACT_OK;
-	}
+	// 	return TC_ACT_OK;
+	// }
 
-	if (temp_dst_ip[0] == 0x00) {
-		bpf_printk("Packet with unspecified destination address ::\n");
-		return TC_ACT_OK;
-	}
+	// if (temp_dst_ip[0] == 0x00) {
+	// 	bpf_printk("Packet with unspecified destination address ::\n");
+	// 	return TC_ACT_OK;
+	// }
 
 	memcpy(&info->src_ip, ip6->saddr.in6_u.u6_addr8, 16);
 	memcpy(&info->dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
@@ -495,7 +477,7 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 		struct tcphdr *tcph = (struct tcphdr *)(ip6 + 1);
 		if ((void *)(tcph + 1) > data_end) {
 			bpf_printk("TCP header is not complete\n");
-			return TC_ACT_OK;
+			return -EFAULT;
 		}
 
 		info->src_port = bpf_ntohs(tcph->source);
@@ -506,7 +488,7 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 		struct udphdr *udph = (struct udphdr *)(ip6 + 1);
 		if ((void *)(udph + 1) > data_end) {
 			bpf_printk("UDP header is not complete\n");
-			return TC_ACT_OK;
+			return -EFAULT;
 		}
 
 		info->src_port = bpf_ntohs(udph->source);
@@ -517,14 +499,14 @@ static __always_inline int classify_ipv6_packet(struct packet_info_ipv6 *info, v
 		struct icmp6hdr *icmph = (struct icmp6hdr *)(ip6 + 1);
 		if ((void *)(icmph + 1) > data_end) {
 			bpf_printk("ICMPv6 header is not complete\n");
-			return TC_ACT_OK;
+			return -EFAULT;
 		}
-		bpf_printk("ICMPv6 packet\n");
+		//bpf_printk("ICMPv6 packet\n");
 		break;
 	}
 	default: {
 		bpf_printk("Unknown protocol\n");
-		return TC_ACT_OK;
+		return -EFAULT;
 	}
 	}
 
@@ -540,7 +522,7 @@ static __always_inline int classify_ONLY_ADDRESS_ipv4_packet(struct only_addr_ip
 	struct iphdr *ip = (struct iphdr *)data;
 	if ((void *)(ip + 1) > data_end) {
 		bpf_printk("IPv4 header is not complete\n");
-		return TC_ACT_OK;
+		return -EFAULT;
 	}
 
 	info->src_ip = ip->saddr;
@@ -556,9 +538,27 @@ static __always_inline int classify_ONLY_ADDRESS_ipv6_packet(struct only_addr_ip
 							     void *data_end, void *data)
 {
 	struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
+	__u8 temp_src_ip[16];
+	__u8 temp_dst_ip[16];
+
 	if ((void *)(ip6 + 1) > data_end) {
 		bpf_printk("IPv6 header is not complete\n");
-		return TC_ACT_OK;
+		return -EFAULT;
+	}
+
+	memcpy(temp_src_ip, ip6->saddr.in6_u.u6_addr8, 16);
+	memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
+
+	// Controllo se l'indirizzo sorgente o destinazione è link-local (fe80::/10)
+	if (temp_src_ip[0] == 0xfe &&
+	    (temp_src_ip[1] & 192) == 0x80) { //corretto bug altrimenti controllava una /12
+		bpf_printk("Packet with link-local source address fe80::/10\n");
+		return -EFAULT;
+	}
+
+	if (temp_dst_ip[0] == 0xfe && (temp_dst_ip[1] & 192) == 0x80) {
+		bpf_printk("Packet with link-local destination address fe80::/10\n");
+		return -EFAULT;
 	}
 
 	memcpy(&info->src_ip, ip6->saddr.in6_u.u6_addr8, 16);
@@ -576,7 +576,7 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv4_packet(struct only_de
 	struct iphdr *ip = (struct iphdr *)data;
 	if ((void *)(ip + 1) > data_end) {
 		bpf_printk("IPv4 header is not complete\n");
-		return TC_ACT_OK;
+		return -EFAULT;
 	}
 
 	info->dst_ip = ip->daddr;
@@ -591,9 +591,18 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv6_packet(struct only_de
 								  void *data_end, void *data)
 {
 	struct ipv6hdr *ip6 = (struct ipv6hdr *)data;
+	__u8 temp_dst_ip[16];
+
 	if ((void *)(ip6 + 1) > data_end) {
 		bpf_printk("IPv6 header is not complete\n");
-		return TC_ACT_OK;
+		return -EFAULT;
+	}
+
+	memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
+
+	if (temp_dst_ip[0] == 0xfe && (temp_dst_ip[1] & 192) == 0x80) {
+		bpf_printk("Packet with link-local destination address fe80::/10\n");
+		return -EFAULT;
 	}
 
 	memcpy(&info->dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
@@ -609,8 +618,36 @@ int tc_ingress(struct __sk_buff *ctx)
 	void *data = (void *)(__u64)ctx->data;
 	struct ethhdr *eth;
 	struct vlan_hdr *vlan;
+	int ret;
 
-	//static __u64 counter = 0;
+	/* ---- */
+
+	u32 key = 0; 
+	__u64 temp = 0;
+	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
+
+	if(flow_id_ret == NULL){
+		bpf_printk("flow_id not found, initializing to 0\n");
+    temp = 0;  // Inizializza il flow_id a 0
+    int ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
+    if (ret) {
+        bpf_printk("Failed to initialize flow_id\n");
+        return TC_ACT_OK;
+    }
+	} else {
+		flow_id = *flow_id_ret;
+		temp = flow_id + 1;
+		ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
+		if(ret){
+			bpf_printk("Failed to update flow_id\n");
+			return TC_ACT_OK;
+		}
+
+	}
+
+	/* ---- */
+	
+
 	__u32 packet_length = ctx->len;
 
 	struct classify_packet_args args = { .map_name = NULL,
@@ -658,13 +695,18 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_IPV4
 	case bpf_htons(ETH_P_IP): {
 		struct packet_info new_info = {};
-		classify_ipv4_packet(&new_info, data_end, data);
-		//CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv4, new_info, QUINTUPLA, ipv4_flow);
+		ret = classify_ipv4_packet(&new_info, data_end, data);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		args.map_name = &map_ipv4;
 		args.new_info = &new_info;
 		args.map_flow = &ipv4_flow;
 		args.flow_type = QUINTUPLA;
-		classify_packet_and_update_map(&args);
+		ret = classify_packet_and_update_map(&args);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		break;
 	}
 #endif
@@ -672,13 +714,18 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
 	case bpf_htons(ETH_P_IP): {
 		struct only_addr_ipv4 new_info_only_addr_ipv4 = {};
-		classify_ONLY_ADDRESS_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
-		//CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_addr_ipv4, new_info_only_addr_ipv4, ONLY_ADDRESS, ipv4_flow);
+		ret = classify_ONLY_ADDRESS_ipv4_packet(&new_info_only_addr_ipv4, data_end, data);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		args.map_name = &map_only_addr_ipv4;
 		args.new_info = &new_info_only_addr_ipv4;
 		args.map_flow = &ipv4_flow;
 		args.flow_type = ONLY_ADDRESS;
-		classify_packet_and_update_map(&args);
+		ret = classify_packet_and_update_map(&args);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		break;
 	}
 #endif
@@ -686,13 +733,19 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
 	case bpf_htons(ETH_P_IP): {
 		struct only_dest_ipv4 new_info_only_dest_ipv4 = {};
-		classify_ONLY_DEST_ADDRESS_ipv4_packet(&new_info_only_dest_ipv4, data_end, data);
-		//CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv4, new_info_only_dest_ipv4, ONLY_DEST_ADDRESS, ipv4_flow);
+		ret = classify_ONLY_DEST_ADDRESS_ipv4_packet(&new_info_only_dest_ipv4, data_end,
+							     data);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		args.map_name = &map_only_dest_ipv4;
 		args.new_info = &new_info_only_dest_ipv4;
 		args.map_flow = &ipv4_flow;
 		args.flow_type = ONLY_DEST_ADDRESS;
-		classify_packet_and_update_map(&args);
+		ret = classify_packet_and_update_map(&args);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		break;
 	}
 #endif
@@ -700,13 +753,18 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_IPV6
 	case bpf_htons(ETH_P_IPV6): {
 		struct packet_info_ipv6 new_info_ipv6 = {};
-		classify_ipv6_packet(&new_info_ipv6, data_end, data);
-		//CLASSIFY_PACKET_AND_UPDATE_MAP(map_ipv6, new_info_ipv6, QUINTUPLA, ipv6_flow);
+		ret = classify_ipv6_packet(&new_info_ipv6, data_end, data);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		args.map_name = &map_ipv6;
 		args.new_info = &new_info_ipv6;
 		args.map_flow = &ipv6_flow;
 		args.flow_type = QUINTUPLA;
-		classify_packet_and_update_map(&args);
+		ret = classify_packet_and_update_map(&args);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		break;
 	}
 #endif
@@ -714,13 +772,18 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
 	case bpf_htons(ETH_P_IPV6): {
 		struct only_addr_ipv6 new_info_only_addr_ipv6 = {};
-		classify_ONLY_ADDRESS_ipv6_packet(&new_info_only_addr_ipv6, data_end, data);
-		//CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_addr_ipv6, new_info_only_addr_ipv6, ONLY_ADDRESS, ipv6_flow);
+		ret = classify_ONLY_ADDRESS_ipv6_packet(&new_info_only_addr_ipv6, data_end, data);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		args.map_name = &map_only_addr_ipv6;
 		args.new_info = &new_info_only_addr_ipv6;
 		args.map_flow = &ipv6_flow;
 		args.flow_type = ONLY_ADDRESS;
-		classify_packet_and_update_map(&args);
+		ret = classify_packet_and_update_map(&args);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		break;
 	}
 #endif
@@ -729,13 +792,19 @@ int tc_ingress(struct __sk_buff *ctx)
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 	case bpf_htons(ETH_P_IPV6): {
 		struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
-		classify_ONLY_DEST_ADDRESS_ipv6_packet(&new_info_only_dest_ipv6, data_end, data);
-		//CLASSIFY_PACKET_AND_UPDATE_MAP(map_only_dest_ipv6, new_info_only_dest_ipv6, ONLY_DEST_ADDRESS, ipv6_flow);
+		ret = classify_ONLY_DEST_ADDRESS_ipv6_packet(&new_info_only_dest_ipv6, data_end,
+							     data);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		args.map_name = &map_only_dest_ipv6;
 		args.new_info = &new_info_only_dest_ipv6;
 		args.map_flow = &ipv6_flow;
 		args.flow_type = ONLY_DEST_ADDRESS;
-		classify_packet_and_update_map(&args);
+		ret = classify_packet_and_update_map(&args);
+		if (ret < 0) {
+			return TC_ACT_OK;
+		}
 		break;
 	}
 #endif

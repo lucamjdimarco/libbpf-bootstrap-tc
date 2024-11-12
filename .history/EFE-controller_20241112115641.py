@@ -9,7 +9,7 @@ machine_id = os.popen("cat /etc/machine-id").read().strip()
 
 # Inizializza BPF senza compilare il codice, solo per interagire con la mappa
 #b = BPF(text="int _start() { return 0; }")
-b = BPF(src_file="src/c/tc.bpf.c")
+b = BPF(src_file="tc.bpf.c")
 
 # Verifica se la mappa è presente
 try:

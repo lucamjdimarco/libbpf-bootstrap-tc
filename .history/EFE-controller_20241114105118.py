@@ -1,3 +1,7 @@
+import redis
+import time
+import os
+
 from typing import Coroutine
 import settings
 import subprocess
@@ -5,13 +9,26 @@ import os
 import json
 from hex_types import u64, u32, u16, u8, s8, to_hex
 
-import redis
-import time
-import os
-
 # Inizializza la connessione a Redis
 r = redis.Redis(host='redis', port=6379, db=0)
 machine_id = os.popen("cat /etc/machine-id").read().strip()
+
+"""
+Command Abstraction Layer
+
+This module implements the abstraction between python functions and commands
+such as bpftools.
+"""
+from typing import Coroutine
+import settings
+import subprocess
+import os
+import json
+from hex_types import u64, u32, u16, u8, s8, to_hex
+
+# References:
+# - https://manpages.ubuntu.com/manpages/focal/man8/bpftool-prog.8.html
+# - https://man.archlinux.org/man/bpftool.8.en
 
 
 def ebpf_system_init():

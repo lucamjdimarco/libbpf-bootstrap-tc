@@ -26,6 +26,65 @@ params = {
 }
 
 
+
+def ebpf_system_init():
+    """
+    mount bpf and tracefs
+    mkdir /sys/fs/bpf/progs
+    mkdir /sys/fs/bpf/maps
+    """
+    mount_bpf(settings.BPF_FS_PATH)
+    mount_tracefs(settings.TRACE_FS_PATH)
+
+    mkdir(settings.BPF_FS_PROGS_PATH)
+    mkdir(settings.BPF_FS_MAPS_PATH)
+
+    mkdir(settings.COMPONENTS_DIR)
+    # mkdir(settings.BUILD_LOADERS_DIR)
+    # mkdir(settings.BUILD_PROGRAMS_DIR)
+    # mkdir(settings.BUILD_CHAINS_DIR)
+
+    # mkdir(settings.LOADERS_DIR)
+    # mkdir(settings.PROGRAMS_DIR)
+    # mkdir(settings.CHAINS_DIR)
+
+
+def hike_system_init():
+    """
+    Initialize HIKe system by loading HIKe maps.
+    """
+    import settings
+
+    # It allows to load maps with many entries without failing
+    if os.system("ulimit -l unlimited"):
+        raise OSError(f"Failing in setting user limit to unlimited")
+
+    # load a "dummy" classifier to load the maps
+
+    # make -f hike/external/Makefile -j24 prog PROG=components/loaders/init_hike.bpf.c HIKE_DIR=hike/src/
+    if not os.path.exists("/sys/fs/bpf/progs/system"):
+        bpf_source_file = os.path.join(
+            settings.HIKE_SOURCE_PATH, 'hikevm.bpf.c')  # TODO
+        bpf_obj_file = os.path.join(
+            settings.HIKE_SOURCE_PATH, '.output', 'hikevm.bpf.o')
+        make_ebpf_hike_program(bpf_source_file, build_dir=".output")
+
+        pinned_maps = {}
+        bpftool_prog_load("init_hike", "system", pinned_maps,
+                          load_system_maps=False, obj_file=bpf_obj_file)
+        print("Init program loaded")
+
+
+def mkdir(path):
+    """
+    mkdir path
+    """
+    cmd = f"mkdir -p {path}"
+    ret = os.system(cmd)
+    if ret:
+        raise OSError(f"Can not create directory {path}")
+
+
 def mount_bpf(mount_point):
     """
     mount -t bpf bpf /sys/fs/bpf/
@@ -157,4 +216,7 @@ def bpftool_map_create(map_name, map_path, key_size, value_size, max_entries, ty
         raise Exception(f"Map create {map_path} failed.")
     else:
         return result.stdout.decode("utf-8")
+
+
+
 

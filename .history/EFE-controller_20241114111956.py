@@ -26,6 +26,65 @@ params = {
 }
 
 
+
+def ebpf_system_init():
+    """
+    mount bpf and tracefs
+    mkdir /sys/fs/bpf/progs
+    mkdir /sys/fs/bpf/maps
+    """
+    mount_bpf(settings.BPF_FS_PATH)
+    mount_tracefs(settings.TRACE_FS_PATH)
+
+    mkdir(settings.BPF_FS_PROGS_PATH)
+    mkdir(settings.BPF_FS_MAPS_PATH)
+
+    mkdir(settings.COMPONENTS_DIR)
+    # mkdir(settings.BUILD_LOADERS_DIR)
+    # mkdir(settings.BUILD_PROGRAMS_DIR)
+    # mkdir(settings.BUILD_CHAINS_DIR)
+
+    # mkdir(settings.LOADERS_DIR)
+    # mkdir(settings.PROGRAMS_DIR)
+    # mkdir(settings.CHAINS_DIR)
+
+
+def hike_system_init():
+    """
+    Initialize HIKe system by loading HIKe maps.
+    """
+    import settings
+
+    # It allows to load maps with many entries without failing
+    if os.system("ulimit -l unlimited"):
+        raise OSError(f"Failing in setting user limit to unlimited")
+
+    # load a "dummy" classifier to load the maps
+
+    # make -f hike/external/Makefile -j24 prog PROG=components/loaders/init_hike.bpf.c HIKE_DIR=hike/src/
+    if not os.path.exists("/sys/fs/bpf/progs/system"):
+        bpf_source_file = os.path.join(
+            settings.HIKE_SOURCE_PATH, 'hikevm.bpf.c')  # TODO
+        bpf_obj_file = os.path.join(
+            settings.HIKE_SOURCE_PATH, '.output', 'hikevm.bpf.o')
+        make_ebpf_hike_program(bpf_source_file, build_dir=".output")
+
+        pinned_maps = {}
+        bpftool_prog_load("init_hike", "system", pinned_maps,
+                          load_system_maps=False, obj_file=bpf_obj_file)
+        print("Init program loaded")
+
+
+def mkdir(path):
+    """
+    mkdir path
+    """
+    cmd = f"mkdir -p {path}"
+    ret = os.system(cmd)
+    if ret:
+        raise OSError(f"Can not create directory {path}")
+
+
 def mount_bpf(mount_point):
     """
     mount -t bpf bpf /sys/fs/bpf/
@@ -42,6 +101,101 @@ def mount_bpf(mount_point):
     if ret:
         raise OSError(f"Can not mount BPF fs on {mount_point}")
 
+
+def mount_tracefs(mount_point):
+    """
+    mount -t tracefs nodev /sys/kernel/tracing
+    """
+    cmd = f"grep -qs '{mount_point} ' /proc/mounts || mount -t tracefs nodev {mount_point}"
+    print(f"Exec: {cmd}")
+    ret = os.system(cmd)
+    if ret:
+        raise OSError(f"Can not mount trace fs on {mount_point}")
+
+
+def format_c(file_path):
+    """
+    Format a source/header file with clang-format
+
+    clang-format -i nome-file.c
+    clang-format -i nome-file.h
+    """
+    cmd = f"clang-format -i {file_path}"
+    print(f"Exec: {cmd}")
+    ret = os.system(cmd)
+    if ret:
+        raise OSError(f"Can not format {file_path}")
+
+
+def make_hike_chain(file_path):
+    """
+    Run makefile to create an HIKe chain.
+    $ make -f path-to/hike_vm/external/Makefile -j24 chain CHAIN=chain.hike.c HIKE_DIR=path-to/hike_vm/src/
+    """
+    makefile = f"{settings.HIKE_PATH}/external/Makefile"
+    src_dir, chain_name = os.path.split(file_path)
+    #cmd = f"make -f {makefile} chain CHAIN={file_path} HIKE_DIR={settings.HIKE_SOURCE_PATH} HIKE_CFLAGS='-D__HIKE_CFLAGS_EXTMAKE'"
+    cmd = f"make -f {makefile} chain HIKE_DIR={settings.HIKE_SOURCE_PATH} HIKE_CFLAGS='-D__HIKE_CFLAGS_EXTMAKE' SRC_DIR={src_dir} CHAIN={chain_name} BUILD={src_dir}/build"
+
+    print(f"Exec: {cmd}")
+    ret = os.system(cmd)
+    if ret != 0:
+        raise Exception(
+            f"Hike Chain compilation failed\nOffending command is {cmd}")
+
+
+def make_ebpf_hike_program(file_path, build_dir=None):
+    """
+        Compile the eBPF HIKe program specified in the file_path
+        $ make -f path-to/hike_vm/external/Makefile -j24 prog PROG=prog.bpf.c HIKE_DIR=path-to/hike_vm/src/
+    """
+    makefile = f"{settings.HIKE_PATH}/external/Makefile"
+    #cmd = f"make -f {makefile} prog PROG={file_path} HIKE_DIR={settings.HIKE_SOURCE_PATH}"
+    src_dir, prog_name = os.path.split(file_path)
+    build_dir = "build" if not build_dir else build_dir
+    cmd = f"make -f {makefile} prog HIKE_DIR={settings.HIKE_SOURCE_PATH} HIKE_CFLAGS='-D__HIKE_CFLAGS_EXTMAKE' SRC_DIR={src_dir} PROG={prog_name} BUILD={src_dir}/{build_dir}"
+
+    print(f"Exec: {cmd}")
+    ret = os.system(cmd)
+    if ret != 0:
+        raise Exception(
+            f"Hike Program compilation failed\nOffending command is {cmd}")
+
+
+def hikecc(name, package):
+    """
+    # The HIKECC takes as 1) the HIKe Chains object file; 2) the eBPF map
+    # that contains all the HIKe Chains; 3) the path of the load script
+    # that is going to be generated.
+    ${HIKECC} data/binaries/minimal_chain.hike.o			\
+                  /sys/fs/bpf/maps/init/hvm_chain_map 			\
+                  data/binaries/minimal_chain.hike.load.sh
+
+    # Load HIKe Chains calling the loader script we just built :-o
+    /bin/bash data/binaries/minimal_chain.hike.load.sh
+    """
+    obj_file_path = f"{settings.COMPONENTS_DIR}/{package}/build/{name}.hike.o"
+    map_name = f"{settings.BPF_FS_MAPS_SYSTEM_PATH}/hvm_chain_map"
+    loader_file_path = f"{settings.COMPONENTS_DIR}/{package}/{name}.hike.load.sh"
+    HIKE_CC = f"{settings.HIKE_PATH}/hike-tools/hikecc.sh"
+
+    cmd = f"/bin/bash {HIKE_CC} {obj_file_path} {map_name} {loader_file_path}"
+    print(f"Exec: {cmd}")
+    ret = os.system(cmd)
+    if ret != 0:
+        raise Exception(
+            f"HikeCC Chain loader creation failed\nOffending command is {cmd}")
+    load_chain(loader_file_path)
+
+
+def load_chain(loader_file):
+
+    cmd = f"/bin/bash {loader_file}"
+    print(f"Exec: {cmd}")
+    ret = os.system(cmd)
+    if ret != 0:
+        raise Exception(
+            f"HikeCC Chain loader execution failed\nOffending command is {cmd}")
 
 
 
@@ -157,4 +311,7 @@ def bpftool_map_create(map_name, map_path, key_size, value_size, max_entries, ty
         raise Exception(f"Map create {map_path} failed.")
     else:
         return result.stdout.decode("utf-8")
+
+
+
 

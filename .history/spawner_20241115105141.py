@@ -52,15 +52,15 @@ def main():
     try:
         c_stdout_queue = Queue()
         c_stderr_queue = Queue()
-        c_stdout_thread = Thread(target=reader, args=[c_process.stdout, c_stdout_queue])
-        c_stderr_thread = Thread(target=reader, args=[c_process.stderr, c_stderr_queue])
+        c_stdout_thread = Thread(target=reader, args=(c_process.stdout, c_stdout_queue))
+        c_stderr_thread = Thread(target=reader, args=(c_process.stderr, c_stderr_queue))
         c_stdout_thread.start()
         c_stderr_thread.start()
 
         python_stdout_queue = Queue()
         python_stderr_queue = Queue()
-        python_stdout_thread = Thread(target=reader, args=[python_process.stdout, python_stdout_queue])
-        python_stderr_thread = Thread(target=reader, args=[python_process.stderr, python_stderr_queue])
+        python_stdout_thread = Thread(target=reader, args=(python_process.stdout, python_stdout_queue))
+        python_stderr_thread = Thread(target=reader, args=(python_process.stderr, python_stderr_queue))
         python_stdout_thread.start()
         python_stderr_thread.start()
 

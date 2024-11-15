@@ -22,7 +22,7 @@ def main():
 
 
     if not os.path.isfile(c_path):
-        print(f"C program '{c_path}' does not exist.")
+        print(f"C program '{c_program}' does not exist.")
         sys.exit(1)
 
 

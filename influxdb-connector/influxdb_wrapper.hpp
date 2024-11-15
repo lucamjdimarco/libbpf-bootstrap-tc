@@ -3,7 +3,7 @@
 #define INFLUXDB_WRAPPER_HPP
 
 #include <iostream>
-#include <InfluxDBFactory.h>
+#include <InfluxDB/InfluxDBFactory.h>
 
 class InfluxDBWrapper {
 public:

@@ -57,6 +57,7 @@ def main():
                 except UnicodeDecodeError:
                     print("Error in C program (unable to decode):", repr(c_stderr))
 
+            # Gestione della stderr del programma Python
             py_stderr = python_process.stderr.readline()
             if py_stderr:
                 try:

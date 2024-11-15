@@ -17,7 +17,7 @@ def main():
     c_path = os.path.join("src", "c", "tc")
     python_program = "EFE-controller.py"
 
-    c_program = [c_path, interface, protocol]
+    c_program = ['./tc', interface, protocol]
     python_program = ['python3', 'EFE-controller.py']
 
 

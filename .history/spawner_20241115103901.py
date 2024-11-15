@@ -39,17 +39,17 @@ def main():
 
     try:
         while True:
-            
+            # Leggi l'output dal processo C
             c_stdout = c_process.stdout.readline()
             if c_stdout:
                 print("Output of C program:", c_stdout.strip())
             
-            
+            # Leggi l'output dal processo Python
             py_stdout = python_process.stdout.readline()
             if py_stdout:
                 print("Output of Python program:", py_stdout.strip())
 
-            
+            # Controlla se uno dei processi ha terminato
             c_stderr = c_process.stderr.readline()
             if c_stderr:
                 print("Error in C program:", c_stderr.strip())
@@ -58,15 +58,17 @@ def main():
             if py_stderr:
                 print("Error in Python program:", py_stderr.strip())
 
-            
+            # Termina quando entrambi i processi sono finiti
             if c_process.poll() is not None and python_process.poll() is not None:
                 break
 
     except KeyboardInterrupt:
+        # Gestisce l'interruzione manuale (Ctrl+C)
         print("Process interrupted.")
         c_process.terminate()
         python_process.terminate()
 
+    # Controlla se i processi hanno terminato correttamente
     if c_process.returncode != 0:
         print(f"C program finished with error code {c_process.returncode}")
     if python_process.returncode != 0:

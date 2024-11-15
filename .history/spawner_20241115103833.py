@@ -38,39 +38,22 @@ def main():
 
 
     try:
-        while True:
-            
-            c_stdout = c_process.stdout.readline()
-            if c_stdout:
-                print("Output of C program:", c_stdout.strip())
-            
-            
-            py_stdout = python_process.stdout.readline()
-            if py_stdout:
-                print("Output of Python program:", py_stdout.strip())
+        c_stdout, c_stderr = c_process.communicate()
+        py_stdout, py_stderr = python_process.communicate()
 
-            
-            c_stderr = c_process.stderr.readline()
-            if c_stderr:
-                print("Error in C program:", c_stderr.strip())
+        if c_process.returncode != 0:
+            print("Error in C program:", c_stderr)
+        else:
+            print("Output of C program:", c_stdout)
 
-            py_stderr = python_process.stderr.readline()
-            if py_stderr:
-                print("Error in Python program:", py_stderr.strip())
-
-            
-            if c_process.poll() is not None and python_process.poll() is not None:
-                break
+        if python_process.returncode != 0:
+            print("Error in Python program:", py_stderr)
+        else:
+            print("Output of Python program:", py_stdout)
 
     except KeyboardInterrupt:
-        print("Process interrupted.")
         c_process.terminate()
         python_process.terminate()
-
-    if c_process.returncode != 0:
-        print(f"C program finished with error code {c_process.returncode}")
-    if python_process.returncode != 0:
-        print(f"Python program finished with error code {python_process.returncode}")
 
 if __name__ == "__main__":
     main()

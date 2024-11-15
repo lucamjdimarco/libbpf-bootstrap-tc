@@ -45,42 +45,38 @@ def main():
     except FileNotFoundError:
         print("EFE-controller.py not found.")
         sys.exit(1)
-    
-
 
 
     try:
-        c_stdout_queue = Queue()
-        c_stderr_queue = Queue()
-        c_stdout_thread = Thread(target=reader, args=(c_process.stdout, c_stdout_queue))
-        c_stderr_thread = Thread(target=reader, args=(c_process.stderr, c_stderr_queue))
-        c_stdout_thread.start()
-        c_stderr_thread.start()
-
-        python_stdout_queue = Queue()
-        python_stderr_queue = Queue()
-        python_stdout_thread = Thread(target=reader, args=(python_process.stdout, python_stdout_queue))
-        python_stderr_thread = Thread(target=reader, args=(python_process.stderr, python_stderr_queue))
-        python_stdout_thread.start()
-        python_stderr_thread.start()
-
         while True:
-            c_stdout = c_stdout_queue.get()
-            c_stderr = c_stderr_queue.get()
-            python_stdout = python_stdout_queue.get()
-            python_stderr = python_stderr_queue.get()
+            
+            c_stdout = c_process.stdout.readline()
+            if c_stdout:
+                print("Output of C program:", c_stdout.strip())
+            
+            
+            py_stdout = python_process.stdout.readline()
+            if py_stdout:
+                print("Output of Python program:", py_stdout.strip())
 
-            if c_stdout is None and c_stderr is None and python_stdout is None and python_stderr is None:
+            
+            # c_stderr = c_process.stderr.readline()
+            # if c_stderr:
+            #     try:
+            #         print("Error in C program:", c_stderr.strip())
+            #     except UnicodeDecodeError:
+            #         print("Error in C program (unable to decode):", repr(c_stderr))
+
+            # py_stderr = python_process.stderr.readline()
+            # if py_stderr:
+            #     try:
+            #         print("Error in Python program:", py_stderr.strip())
+            #     except UnicodeDecodeError:
+            #         print("Error in Python program (unable to decode):", repr(py_stderr))
+
+            
+            if c_process.poll() is not None and python_process.poll() is not None:
                 break
-
-            if c_stdout is not None:
-                print(f"C stdout: {c_stdout[1]}", end="")
-            if c_stderr is not None:
-                print(f"C stderr: {c_stderr[1]}", end="")
-            if python_stdout is not None:
-                print(f"Python stdout: {python_stdout[1]}", end="")
-            if python_stderr is not None:
-                print(f"Python stderr: {python_stderr[1]}", end="")
 
     except KeyboardInterrupt:
         print("Process interrupted.")

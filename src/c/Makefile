@@ -20,7 +20,7 @@ VMLINUX := ../../vmlinux/$(ARCH)/vmlinux.h
 # outdated
 INCLUDES := -I$(OUTPUT) -I../../libbpf/include/uapi -I$(dir $(VMLINUX)) -I/opt/git/influxdb-cxx/include
 CFLAGS := -g -Wall $(CFLAGS_EXTRA)
-ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
+ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS) -L/opt/git/influxdb-cxx/lib
 
 #LIBS := -lelf -lz -lstdc++ -lInfluxDB
 

@@ -4,7 +4,7 @@ import sys
 import os
 
 def main(): 
-
+    # Definisci e parsifica gli argomenti
     parser = argparse.ArgumentParser(description="Exec C program and Python program")
     parser.add_argument("protocol", choices=["ipv4", "ipv6"], help="Specify the protocol (ipv4 or ipv6).")
     parser.add_argument("interface", help="Specify the interface to monitor.")
@@ -13,30 +13,30 @@ def main():
     protocol = args.protocol
     interface = args.interface
 
-
+    # Percorso al programma C e al controller Python
     c_program = os.path.join("src", "c", "tc")
     python_program = "EFE-controller.py"
 
-
+    # Controlla l'esistenza del programma C
     if not os.path.isfile(c_program):
         print(f"C program '{c_program}' does not exist.")
         sys.exit(1)
 
-
+    # Avvia il programma C
     try:
         c_process = subprocess.Popen([c_program, protocol, interface], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except FileNotFoundError:
         print("C program not found.")
         sys.exit(1)
 
-
+    # Avvia il controller Python
     try:
         python_process = subprocess.Popen(["python3", python_program], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except FileNotFoundError:
         print("EFE-controller.py not found.")
         sys.exit(1)
 
-
+    # Gestione dell'output e attesa dei processi
     try:
         c_stdout, c_stderr = c_process.communicate()
         py_stdout, py_stderr = python_process.communicate()

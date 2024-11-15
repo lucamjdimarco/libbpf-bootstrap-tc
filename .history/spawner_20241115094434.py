@@ -4,7 +4,7 @@ import sys
 import os
 
 def main(): 
-
+    # Definisci e parsifica gli argomenti
     parser = argparse.ArgumentParser(description="Exec C program and Python program")
     parser.add_argument("protocol", choices=["ipv4", "ipv6"], help="Specify the protocol (ipv4 or ipv6).")
     parser.add_argument("interface", help="Specify the interface to monitor.")

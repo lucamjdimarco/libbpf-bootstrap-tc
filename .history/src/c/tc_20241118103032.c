@@ -455,8 +455,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	setbuf(stdout, NULL);
-
 	last_watched_event_time = time(NULL);
 
 	MHandler_t *h = create_influxdb(INFLUXDB_URL);

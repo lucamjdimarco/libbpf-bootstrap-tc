@@ -41,8 +41,8 @@ def main():
             [c_program, interface, protocol],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            # bufsize=1,  # Usa un buffer a riga per output in tempo reale
-            # text=True   # Decodifica automaticamente l'output in stringhe
+            bufsize=1,  # Usa un buffer a riga per output in tempo reale
+            text=True   # Decodifica automaticamente l'output in stringhe
         )
     except FileNotFoundError:
         print("C program not found.")

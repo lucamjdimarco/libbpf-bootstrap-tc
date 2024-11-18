@@ -531,26 +531,26 @@ int main(int argc, char **argv)
     FILE *file = fopen("/etc/machine-id", "r");
     if (!file) {
         perror("Failed to open /etc/machine-id");
-        goto detach;
+        return -EINVAL;
     }
 
 	if (fgets(machine_id, sizeof(machine_id), file) == NULL) {
         perror("Failed to read machine-id");
         fclose(file);
-        goto detach;
+        return -EINVAL;
     }
     fclose(file);
 
 	int map_descriptor = bpf_obj_get("/sys/fs/bpf/map_start_value");  
     if (map_descriptor < 0) {
         perror("Failed to get map");
-        goto detach;
+        return -EINVAL;
     }
 
 	int key = 0; 
     if (bpf_map_update_elem(map_descriptor, &key, machine_id, BPF_ANY) != 0) {
         perror("Failed to update map");
-       	goto detach;
+        return -EINVAL;
     }
 
 	key = 1;

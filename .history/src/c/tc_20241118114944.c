@@ -531,13 +531,13 @@ int main(int argc, char **argv)
     FILE *file = fopen("/etc/machine-id", "r");
     if (!file) {
         perror("Failed to open /etc/machine-id");
-        goto detach;
+        return -EINVAL;
     }
 
 	if (fgets(machine_id, sizeof(machine_id), file) == NULL) {
         perror("Failed to read machine-id");
         fclose(file);
-        goto detach;
+        return -EINVAL;
     }
     fclose(file);
 

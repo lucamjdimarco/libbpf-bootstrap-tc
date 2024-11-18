@@ -631,23 +631,23 @@ int tc_ingress(struct __sk_buff *ctx)
 
 	/* ---- */
 
-	//if(isFirst == 0) {
-	u32 key = 0;
-	char *machine_id = bpf_map_lookup_elem(&map_start_value, &key);
-	if (machine_id == NULL) {
-		bpf_printk("Machine ID not found\n");
-		return TC_ACT_OK;
-	}
+	if(isFirst == 0) {
+		u32 key = 0;
+		machine_id = bpf_map_lookup_elem(&map_start_value, &key);
+		if (machine_id == NULL) {
+			bpf_printk("Machine ID not found\n");
+			return TC_ACT_OK;
+		}
 
-	key = 1;
-	char *interface = bpf_map_lookup_elem(&map_start_value, &key);
-	if (interface == NULL) {
-		bpf_printk("Interface not found\n");
-		return TC_ACT_OK;
-	}
+		key = 1;
+		interface = bpf_map_lookup_elem(&map_start_value, &key);
+		if (interface == NULL) {
+			bpf_printk("Interface not found\n");
+			return TC_ACT_OK;
+		}
 
-		//isFirst = 1;
-	//}
+		isFirst = 1;
+	}
 
 	/* ---- */
 

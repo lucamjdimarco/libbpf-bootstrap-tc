@@ -71,8 +71,7 @@ def main():
             # python_stdout = python_stdout_queue.get()
             # python_stderr = python_stderr_queue.get()
 
-            # if c_stdout is None and c_stderr is None and python_stdout is None and python_stderr is None:
-            if c_stdout is None and c_stderr is None:
+            if c_stdout is None and c_stderr is None and python_stdout is None and python_stderr is None:
                 break
 
             if c_stdout is not None:

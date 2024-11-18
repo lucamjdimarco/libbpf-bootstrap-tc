@@ -68,21 +68,20 @@ def main():
         while True:
             c_stdout = c_stdout_queue.get()
             c_stderr = c_stderr_queue.get()
-            # python_stdout = python_stdout_queue.get()
-            # python_stderr = python_stderr_queue.get()
+            python_stdout = python_stdout_queue.get()
+            python_stderr = python_stderr_queue.get()
 
-            # if c_stdout is None and c_stderr is None and python_stdout is None and python_stderr is None:
-            if c_stdout is None and c_stderr is None:
+            if c_stdout is None and c_stderr is None and python_stdout is None and python_stderr is None:
                 break
 
             if c_stdout is not None:
                 print(f"C stdout: {c_stdout[1]}", end="")
             if c_stderr is not None:
                 print(f"C stderr: {c_stderr[1]}", end="")
-            # if python_stdout is not None:
-            #     print(f"Python stdout: {python_stdout[1]}", end="")
-            # if python_stderr is not None:
-            #     print(f"Python stderr: {python_stderr[1]}", end="")
+            if python_stdout is not None:
+                print(f"Python stdout: {python_stdout[1]}", end="")
+            if python_stderr is not None:
+                print(f"Python stderr: {python_stderr[1]}", end="")
 
     except KeyboardInterrupt:
         print("Process interrupted.")

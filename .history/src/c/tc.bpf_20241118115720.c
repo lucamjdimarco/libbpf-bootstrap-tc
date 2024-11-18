@@ -648,7 +648,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		return TC_ACT_OK;
 	}
 
-	
+	machine_id = mac_id;
 
 		//isFirst = 1;
 	//}

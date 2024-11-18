@@ -94,16 +94,16 @@ def main():
     except KeyboardInterrupt:
         print("Process interrupted.")
         c_process.terminate()
-        #python_process.terminate()
+        python_process.terminate()
 
     # Controlla i codici di ritorno
     c_exit_code = c_process.wait()
-    #python_exit_code = python_process.wait()
+    python_exit_code = python_process.wait()
 
     if c_exit_code != 0:
         print(f"C program finished with error code {c_exit_code}")
-    # if python_exit_code != 0:
-    #     print(f"Python program finished with error code {python_exit_code}")
+    if python_exit_code != 0:
+        print(f"Python program finished with error code {python_exit_code}")
 
 if __name__ == "__main__":
     main()

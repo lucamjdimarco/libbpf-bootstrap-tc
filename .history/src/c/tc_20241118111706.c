@@ -476,26 +476,26 @@ int main(int argc, char **argv)
     }
     fclose(file);
 
-	int map_descriptor = bpf_obj_get("/sys/fs/bpf/map_start_value");  // Path to your map
-    if (map_descriptor < 0) {
+	int map_fd = bpf_obj_get("/sys/fs/bpf/map_start_value");  // Path to your map
+    if (map_fd < 0) {
         perror("Failed to get map");
         return -EINVAL;
     }
 
 	int key = 0; 
-    if (bpf_map_update_elem(map_descriptor, &key, machine_id, BPF_ANY) != 0) {
+    if (bpf_map_update_elem(map_fd, &key, machine_id, BPF_ANY) != 0) {
         perror("Failed to update map");
         return -EINVAL;
     }
 
 	key = 1;
-	if (bpf_map_update_elem(map_descriptor, &key, argv[1], BPF_ANY) != 0) {
+	if (bpf_map_update_elem(map_fd, &key, argv[1], BPF_ANY) != 0) {
 		perror("Failed to update map");
 		return -EINVAL;
 	}
 
 	printf("Machine ID: %s passed\n", machine_id);
-	printf("Interface: %s passed\n", argv[1]);
+	pruintf("Interface: %s passed\n", argv[1]);
 
 	// --------------------------------
 

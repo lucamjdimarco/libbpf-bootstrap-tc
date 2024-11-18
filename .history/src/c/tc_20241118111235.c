@@ -479,25 +479,12 @@ int main(int argc, char **argv)
 	int map_fd = bpf_obj_get("/sys/fs/bpf/map_start_value");  // Path to your map
     if (map_fd < 0) {
         perror("Failed to get map");
-        return -EINVAL;
+        return -E;
     }
-
-	int key = 0; 
-    if (bpf_map_update_elem(map_fd, &key, machine_id, BPF_ANY) != 0) {
-        perror("Failed to update map");
-        return -EINVAL;
-    }
-
-	int key = 1;
-	if (bpf_map_update_elem(map_fd, &key, argv[1], BPF_ANY) != 0) {
-		perror("Failed to update map");
-		return -EINVAL;
-	}
-
-	printf("Machine ID: %s passed\n", machine_id);
-	pruintf("Interface: %s passed\n", argv[1]);
 
 	// --------------------------------
+
+
 
 	last_watched_event_time = time(NULL);
 

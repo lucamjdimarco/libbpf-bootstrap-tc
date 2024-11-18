@@ -494,10 +494,9 @@ int main(int argc, char **argv)
 		return -EINVAL;
 	}
 
-	printf("Machine ID: %s passed\n", machine_id);
-	pruintf("Interface: %s passed\n", argv[1]);
-
 	// --------------------------------
+
+
 
 	last_watched_event_time = time(NULL);
 

@@ -492,12 +492,10 @@ int main(int argc, char **argv)
 	if (bpf_map_update_elem(map_fd, &key, argv[1], BPF_ANY) != 0) {
 		perror("Failed to update map");
 		return -EINVAL;
-	}
-
-	printf("Machine ID: %s passed\n", machine_id);
-	pruintf("Interface: %s passed\n", argv[1]);
 
 	// --------------------------------
+
+
 
 	last_watched_event_time = time(NULL);
 

@@ -499,6 +499,8 @@ int main(int argc, char **argv)
 
 	// --------------------------------
 
+
+
 	last_watched_event_time = time(NULL);
 
 	MHandler_t *h = create_influxdb(INFLUXDB_URL);

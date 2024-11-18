@@ -38,6 +38,13 @@ struct {
 	__type(key, __u32);
 	__type(value, __u64);
 } flowpy_map SEC(".maps");
+
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __type(key, int); // 0 = interface, 1 = machine ID
+    __type(value, char[32]);  // Machine ID size
+    __uint(max_entries, 2);
+} map_start_value SEC(".maps");
 /* ---- */
 
 #ifdef CLASSIFY_IPV4
@@ -622,7 +629,23 @@ int tc_ingress(struct __sk_buff *ctx)
 
 	/* ---- */
 
-	u32 key = 0; 
+	u32 key = 0;
+	char *machine_id = bpf_map_lookup_elem(&map_start_value, &key);
+	if (machine_id == NULL) {
+		bpf_printk("Machine ID not found\n");
+		return TC_ACT_OK;
+	}
+
+	key = 1;
+	char *interface = bpf_map_lookup_elem(&map_start_value, &key);
+	if (interface == NULL) {
+		bpf_printk("Interface not found\n");
+		return TC_ACT_OK;
+	}
+
+	/* ---- */
+
+	//u32 key = 0; 
 	__u64 temp = 0;
 	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
 

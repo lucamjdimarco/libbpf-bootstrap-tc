@@ -78,8 +78,8 @@ def main():
             py_stderr = py_stderr_queue.get()
 
             # Interrompi il ciclo se entrambi i processi hanno terminato
-            # if c_stdout is None and c_stderr is None and py_stdout is None and py_stderr is None:
-            #     break
+            if c_stdout is None and c_stderr is None and py_stdout is None and py_stderr is None:
+                break
 
             if c_stdout is not None:
                 print(f"{c_stdout[0]}: {c_stdout[1]}", end="")

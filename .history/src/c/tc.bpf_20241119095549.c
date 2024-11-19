@@ -210,22 +210,24 @@ static __always_inline void bpf_safe_strncpy(char *dest, const char *src, size_t
     for (i = 0; i < dest_size - 1 && src[i] != '\0'; i++) {
         dest[i] = src[i];
     }
-    dest[i] = '\0'; 
+    dest[i] = '\0'; // Termina sempre con un null terminator
 }
 
 static __always_inline void bpf_safe_strncat(char *dest, const char *src, size_t dest_size) {
     size_t dest_len = 0;
     size_t i;
 
+    // Trova la lunghezza della stringa di destinazione
     while (dest_len < dest_size && dest[dest_len] != '\0') {
         dest_len++;
     }
 
+    // Aggiungi la sorgente alla fine della destinazione
     for (i = 0; i < dest_size - dest_len - 1 && src[i] != '\0'; i++) {
         dest[dest_len + i] = src[i];
     }
 
-    dest[dest_len + i] = '\0'; 
+    dest[dest_len + i] = '\0'; // Termina sempre con un null terminator
 }
 
 static __always_inline void create_combined_string(char *dest, __u32 max_len,

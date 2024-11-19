@@ -205,27 +205,30 @@ static __always_inline void bpf_safe_memcpy(char *dest, const char *src, size_t 
     }
 }
 
-static __always_inline void bpf_safe_strncpy(char *dest, const char *src, size_t dest_size) {
-    size_t i;
-    for (i = 0; i < dest_size - 1 && src[i] != '\0'; i++) {
-        dest[i] = src[i];
+static __always_inline void bpf_safe_strncpy(char *dest, const char *src, __u32 max_len) {
+    for (__u32 i = 0; i < max_len - 1; i++) {
+        if ((dest[i] = src[i]) == '\0')
+            return;
     }
-    dest[i] = '\0'; 
+    dest[max_len - 1] = '\0';
 }
 
-static __always_inline void bpf_safe_strncat(char *dest, const char *src, size_t dest_size) {
-    size_t dest_len = 0;
-    size_t i;
+static __always_inline void bpf_safe_strncat(char *dest, const char *src, __u32 max_len) {
+    __u32 dest_len = 0;
 
-    while (dest_len < dest_size && dest[dest_len] != '\0') {
-        dest_len++;
+    for (__u32 i = 0; i < max_len; i++) {
+        if (dest[i] == '\0') {
+            dest_len = i;
+            break;
+        }
     }
 
-    for (i = 0; i < dest_size - dest_len - 1 && src[i] != '\0'; i++) {
-        dest[dest_len + i] = src[i];
+    for (__u32 i = 0; i < max_len - dest_len - 1; i++) {
+        if ((dest[dest_len + i] = src[i]) == '\0')
+            return;
     }
 
-    dest[dest_len + i] = '\0'; 
+    dest[max_len - 1] = '\0';
 }
 
 static __always_inline void create_combined_string(char *dest, __u32 max_len,

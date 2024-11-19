@@ -229,7 +229,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	struct event_t *event = NULL;
 	__u32 counter_val;
 	int rc;
-	char formatted_value[128];
 
 	//questo prova a mettere giu
 	// puo accadere che se il buffer è pieno non faccio mai la logica sotto
@@ -265,10 +264,10 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	}
 
 	event->ts = ts;
-	event->flowid = packet->flow_id;
+	//event->flowid = packet->flow_id;
+	char formatted_value[128];
 	snprintf(formatted_value, sizeof(formatted_value), "%s:%s:%llu", machine_id, interface, packet->flow_id);
-	//event->formatted_value = formatted_value;
-	bpf_printk("Formatted value: %s\n", formatted_value);
+	event->formatted_value = formatted_value;
 	event->counter = counter_val;
 
 

@@ -38,6 +38,7 @@
 struct event_t {
 	__u64 ts;
 	__u64 flowid;
+	//char formatted_value[128];
 	__u64 counter;
 };
 

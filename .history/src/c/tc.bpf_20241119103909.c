@@ -659,7 +659,8 @@ int tc_ingress(struct __sk_buff *ctx)
 
 	/* ---- */
 
-	u32 key = 0; 
+	//u32 key = 0; 
+	key = 0;
 	__u64 temp = 0;
 	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
 

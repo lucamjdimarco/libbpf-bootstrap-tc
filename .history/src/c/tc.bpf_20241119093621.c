@@ -165,14 +165,14 @@ struct {
 	__uint(max_entries, 1 << 24); // 16 MB di spazio
 } rbuf_events SEC(".maps");
 
-static __always_inline void u64_to_str(__u64 num, char *buffer, size_t buffer_size) {
-    char temp[21];
+static always_inline void u64_to_str(__u64 num, char *buffer, size_t buffer_size) {
+    char temp[21]; // Buffer temporaneo (al massimo un __u64 ha 20 cifre)
     int i = 0;
 
     if (buffer_size == 0)
         return;
 
-    // Special case for 0
+    // Gestione caso speciale per 0
     if (num == 0) {
         if (buffer_size > 1) {
             buffer[0] = '0';
@@ -181,13 +181,15 @@ static __always_inline void u64_to_str(__u64 num, char *buffer, size_t buffer_si
         return;
     }
 
+    // Converti il numero al contrario in `temp`
     while (num > 0 && i < sizeof(temp) - 1) {
-        temp[i++] = '0' + (num % 10);
-        num /= 10;                   
+        temp[i++] = '0' + (num % 10); // Ottieni la cifra meno significativa
+        num /= 10;                   // Rimuovi la cifra meno significativa
     }
 
     temp[i] = '\0';
 
+    // Copia le cifre invertite nel buffer di destinazione
     if (i < buffer_size) {
         int j;
         for (j = 0; j < i; j++) {
@@ -195,12 +197,12 @@ static __always_inline void u64_to_str(__u64 num, char *buffer, size_t buffer_si
         }
         buffer[j] = '\0';
     } else {
-        buffer[0] = '\0'; 
+        buffer[0] = '\0'; // Buffer troppo piccolo
     }
 }
 
 static __always_inline void create_combined_string(char *dest, size_t dest_size, const char *str1, const char *str2, __u64 num) {
-    char num_str[21]; //buffer for the number --> _u64 max is 20 digits
+    char num_str[21]; // Buffer per il numero (sufficiente per un __u64, che al massimo ha 20 cifre)
     
     // Initialize the destination string
     dest[0] = '\0';
@@ -317,7 +319,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	event->ts = ts;
 	event->flowid = packet->flow_id;
-	create_comnined_string(formatted_value, sizeof(formatted_value), machine_id, interface, packet->flowid);
+	bpf_snprintf(formatted_value, sizeof(formatted_value), "%s:%s:%llu", machine_id, interface, packet->flow_id);
 	//event->formatted_value = formatted_value;
 	bpf_printk("Formatted value: %s\n", formatted_value);
 	event->counter = counter_val;

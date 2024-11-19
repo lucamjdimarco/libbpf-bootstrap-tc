@@ -200,7 +200,7 @@ static __always_inline void u64_to_str(__u64 num, char *buffer, size_t buffer_si
 }
 
 static __always_inline void create_combined_string(char *dest, size_t dest_size, const char *str1, const char *str2, __u64 num) {
-    char num_str[21]; //buffer for the number --> _u64 max is 20 digits
+    char num_str[21]; // Buffer per il numero (sufficiente per un __u64, che al massimo ha 20 cifre)
     
     // Initialize the destination string
     dest[0] = '\0';
@@ -317,7 +317,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	event->ts = ts;
 	event->flowid = packet->flow_id;
-	create_comnined_string(formatted_value, sizeof(formatted_value), machine_id, interface, packet->flowid);
+	bpf_snprintf(formatted_value, sizeof(formatted_value), "%s:%s:%llu", machine_id, interface, packet->flow_id);
 	//event->formatted_value = formatted_value;
 	bpf_printk("Formatted value: %s\n", formatted_value);
 	event->counter = counter_val;

@@ -555,8 +555,6 @@ int main(int argc, char **argv)
     }
     fclose(file);
 
-	remove_newline(machine_id);
-
 	sprintf(initial_formatted_value, "%s:%s", machine_id, argv[1]);
 
 

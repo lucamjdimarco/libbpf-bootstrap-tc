@@ -462,7 +462,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 void remove_newline(char *str) {
     size_t len = strlen(str);
     if (len > 0 && str[len - 1] == '\n') {
-        str[len - 1] = '\0'; 
+        str[len - 1] = '\0';  // Sostituisci il '\n' con il terminatore nullo
     }
 }
 
@@ -554,8 +554,6 @@ int main(int argc, char **argv)
         goto detach;
     }
     fclose(file);
-
-	remove_newline(machine_id);
 
 	sprintf(initial_formatted_value, "%s:%s", machine_id, argv[1]);
 

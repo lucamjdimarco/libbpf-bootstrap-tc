@@ -20,7 +20,7 @@ __u64 counter = 0;
 //__u32 isFirst = 0;
 __u64 flow_id = -1;
 char *machine_id;
-char *interface;
+char *interface[32];
 /* ---- */
 
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };

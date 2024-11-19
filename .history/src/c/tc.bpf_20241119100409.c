@@ -169,7 +169,7 @@ static __always_inline void create_combined_string(char *dest, size_t dest_size,
                                                    const char *str1, const char *str2, __u64 num) {
     int i = 0;
 
-	if(dest_size == 0 && str1 == NULL && str2 == NULL) {
+	if(dest_size == 0) {
 		return;
 	}
 

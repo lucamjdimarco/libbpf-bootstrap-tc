@@ -169,27 +169,33 @@ static __always_inline void create_combined_string(char *dest, __u32 max_len,
                                                    const char *str1, const char *str2, __u64 num) {
     int i = 0;
 
+    // Copia str1
     for (; i < dest_size - 1 && str1[i] != '\0'; i++) {
         dest[i] = str1[i];
     }
 
+    // Aggiungi ':'
     if (i < dest_size - 1) {
         dest[i++] = ':';
     }
 
+    // Copia str2
     for (int j = 0; i < dest_size - 1 && str2[j] != '\0'; i++, j++) {
         dest[i] = str2[j];
     }
 
+    // Aggiungi ':'
     if (i < dest_size - 1) {
         dest[i++] = ':';
     }
 
+    // Aggiungi il numero
     for (int j = 0; i < dest_size - 1 && j < 20; i++, j++) { // `num` massimo 20 cifre
         dest[i] = (num % 10) + '0';
         num /= 10;
     }
 
+    // Termina con '\0'
     if (i < dest_size) {
         dest[i] = '\0';
     }

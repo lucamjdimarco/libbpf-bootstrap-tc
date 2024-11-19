@@ -167,32 +167,36 @@ struct {
 
 static __always_inline void create_combined_string(char *dest, __u32 max_len,
                                                    const char *str1, const char *str2, __u64 num) {
-    int i = 0;
+    char num_str[21]; //buffer for the number --> _u64 max is 20 digits
+	__u32 idx = 0;
+    
+    bpf_safe_strncpy(dest, str1, max_len);
 
-    for (; i < dest_size - 1 && str1[i] != '\0'; i++) {
-        dest[i] = str1[i];
-    }
+    // Concatena ":"
+    bpf_safe_strncat(dest, ":", max_len);
 
-    if (i < dest_size - 1) {
-        dest[i++] = ':';
-    }
+    // Concatena la seconda stringa
+    bpf_safe_strncat(dest, str2, max_len);
 
-    for (int j = 0; i < dest_size - 1 && str2[j] != '\0'; i++, j++) {
-        dest[i] = str2[j];
-    }
+    // Concatena ":"
+    bpf_safe_strncat(dest, ":", max_len);
 
-    if (i < dest_size - 1) {
-        dest[i++] = ':';
-    }
-
-    for (int j = 0; i < dest_size - 1 && j < 20; i++, j++) { // `num` massimo 20 cifre
-        dest[i] = (num % 10) + '0';
+    // Converti il numero in stringa
+    for (idx = 20; num > 0 && idx > 0; idx--) {
+        num_str[idx - 1] = '0' + (num % 10);
         num /= 10;
     }
 
-    if (i < dest_size) {
-        dest[i] = '\0';
+	// Se il numero è zero
+    if (idx == 20) {
+        num_str[19] = '0';
+        idx = 19;
     }
+
+    num_str[20] = '\0'; // Null-terminate
+
+    // Concatena il numero
+    bpf_safe_strncat(dest, &num_str[idx], max_len);
 }
 
 // Funzione per costruire l'ID del flusso

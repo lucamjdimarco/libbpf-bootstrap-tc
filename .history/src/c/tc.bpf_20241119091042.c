@@ -641,16 +641,12 @@ int tc_ingress(struct __sk_buff *ctx)
 		return TC_ACT_OK;
 	}
 
-	machine_id = mac_id;
-
 	key = 1;
 	char *inter = bpf_map_lookup_elem(&map_start_value, &key);
 	if (inter == NULL) {
 		bpf_printk("Interface not found\n");
 		return TC_ACT_OK;
 	}
-
-	interface = inter;
 
 	
 

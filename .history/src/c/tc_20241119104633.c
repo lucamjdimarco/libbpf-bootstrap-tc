@@ -548,7 +548,7 @@ int main(int argc, char **argv)
     }
     fclose(file);
 
-	sprintf(initial_formatted_value, "%s:%s", machine_id, argv[1]);
+	snptrintf(initial_formatted_value, sizeof(initial_formatted_value), "%s:%s", machine_id, argv[1]);
 
 
 

@@ -217,19 +217,21 @@ static __always_inline size_t safe_strncat(char *dest, const char *src, size_t d
     size_t dest_len = 0;
     size_t i = 0;
 
+    // Trova la fine di `dest`
     while (dest_len < dest_size && dest[dest_len] != '\0') {
         dest_len++;
     }
 
+    // Aggiungi `src` a `dest`
     while (dest_len + i < dest_size - 1 && src[i] != '\0') {
         dest[dest_len + i] = src[i];
         i++;
     }
 
     if (dest_len + i < dest_size)
-        dest[dest_len + i] = '\0';
+        dest[dest_len + i] = '\0'; // Null-termina
 
-    return dest_len + i;
+    return dest_len + i; // Restituisci la nuova lunghezza
 }
 
 static __always_inline void create_combined_string(char *dest, size_t dest_size, const char *str1, const char *str2, __u64 num) {

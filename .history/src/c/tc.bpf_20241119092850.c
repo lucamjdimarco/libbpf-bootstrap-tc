@@ -267,8 +267,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	event->ts = ts;
 	event->flowid = packet->flow_id;
-	bpf_snprintf(initial_part, sizeof(initial_part), "%s:%s", machine_id, interface);
-	bpf_snprintf(formatted_value, sizeof(formatted_value), "%s:%llu", initial_part, packet->flow_id);
+	bpf_snprintf(formatted_value, sizeof(formatted_value), "%s:%s:%llu", machine_id, interface, packet->flow_id);
 	//event->formatted_value = formatted_value;
 	bpf_printk("Formatted value: %s\n", formatted_value);
 	event->counter = counter_val;

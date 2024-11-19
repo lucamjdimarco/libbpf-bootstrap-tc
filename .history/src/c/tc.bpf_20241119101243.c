@@ -19,8 +19,8 @@ __u64 counter = 0;
 /* ---- */
 //__u32 isFirst = 0;
 __u64 flow_id = -1;
-//char *machine_id;
-//char *interface;
+char *machine_id;
+char *interface;
 /* ---- */
 
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };
@@ -42,13 +42,13 @@ struct {
 	__type(value, __u64);
 } flowpy_map SEC(".maps");
 
-// struct {
-//     __uint(type, BPF_MAP_TYPE_HASH);
-//     __type(key, int); // 0 = interface, 1 = machine ID
-//     __type(value, char[32]);  // Machine ID size
-//     __uint(max_entries, 2);
-// 	__uint(pinning, LIBBPF_PIN_BY_NAME);
-// } map_start_value SEC(".maps");
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __type(key, int); // 0 = interface, 1 = machine ID
+    __type(value, char[32]);  // Machine ID size
+    __uint(max_entries, 2);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} map_start_value SEC(".maps");
 /* ---- */
 
 #ifdef CLASSIFY_IPV4
@@ -266,6 +266,9 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	event->ts = ts;
 	event->flowid = packet->flow_id;
+	create_combined_string(formatted_value, sizeof(formatted_value), machine_id, interface, packet->flow_id);
+	//event->formatted_value = formatted_value;
+	bpf_printk("Formatted value: %s\n", formatted_value);
 	event->counter = counter_val;
 
 
@@ -635,7 +638,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	/* ---- */
 
 	//if(isFirst == 0) {
-	/*u32 key = 0;
+	u32 key = 0;
 	char *mac_id = bpf_map_lookup_elem(&map_start_value, &key);
 	if (mac_id == NULL) {
 		bpf_printk("Machine ID not found\n");
@@ -651,7 +654,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		return TC_ACT_OK;
 	}
 
-	interface = inter;*/
+	interface = inter;
 
 	
 

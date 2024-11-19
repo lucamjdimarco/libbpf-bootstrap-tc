@@ -42,13 +42,13 @@ struct {
 	__type(value, __u64);
 } flowpy_map SEC(".maps");
 
-// struct {
-//     __uint(type, BPF_MAP_TYPE_HASH);
-//     __type(key, int); // 0 = interface, 1 = machine ID
-//     __type(value, char[32]);  // Machine ID size
-//     __uint(max_entries, 2);
-// 	__uint(pinning, LIBBPF_PIN_BY_NAME);
-// } map_start_value SEC(".maps");
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __type(key, int); // 0 = interface, 1 = machine ID
+    __type(value, char[32]);  // Machine ID size
+    __uint(max_entries, 2);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} map_start_value SEC(".maps");
 /* ---- */
 
 #ifdef CLASSIFY_IPV4

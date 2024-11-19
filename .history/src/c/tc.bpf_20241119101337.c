@@ -19,8 +19,8 @@ __u64 counter = 0;
 /* ---- */
 //__u32 isFirst = 0;
 __u64 flow_id = -1;
-//char *machine_id;
-//char *interface;
+char *machine_id;
+char *interface;
 /* ---- */
 
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };
@@ -42,13 +42,13 @@ struct {
 	__type(value, __u64);
 } flowpy_map SEC(".maps");
 
-// struct {
-//     __uint(type, BPF_MAP_TYPE_HASH);
-//     __type(key, int); // 0 = interface, 1 = machine ID
-//     __type(value, char[32]);  // Machine ID size
-//     __uint(max_entries, 2);
-// 	__uint(pinning, LIBBPF_PIN_BY_NAME);
-// } map_start_value SEC(".maps");
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __type(key, int); // 0 = interface, 1 = machine ID
+    __type(value, char[32]);  // Machine ID size
+    __uint(max_entries, 2);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} map_start_value SEC(".maps");
 /* ---- */
 
 #ifdef CLASSIFY_IPV4

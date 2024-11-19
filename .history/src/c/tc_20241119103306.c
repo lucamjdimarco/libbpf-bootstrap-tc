@@ -19,7 +19,7 @@ struct event_t events_buffer[BATCH_SIZE];
 int events_count = 0;
 int last_watched_event_time;
 int current_time;
-char machine_id[32];
+
 
 
 
@@ -313,16 +313,25 @@ void create_combined_string(char *dest, size_t dest_size, const char *str1, cons
     size_t len2 = strlen(str2);
     int num_len = snprintf(NULL, 0, "%lu", num);  
 
-    if (dest_size < len1 + len2 + num_len + 3) { 
+    // Verifica che ci sia spazio sufficiente nel buffer di destinazione
+    if (dest_size < len1 + len2 + num_len + 3) {  // +3 per ':' e il terminatore nullo
         printf("Buffer too small!\n");
         return;
     }
 
+    // Copia str1 in dest
     strcpy(dest, str1);
-    strcat(dest, ":");
-    strcat(dest, str2);
+
+    // Aggiungi il primo separatore ":"
     strcat(dest, ":");
 
+    // Copia str2 in dest
+    strcat(dest, str2);
+
+    // Aggiungi il secondo separatore ":"
+    strcat(dest, ":");
+
+    // Aggiungi il numero in formato stringa
     snprintf(dest + strlen(dest), num_len + 1, "%lu", num);
 }
 
@@ -399,10 +408,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	printf("**********\n");
 	printf("Received event in the ring buffer\n");
 	struct event_t *event = data;
-
-	char[128] formatted_value;
-	sprintf(formatted_value, "%s:%s:%llu", machine_id, argv[1], event->flowid);
-	printf("Formatted value: %s\n", formatted_value);
 
 	/*if(isFirst == 0){
 		kernel_time = event->ts;
@@ -549,7 +554,7 @@ int main(int argc, char **argv)
 	// retrieve machine id
 	// --------------------------------
 	//struct bpf_map *map;
-	
+	char machine_id[32];
     FILE *file = fopen("/etc/machine-id", "r");
     if (!file) {
         perror("Failed to open /etc/machine-id");

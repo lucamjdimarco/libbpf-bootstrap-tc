@@ -401,8 +401,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	struct event_t *event = data;
 
 	char[128] formatted_value;
-	sprintf(formatted_value, "%s:%s:%llu", machine_id, argv[1], event->flowid);
-	printf("Formatted value: %s\n", formatted_value);
+	sprintf(formatted_value, "%s:%s:%llu", machine_id, args[1], event->flowid);
 
 	/*if(isFirst == 0){
 		kernel_time = event->ts;

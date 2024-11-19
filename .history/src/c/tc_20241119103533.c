@@ -19,7 +19,7 @@ struct event_t events_buffer[BATCH_SIZE];
 int events_count = 0;
 int last_watched_event_time;
 int current_time;
-char machine_id[32];
+
 
 
 
@@ -401,8 +401,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	struct event_t *event = data;
 
 	char[128] formatted_value;
-	sprintf(formatted_value, "%s:%s:%llu", machine_id, argv[1], event->flowid);
-	printf("Formatted value: %s\n", formatted_value);
+	sprintf(formatted_value, "%s:%s:%llu", );
 
 	/*if(isFirst == 0){
 		kernel_time = event->ts;
@@ -549,7 +548,7 @@ int main(int argc, char **argv)
 	// retrieve machine id
 	// --------------------------------
 	//struct bpf_map *map;
-	
+	char machine_id[32];
     FILE *file = fopen("/etc/machine-id", "r");
     if (!file) {
         perror("Failed to open /etc/machine-id");

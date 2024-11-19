@@ -402,7 +402,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 
 	char[128] formatted_value;
 	sprintf(formatted_value, "%s:%s:%llu", machine_id, argv[1], event->flowid);
-	printf("Formatted value: %s\n", formatted_value);
 
 	/*if(isFirst == 0){
 		kernel_time = event->ts;

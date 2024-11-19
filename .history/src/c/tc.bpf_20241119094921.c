@@ -230,33 +230,18 @@ static __always_inline void create_combined_string(char *dest, __u32 max_len,
     char num_str[21]; //buffer for the number --> _u64 max is 20 digits
 	__u32 idx = 0;
     
-    bpf_safe_strncpy(dest, str1, max_len);
+    // Initialize the destination string
+    dest[0] = '\0';
+    
+    safe_strncpy(dest, str1, dest_size);
+    safe_strncat(dest, ":", dest_size);
 
-    // Concatena ":"
-    bpf_safe_strncat(dest, ":", max_len);
+    safe_strncat(dest, str2, dest_size);
+    safe_strncat(dest, ":", dest_size);
 
-    // Concatena la seconda stringa
-    bpf_safe_strncat(dest, str2, max_len);
+    u64_to_str(num, num_str, sizeof(num_str));
 
-    // Concatena ":"
-    bpf_safe_strncat(dest, ":", max_len);
-
-    // Converti il numero in stringa
-    for (idx = 20; num > 0 && idx > 0; idx--) {
-        num_str[idx - 1] = '0' + (num % 10);
-        num /= 10;
-    }
-
-	// Se il numero è zero
-    if (idx == 20) {
-        num_str[19] = '0';
-        idx = 19;
-    }
-
-    num_str[20] = '\0'; // Null-terminate
-
-    // Concatena il numero
-    bpf_safe_strncat(dest, &num_str[idx], max_len);
+    safe_strncat(dest, num_str, dest_size);
 }
 
 // Funzione per costruire l'ID del flusso

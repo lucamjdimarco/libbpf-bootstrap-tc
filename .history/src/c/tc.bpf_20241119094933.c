@@ -246,17 +246,6 @@ static __always_inline void create_combined_string(char *dest, __u32 max_len,
         num_str[idx - 1] = '0' + (num % 10);
         num /= 10;
     }
-
-	// Se il numero è zero
-    if (idx == 20) {
-        num_str[19] = '0';
-        idx = 19;
-    }
-
-    num_str[20] = '\0'; // Null-terminate
-
-    // Concatena il numero
-    bpf_safe_strncat(dest, &num_str[idx], max_len);
 }
 
 // Funzione per costruire l'ID del flusso

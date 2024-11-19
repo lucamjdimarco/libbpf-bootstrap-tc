@@ -382,10 +382,12 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	printf("Received event in the ring buffer\n");
 	struct event_t *event = data;
 
-	size_t len_formatted_value = strlen(initial_formatted_value) + 21;
+	size_t len_machine_id = strlen(machine_id);
+	size_t len_interface = strlen(argv[1]);
+	size_t len_formatted_value = len_machine_id + len_interface + 21;
 
 	char formatted_value[len_formatted_value];
-	sprintf(formatted_value, "%s:%llu", initial_formatted_value, event->flowid);
+	sprintf(formatted_value, "%s:%s:%llu", machine_id, argv[1], event->flowid);
 	printf("Formatted value: %s\n", formatted_value);
 
 	/*if(isFirst == 0){
@@ -546,8 +548,6 @@ int main(int argc, char **argv)
         goto detach;
     }
     fclose(file);
-
-	snptrintf(initial_formatted_value, sizeof(initial_formatted_value), "%s:%s", machine_id, argv[1]);
 
 
 

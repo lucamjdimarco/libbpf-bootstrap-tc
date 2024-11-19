@@ -385,7 +385,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	size_t len_formatted_value = strlen(initial_formatted_value) + 21;
 
 	char formatted_value[len_formatted_value];
-	sprintf(formatted_value, "%s:%llu", initial_formatted_value, event->flowid);
+	sprintf(formatted_value, "%s:%s:%llu", machine_id, argv[1], event->flowid);
 	printf("Formatted value: %s\n", formatted_value);
 
 	/*if(isFirst == 0){

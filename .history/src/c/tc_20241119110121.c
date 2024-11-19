@@ -383,7 +383,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	printf("Received event in the ring buffer\n");
 	struct event_t *event = data;
 
-	//21 is the length of the string ":<flowid>" --> __u64 has max 20 digits 
+	//21 is the length of the string ":<flowid>" --> __u64 has 20 digits max
 	size_t len_formatted_value = strlen(initial_formatted_value) + 21;
 
 	char formatted_value[len_formatted_value];

@@ -15,9 +15,6 @@
 #define MAX_ENTRIES    256
 #define MAX_COUNTER    4294967295 /* 2 ^ 32 */
 
-#define MAX_FORMATTED_STRING_SIZE 128
-#define MAX_MACHINE_ID_SIZE 64
-
 #if CLASS == 1
 #define CLASSIFY_IPV4
 #elif CLASS == 2
@@ -48,7 +45,7 @@ struct event_t {
 struct event_t_formatted {
 	__u64 ts;
 	//__u64 flowid;
-	char formatted_value[MAX_FORMATTED_STRING_SIZE];
+	char formatted_value[128];
 	__u64 counter;
 };
 

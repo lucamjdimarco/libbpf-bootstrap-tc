@@ -16,7 +16,7 @@
 #define BATCH_SIZE  3
 #define TIMEOUT_SEC 40
 
-struct event_t_formatted events_buffer[BATCH_SIZE];
+struct event_t events_buffer[BATCH_SIZE];
 int events_count = 0;
 int last_watched_event_time;
 int current_time;
@@ -453,8 +453,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		for (int i = 0; i < events_count; i++) {
 			timestamps[i] = events_buffer[i].ts;
 			//flowids[i] = events_buffer[i].flowid;
-			strncpy(str_identifiers[i], events_buffer[i].formatted_value, MAX_FORMATTED_STRING_SIZE - 1);
-            str_identifiers[i][MAX_FORMATTED_STRING_SIZE - 1] = '\0'; // Garantisce il terminatore
+			strcpy(str_identifiers[i], events_buffer[i].formatted_value, MAX_FORMATTED_STRING_SIZE);
 			counters[i] = events_buffer[i].counter;
 		}
 

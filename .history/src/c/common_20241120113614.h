@@ -48,7 +48,7 @@ struct event_t {
 struct event_t_formatted {
 	__u64 ts;
 	//__u64 flowid;
-	char formatted_value[MAX_FORMATTED_STRING_SIZE];
+	char formatted_value[128];
 	__u64 counter;
 };
 

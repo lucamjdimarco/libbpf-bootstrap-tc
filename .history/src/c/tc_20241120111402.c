@@ -15,13 +15,12 @@
 
 #define BATCH_SIZE  3
 #define TIMEOUT_SEC 40
-
-struct event_t_formatted events_buffer[BATCH_SIZE];
+struct event_t events_buffer[BATCH_SIZE];
 int events_count = 0;
 int last_watched_event_time;
 int current_time;
-char initial_formatted_value[MAX_FORMATTED_STRING_SIZE];
-char machine_id[MAX_MACHINE_ID_SIZE];
+char initial_formatted_value[128];
+char machine_id[64];
 
 
 
@@ -355,7 +354,7 @@ void free_influxdb_point(InfluxDBPoint *point)
 	}
 }
 
-InfluxDBPoint **create_points_batch(struct event_t_formatted *events_buffer, int events_count)
+InfluxDBPoint **create_points_batch(struct event_t *events_buffer, int events_count)
 {
 	InfluxDBPoint **points_batch =
 		(InfluxDBPoint **)malloc(events_count * sizeof(InfluxDBPoint *));
@@ -446,23 +445,26 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		//Array per contenere i dati del buffer
 		uint64_t timestamps[BATCH_SIZE];
 		//uint64_t flowids[BATCH_SIZE];
-		char str_identifiers[BATCH_SIZE][MAX_FORMATTED_STRING_SIZE];
+		char *str_identifiers[BATCH_SIZE];
 		uint64_t counters[BATCH_SIZE];
 
 		// Copia i dati dal buffer negli array
 		for (int i = 0; i < events_count; i++) {
 			timestamps[i] = events_buffer[i].ts;
 			//flowids[i] = events_buffer[i].flowid;
-			strncpy(str_identifiers[i], events_buffer[i].formatted_value, MAX_FORMATTED_STRING_SIZE - 1);
-            str_identifiers[i][MAX_FORMATTED_STRING_SIZE - 1] = '\0'; // Garantisce il terminatore
+			str_identifiers[i] = malloc(strlen(events_buffer[i].formatted_value) + 1);
+			if(!str_identifiers[i]){
+				fprintf(stderr, "Memory allocation failed for str_identifiers\n");
+				return -1;
+			}
+			strcpy(str_identifiers[i], events_buffer[i].formatted_value);
+			
 			counters[i] = events_buffer[i].counter;
 		}
 
 		// Scrivi i dati in InfluxDB
-		// int ret = write_data_influxdb_batch(influx_handler, timestamps, flowids, counters,
-		// 				    events_count);
-		int ret = write_data_influxdb_batch(influx_handler, timestamps, str_identifiers, counters,
-							events_count);
+		int ret = write_data_influxdb_batch(influx_handler, timestamps, flowids, counters,
+						    events_count);
 		if (ret != 0) {
 			fprintf(stderr, "Failed to write data to InfluxDB\n");
 		} else {
@@ -637,8 +639,7 @@ int main(int argc, char **argv)
 					for (int i = 0; i < events_count; i++) {
 						int ret = write_data_influxdb(
 							h, events_buffer[i].ts,
-							//events_buffer[i].flowid,
-							events_buffer[i].formatted_value,
+							events_buffer[i].flowid,
 							events_buffer[i].counter);
 						if (ret != 0) {
 							fprintf(stderr,
@@ -670,8 +671,7 @@ int main(int argc, char **argv)
 					for (int i = 0; i < events_count; i++) {
 						int ret = write_data_influxdb(
 							h, events_buffer[i].ts,
-							//events_buffer[i].flowid,
-							events_buffer[i].formatted_value,
+							events_buffer[i].flowid,
 							events_buffer[i].counter);
 						if (ret != 0) {
 							fprintf(stderr,

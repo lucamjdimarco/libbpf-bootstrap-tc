@@ -57,7 +57,9 @@ int InfluxDBWrapper::writeData(uint64_t ts, const std::string& str_identifier, u
 	//oss << flowid;
 	// flowid_str = oss.str();
 	// point.addTag("flowid", flowid_str);
-	point.addTag("id", str_identifier);
+	point.addTag("flowid", flowid);
+    point.addField("value", static_cast<double>(counter));
+
 	point.addField("value", ccnt);
 
 	//FIXME: use ts instead of now()
@@ -87,9 +89,9 @@ int InfluxDBWrapper::writeData(uint64_t ts, const std::string& str_identifier, u
 
 
 int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
-                                    const std::vector<std::string>& str_identifiers,
+                                    const std::vector<uint64_t>& flowids,
                                     const std::vector<uint64_t>& counters) {
-    if (timestamps.size() != str_identifiers.size() || str_identifiers.size() != counters.size()) {
+    if (timestamps.size() != flowids.size() || flowids.size() != counters.size()) {
         std::cerr << "Error: Mismatched sizes of input vectors." << std::endl;
         return -EINVAL;
     }
@@ -105,8 +107,7 @@ int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
 
         for (size_t i = 0; i < timestamps.size(); ++i) {
             influxdb::Point point("rate");
-            // point.addTag("flowid", std::to_string(flowids[i]));
-			point.addTag("id", str_identifiers[i]);
+            point.addTag("flowid", std::to_string(flowids[i]));
             point.addField("value", static_cast<double>(counters[i]));
             //point.setTimestamp(std::chrono::milliseconds(timestamps[i]));
             std::chrono::time_point<std::chrono::system_clock> timestamp_point = 

@@ -83,7 +83,7 @@ int write_data_influxdb(MHandler_t *h,
 int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char **str_identifier, uint64_t *counter, size_t count) {
     InfluxDBWrapper *obj;
 
-    if (h == nullptr || ts == nullptr || str_identifier == nullptr || counter == nullptr) {
+    if (h == nullptr || ts == nullptr || counter == nullptr) {
         std::cerr << "Error: null pointer passed to write_data_influx_batch." << std::endl;
         return -EINVAL;
     }
@@ -94,9 +94,6 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char **str_iden
     }
 	    // Converti gli array C in vettori C++ per passarli alla funzione
     std::vector<uint64_t> ts_vec(ts, ts + count);
-	std::vector<std::string> str_vec;
-	std::vector<uint64_t> counter_vec(counter, counter + count);
-
     for (size_t i = 0; i < count; ++i) {
         if (str_identifier[i] == nullptr) {
             std::cerr << "Error: null string in str_identifier array." << std::endl;
@@ -104,7 +101,7 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char **str_iden
         }
         str_vec.emplace_back(str_identifier[i]);
     }
-    
+    std::vector<uint64_t> counter_vec(counter, counter + count);
 
     obj = static_cast<InfluxDBWrapper *>(h->obj);
     

@@ -637,7 +637,7 @@ int main(int argc, char **argv)
 						int ret = write_data_influxdb(
 							h, events_buffer[i].ts,
 							//events_buffer[i].flowid,
-							events_buffer[i].str_identifier,
+							events_buffer[i].formatted_value,
 							events_buffer[i].counter);
 						if (ret != 0) {
 							fprintf(stderr,

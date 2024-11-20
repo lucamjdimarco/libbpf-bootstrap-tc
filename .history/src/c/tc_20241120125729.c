@@ -453,7 +453,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		for (int i = 0; i < events_count; i++) {
 			timestamps[i] = events_buffer[i].ts;
 			//flowids[i] = events_buffer[i].flowid;
-			str_identifiers[i] = events_buffer[i].str_identifier;
+			strncpy(str_identifiers[i], events_buffer[i].str_identifier, MAX_FORMATTED_STRING_SIZE - 1);
             str_identifiers[i][MAX_FORMATTED_STRING_SIZE - 1] = '\0'; // Garantisce il terminatore
 			counters[i] = events_buffer[i].counter;
 		}

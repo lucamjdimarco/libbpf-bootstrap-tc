@@ -51,7 +51,7 @@ def main():
     try:
         # Avvia il programma Python
         python_process = subprocess.Popen(
-            ["python3", python_program, interface],
+            ["python3", python_program],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             # bufsize=1,
@@ -92,24 +92,24 @@ def main():
                 print(f"{c_stdout[0]}: {c_stdout[1]}", end="")
             if c_stderr is not None:
                 print(f"{c_stderr[0]}: {c_stderr[1]}", end="")
-            if py_stdout is not None:
-                print(f"{py_stdout[0]}: {py_stdout[1]}", end="")
-            if py_stderr is not None:
-                print(f"{py_stderr[0]}: {py_stderr[1]}", end="")
+            # if py_stdout is not None:
+            #     print(f"{py_stdout[0]}: {py_stdout[1]}", end="")
+            # if py_stderr is not None:
+            #     print(f"{py_stderr[0]}: {py_stderr[1]}", end="")
 
     except KeyboardInterrupt:
         print("Process interrupted.")
         c_process.terminate()
-        python_process.terminate()
+        #python_process.terminate()
 
     # Controlla i codici di ritorno
     c_exit_code = c_process.wait()
-    python_exit_code = python_process.wait()
+    #python_exit_code = python_process.wait()
 
     if c_exit_code != 0:
         print(f"C program finished with error code {c_exit_code}")
-    if python_exit_code != 0:
-        print(f"Python program finished with error code {python_exit_code}")
+    # if python_exit_code != 0:
+    #     print(f"Python program finished with error code {python_exit_code}")
 
 if __name__ == "__main__":
     main()

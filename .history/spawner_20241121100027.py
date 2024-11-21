@@ -51,7 +51,7 @@ def main():
     try:
         # Avvia il programma Python
         python_process = subprocess.Popen(
-            ["python3", python_program, interface],
+            ["python3", python_program],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             # bufsize=1,

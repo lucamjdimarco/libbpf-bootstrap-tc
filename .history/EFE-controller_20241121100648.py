@@ -178,14 +178,14 @@ def main():
         "q": query
     }
 
-    # MAP_PATH = f"{MOUNT_POINT}"
+    MAP_PATH = f"{MOUNT_POINT}"
 
-    # try:
-    #     mount_bpf(MOUNT_POINT)
-    #     print(f"BPF filesystem montato su {MOUNT_POINT}")
-    # except OSError as e:
-    #     print(f"Errore durante il montaggio del filesystem BPF: {e}")
-    #     exit(1)
+    try:
+        mount_bpf(MOUNT_POINT)
+        print(f"BPF filesystem montato su {MOUNT_POINT}")
+    except OSError as e:
+        print(f"Errore durante il montaggio del filesystem BPF: {e}")
+        exit(1)
 
     try:
         response = requests.get(URL_IPV4, params=params)

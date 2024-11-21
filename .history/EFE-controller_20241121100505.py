@@ -20,8 +20,6 @@ machine_id = os.popen("cat /etc/machine-id").read().strip()
 URL_IPV4 = "http://influxdb:8086/query?db=tc_db"
 URL_IPV6 = "http://10.89.0.30:8086/query?db=tc_db"
 
-MOUNT_POINT = "/sys/fs/bpf"
-
 
 
 def mount_bpf(mount_point):
@@ -157,16 +155,16 @@ def bpftool_map_create(map_name, map_path, key_size, value_size, max_entries, ty
         return result.stdout.decode("utf-8")
     
 def main():
-    
+    # Verifica che l'interfaccia sia stata passata come argomento
     if len(sys.argv) < 2:
         print("Usage: python3 EFE-controller.py <interface>")
         sys.exit(1)
 
-    
+    # Recupera l'interfaccia dal secondo argomento
     interface = sys.argv[1]
     print(f"Received interface: {interface}")
 
-    
+    # Query per verificare l'esistenza del flowid
     query = f"""
     SELECT "value" 
     FROM "tc_db"."autogen"."rate" 
@@ -178,14 +176,7 @@ def main():
         "q": query
     }
 
-    # MAP_PATH = f"{MOUNT_POINT}"
-
-    # try:
-    #     mount_bpf(MOUNT_POINT)
-    #     print(f"BPF filesystem montato su {MOUNT_POINT}")
-    # except OSError as e:
-    #     print(f"Errore durante il montaggio del filesystem BPF: {e}")
-    #     exit(1)
+    MAP_PATH = f"{MOUNT_POINT}/flowpy_map"
 
     try:
         response = requests.get(URL_IPV4, params=params)
@@ -205,8 +196,8 @@ def main():
                 print(f"Flow ID estratto: {flowid}")
                 
                 # Aggiorna la mappa eBPF
-                #ebpf_map_path = "/sys/fs/bpf/flow_map"  # Sostituisci con il percorso corretto della tua mappa
-                #cal_map_update(ebpf_map_path, key=interface, value=int(flowid))
+                ebpf_map_path = "/sys/fs/bpf/flow_map"  # Sostituisci con il percorso corretto della tua mappa
+                cal_map_update(ebpf_map_path, key=interface, value=int(flowid))
         else:
             print("Nessun risultato trovato.")
     except requests.exceptions.RequestException as e:

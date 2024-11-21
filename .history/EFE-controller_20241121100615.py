@@ -157,16 +157,16 @@ def bpftool_map_create(map_name, map_path, key_size, value_size, max_entries, ty
         return result.stdout.decode("utf-8")
     
 def main():
-    
+    # Verifica che l'interfaccia sia stata passata come argomento
     if len(sys.argv) < 2:
         print("Usage: python3 EFE-controller.py <interface>")
         sys.exit(1)
 
-    
+    # Recupera l'interfaccia dal secondo argomento
     interface = sys.argv[1]
     print(f"Received interface: {interface}")
 
-    
+    # Query per verificare l'esistenza del flowid
     query = f"""
     SELECT "value" 
     FROM "tc_db"."autogen"."rate" 
@@ -178,14 +178,14 @@ def main():
         "q": query
     }
 
-    # MAP_PATH = f"{MOUNT_POINT}"
+    MAP_PATH = f"{MOUNT_POINT}"
 
-    # try:
-    #     mount_bpf(MOUNT_POINT)
-    #     print(f"BPF filesystem montato su {MOUNT_POINT}")
-    # except OSError as e:
-    #     print(f"Errore durante il montaggio del filesystem BPF: {e}")
-    #     exit(1)
+    try:
+        mount_bpf(MOUNT_POINT)
+        print(f"BPF filesystem montato su {MOUNT_POINT}")
+    except OSError as e:
+        print(f"Errore durante il montaggio del filesystem BPF: {e}")
+        exit(1)
 
     try:
         response = requests.get(URL_IPV4, params=params)

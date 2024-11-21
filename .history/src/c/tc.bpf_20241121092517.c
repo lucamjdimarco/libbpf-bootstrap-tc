@@ -15,7 +15,13 @@
 #define SWIN_TIMER_TIMEOUT (SWIN_SCALER << 1ul)
 
 __u64 counter = 0;
-//__u8 isFirst = 0;
+
+/* ---- */
+//__u32 isFirst = 0;
+__u64 flow_id = -1;
+//char *machine_id;
+//char *interface;
+/* ---- */
 
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };
 
@@ -27,6 +33,23 @@ struct classify_packet_args {
 	__u32 flow_type;
 	__u32 packet_length;
 };
+
+/* ---- */
+struct {
+	__uint(type, BPF_MAP_TYPE_HASH);
+	__uint(max_entries, 1);
+	__type(key, __u32);
+	__type(value, __u64);
+} flowpy_map SEC(".maps");
+
+// struct {
+//     __uint(type, BPF_MAP_TYPE_HASH);
+//     __type(key, int); // 0 = interface, 1 = machine ID
+//     __type(value, char[32]);  // Machine ID size
+//     __uint(max_entries, 2);
+// 	__uint(pinning, LIBBPF_PIN_BY_NAME);
+// } map_start_value SEC(".maps");
+/* ---- */
 
 #ifdef CLASSIFY_IPV4
 struct {
@@ -231,12 +254,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 		return 0;
 	}
 
-	//scompare
 	counter_val = *counter;
-
-	// event->ts = tsw;
-	// event->flowid = packet->flow_id;
-	// event->counter = counter_val;
 
 	if (!event) {
 		bpf_spin_unlock(&packet->lock);
@@ -245,16 +263,11 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 		return -EINVAL;
 	}
 
-	//event->ts = tsw;
-	/* --- */
 	event->ts = ts;
-	/* --- */
 	event->flowid = packet->flow_id;
 	event->counter = counter_val;
 
-	//goto update_win;
 
-	//update_win:
 	packet->tsw = cur_tsw;
 	bpf_spin_unlock(&packet->lock);
 
@@ -270,15 +283,6 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 		return -EINVAL;
 	}
 
-	//Riserva spazio nel rbuf per poter poi aggiungere l'evento secondo la logica commit/abort
-	// rc = prepare_ring_buffer_write(&rbuf_events, &event);
-	// if (rc) {
-	// 	bpf_printk("Failed to reserve space in ring buffer\n");
-	// 	return 0;
-	// }
-	//bpf_printk("Failed to reserve space in ring buffer\n");
-	//goto update_win;
-
 	bpf_printk("Sending event: %llu %llu %u\n", event->ts, event->flowid, event->counter);
 
 	bpf_ringbuf_submit(event, 0);
@@ -291,7 +295,7 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 	struct value_packet *packet = NULL;
 	int ret;
 
-	__u64 flow_id = -1;
+	//__u64 flow_id = -1;
 
 	// Cerca l'elemento nella mappa
 	packet = bpf_map_lookup_elem(args->map_name, args->new_info);
@@ -347,7 +351,6 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 		}
 	} else {
 		// Aggiorna i contatori nella finestra temporale
-		//update_window(packet, args->packet_length, bpf_ktime_get_ns(), true);
 		update_window(packet, args->packet_length, bpf_ktime_get_tai_ns(), true);
 	}
 
@@ -628,29 +631,31 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct vlan_hdr *vlan;
 	int ret;
 
-	/* -------- */
+	u32 key = 0; 
+	__u64 temp = 0;
+	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
 
-	//controllo se è la prima volta che tc ingress viene chiamato
-	/*if (isFirst == 0) {
-		//recupero il primissimo tempo in ns
-		__u64 ts = bpf_ktime_get_ns();
-		//muovo il tempo in ns verso il lato utente
-		struct event_t *event = NULL;
-		int rc = prepare_ring_buffer_write(&rbuf_events, &event);
-		if (rc) {
-			bpf_printk("Failed to reserve space in ring buffer\n");
-			return 0;
+	if(flow_id_ret == NULL){
+		bpf_printk("flow_id not found, initializing to 0\n");
+		temp = 0;  // Inizializza il flow_id a 0
+		int ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
+		if (ret) {
+			bpf_printk("Failed to initialize flow_id\n");
+			return TC_ACT_OK;
 		}
-		//inizializzo l'evento
-		event->ts = ts;
-		event->flowid = 0;
-		event->counter = 0;
-		//mando l'evento
-		bpf_ringbuf_submit(event, 0);
-		//porto isFirst a 1 così da non eseguire più questa parte di codice
-		isFirst = 1;
-	}*/
-	/* -------- */
+	} else {
+		flow_id = *flow_id_ret;
+		temp = flow_id + 1;
+		ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
+		if(ret){
+			bpf_printk("Failed to update flow_id\n");
+			return TC_ACT_OK;
+		}
+
+	}
+
+	/* ---- */
+	
 
 	__u32 packet_length = ctx->len;
 

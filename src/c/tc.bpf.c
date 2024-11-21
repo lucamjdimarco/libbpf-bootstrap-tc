@@ -631,34 +631,6 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct vlan_hdr *vlan;
 	int ret;
 
-	/* ---- */
-
-	//if(isFirst == 0) {
-	/*u32 key = 0;
-	char *mac_id = bpf_map_lookup_elem(&map_start_value, &key);
-	if (mac_id == NULL) {
-		bpf_printk("Machine ID not found\n");
-		return TC_ACT_OK;
-	}
-
-	machine_id = mac_id;
-
-	key = 1;
-	char *inter = bpf_map_lookup_elem(&map_start_value, &key);
-	if (inter == NULL) {
-		bpf_printk("Interface not found\n");
-		return TC_ACT_OK;
-	}
-
-	interface = inter;*/
-
-	
-
-		//isFirst = 1;
-	//}
-
-	/* ---- */
-
 	u32 key = 0; 
 	__u64 temp = 0;
 	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);

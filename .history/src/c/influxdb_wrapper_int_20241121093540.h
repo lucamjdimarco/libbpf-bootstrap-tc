@@ -2,8 +2,6 @@
 #ifndef INFLUXDB_WRAPPER_INT
 #define INFLUXDB_WRAPPER_INT
 
-#define BATCH_SIZE 3
-
 #ifdef __cplusplus
 
 extern "C" {
@@ -27,11 +25,10 @@ extern "C" {
 	void destroy_influxdb(MHandler_t *);
 	// int write_data_influxdb(MHandler_t *,
 	// 			    uint64_t, uint64_t, uint64_t);
-	//int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, uint64_t *flowid, uint64_t *counter, size_t count);
 	int write_data_influxdb(MHandler_t *h,
 			    uint64_t ts, const char *str_identifier, uint64_t counter);
-	
-	int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *str_identifier[BATCH_SIZE], uint64_t *counter, size_t count);
+	//int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, uint64_t *flowid, uint64_t *counter, size_t count);
+	int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *str_identifier[3], uint64_t *counter, size_t count);
 
 	//void show_data_influxdb(MHandler_t *h, const char *measurement);
 #ifdef __cplusplus

@@ -191,7 +191,7 @@ def main():
         response = requests.get(URL_IPV6, params=params)
         response.raise_for_status()
         data = response.json()
-        #print(f"Risultato della query: {json.dumps(data, indent=4)}")
+        print(f"Risultato della query: {json.dumps(data, indent=4)}")
         
         # Variabile per tracciare il flowid massimo
         max_flowid = None

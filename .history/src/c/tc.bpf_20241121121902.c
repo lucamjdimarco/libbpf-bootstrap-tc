@@ -295,7 +295,6 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 {
 	struct value_packet *packet = NULL;
 	int ret;
-	u32 key = 0; 
 
 	//__u64 flow_id = -1;
 
@@ -306,16 +305,9 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 		// Costruisci un nuovo flow_id
 		flow_id = build_flowid(args->flow_type, __sync_fetch_and_add(args->counter, 1));
 
-
 		if (flow_id == -1) {
 			bpf_printk("Failed to build flow_id\n");
 			return -EFAULT;
-		}
-
-		ret = bpf_map_update_elem(&flowpy_map, &key, &counter, BPF_ANY);
-		if(ret){
-			bpf_printk("Failed to update flow_id\n");
-			return TC_ACT_OK;
 		}
 
 		// Crea un nuovo valore per il pacchetto
@@ -641,7 +633,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	int ret;
 
 	u32 key = 0; 
-	//__u64 temp = 0;
+	__u64 temp = 0;
 
 
 	/* ---- */
@@ -697,8 +689,13 @@ int tc_ingress(struct __sk_buff *ctx)
 		bpf_printk("flow_id not found\n");
 		return TC_ACT_OK;
 	} else {
-		//inserisco l'ulitmo flow_id trovato in counter --> counter viene usato in update packet 
 		counter = *flow_id_ret;
+		temp = flow_id + 1;
+		ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
+		if(ret){
+			bpf_printk("Failed to update flow_id\n");
+			return TC_ACT_OK;
+		}
 
 	}
 

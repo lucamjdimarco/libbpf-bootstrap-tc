@@ -312,7 +312,7 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 			return -EFAULT;
 		}
 
-		ret = bpf_map_update_elem(&flowpy_map, &key, &counter, BPF_ANY);
+		ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
 		if(ret){
 			bpf_printk("Failed to update flow_id\n");
 			return TC_ACT_OK;

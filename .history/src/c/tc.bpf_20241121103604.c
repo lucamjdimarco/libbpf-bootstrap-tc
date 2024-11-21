@@ -40,7 +40,6 @@ struct {
 	__uint(max_entries, 1);
 	__type(key, __u32);
 	__type(value, __u64);
-	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flowpy_map SEC(".maps");
 
 // struct {

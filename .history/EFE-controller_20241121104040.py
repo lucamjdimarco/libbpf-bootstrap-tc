@@ -4,7 +4,6 @@ import subprocess
 import os
 import json
 from hex_types import u64, u32, u16, u8, s8, to_hex
-from settings import BPF_FS_PATH
 
 
 import redis
@@ -181,7 +180,7 @@ def main():
 
     try:
         mount_bpf(BPF_FS_PATH)
-        print(f"BPF filesystem montato su {BPF_FS_PATH}")
+        print(f"BPF filesystem montato su {MOUNT_POINT}")
     except OSError as e:
         print(f"Errore durante il montaggio del filesystem BPF: {e}")
         exit(1)

@@ -4,7 +4,6 @@ import subprocess
 import os
 import json
 from hex_types import u64, u32, u16, u8, s8, to_hex
-from settings import BPF_FS_PATH
 
 
 import redis
@@ -179,12 +178,14 @@ def main():
         "q": query
     }
 
-    try:
-        mount_bpf(BPF_FS_PATH)
-        print(f"BPF filesystem montato su {BPF_FS_PATH}")
-    except OSError as e:
-        print(f"Errore durante il montaggio del filesystem BPF: {e}")
-        exit(1)
+    # MAP_PATH = f"{MOUNT_POINT}"
+
+    # try:
+    #     mount_bpf(MOUNT_POINT)
+    #     print(f"BPF filesystem montato su {MOUNT_POINT}")
+    # except OSError as e:
+    #     print(f"Errore durante il montaggio del filesystem BPF: {e}")
+    #     exit(1)
 
     try:
         response = requests.get(URL_IPV6, params=params)
@@ -221,10 +222,7 @@ def main():
             else:
                 print("Nessun flowid valido trovato.")
         else:
-            
             print("Nessun risultato trovato nella query.")
-            # Se non ci sono risultati, aggiorna la mappa flowpy_map
-            bpftool_map_update("/sys/fs/bpf/flowpy_map", 0, 0)  # Mappa eBPF a chiave 0 e valore 0
     except requests.exceptions.RequestException as e:
         print(f"Errore nella richiesta: {e}")
     except ValueError as e:

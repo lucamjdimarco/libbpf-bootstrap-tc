@@ -181,7 +181,7 @@ def main():
 
     try:
         mount_bpf(BPF_FS_PATH)
-        print(f"BPF filesystem montato su {BPF_FS_PATH}")
+        print(f"BPF filesystem montato su {MOUNT_POINT}")
     except OSError as e:
         print(f"Errore durante il montaggio del filesystem BPF: {e}")
         exit(1)

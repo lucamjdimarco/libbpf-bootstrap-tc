@@ -40,7 +40,6 @@ struct {
 	__uint(max_entries, 1);
 	__type(key, __u32);
 	__type(value, __u64);
-	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flowpy_map SEC(".maps");
 
 // struct {
@@ -645,7 +644,6 @@ int tc_ingress(struct __sk_buff *ctx)
 		// 	bpf_printk("Failed to initialize flow_id\n");
 		// 	return TC_ACT_OK;
 		// }
-		return TC_ACT_OK;
 	} else {
 		flow_id = *flow_id_ret;
 		temp = flow_id + 1;

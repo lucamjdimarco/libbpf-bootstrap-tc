@@ -634,7 +634,7 @@ int tc_ingress(struct __sk_buff *ctx)
 
 	u32 key = 0; 
 	__u64 temp = 0;
-
+	
 
 	/* ---- */
 	
@@ -679,29 +679,6 @@ int tc_ingress(struct __sk_buff *ctx)
 		bpf_printk("VLAN tag detected, running in access mode\n");
 	} else {
 		data = (void *)(eth + 1);
-	}
-
-	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
-
-	if(flow_id_ret == NULL){
-		//bpf_printk("flow_id not found, initializing to 0\n");
-		bpf_printk("flow_id not found\n");
-		// temp = 0;  // Inizializza il flow_id a 0
-		// int ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
-		// if (ret) {
-		// 	bpf_printk("Failed to initialize flow_id\n");
-		// 	return TC_ACT_OK;
-		// }
-		return TC_ACT_OK;
-	} else {
-		flow_id = *flow_id_ret;
-		temp = flow_id + 1;
-		ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
-		if(ret){
-			bpf_printk("Failed to update flow_id\n");
-			return TC_ACT_OK;
-		}
-
 	}
 
 	// Process IPv4 and IPv6 packets

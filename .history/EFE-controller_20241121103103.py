@@ -191,8 +191,6 @@ def main():
         response = requests.get(URL_IPV6, params=params)
         response.raise_for_status()
         data = response.json()
-
-        print(json.dumps(data, indent=4))
         
         # Variabile per tracciare il flowid massimo
         max_flowid = None
@@ -201,32 +199,24 @@ def main():
         if "series" in data["results"][0]:
             series = data["results"][0]["series"]
             for value in series[0]["values"]:
-                id_value = value[1]  # Assumendo che "rate.id" sia il secondo valore della riga
+                id_value = value[1]  # Estrai la stringa completa "machine_id:interface:flowid"
+                flowid = int(str(id_value).split(":")[-1])  # Estrai il flowid come intero
                 
-                print(f"Valore grezzo id_value: {id_value}")
-                
-                # Assicurati che sia una stringa e valida
-                if isinstance(id_value, str) and ":" in id_value:
-                    try:
-                        # Estrai il flowid
-                        flowid = int(id_value.split(":")[-1])
-                        print(f"Flow ID estratto: {flowid}")
-                        
-                        # Aggiorna il massimo flowid
-                        if max_flowid is None or flowid > max_flowid:
-                            max_flowid = flowid
-                    except ValueError:
-                        print(f"Errore: Impossibile convertire {id_value} in un intero.")
-                else:
-                    print(f"Formato non valido per id_value: {id_value}")
+                # Aggiorna il massimo flowidh
+                if max_flowid is None or flowid > max_flowid:
+                    max_flowid = flowid
             
             # Stampa il flowid massimo trovato
             if max_flowid is not None:
-                print(f"Flow ID massimo trovato: {max_flowid}")
+                print(f"Flow ID massimo: {max_flowid}")
+                
+                # Aggiorna la mappa eBPF (decommenta se necessario)
+                # ebpf_map_path = "/sys/fs/bpf/flow_map"  # Percorso della mappa
+                # cal_map_update(ebpf_map_path, key=interface, value=max_flowid)
             else:
-                print("Nessun flowid valido trovato.")
+                print("Nessun flowid trovato.")
         else:
-            print("Nessun risultato trovato nella query.")
+            print("Nessun risultato trovato.")
     except requests.exceptions.RequestException as e:
         print(f"Errore nella richiesta: {e}")
     except ValueError as e:

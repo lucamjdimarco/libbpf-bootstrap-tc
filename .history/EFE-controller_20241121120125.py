@@ -77,15 +77,14 @@ def bpftool_map_update(map_reference, key, value, map_reference_type="pinned", v
         #key_string = " ".join(key)
 
 
-        # if value_type == "pinned":
-        #     cmd = f"bpftool map update pinned {map_reference} key hex {key_string} value pinned {value}"
-        # elif value_type == "hex":
-        #     value_string = " ".join(value)
-        #     cmd = f"bpftool map update pinned {map_reference} key hex {key_string} value hex {value_string}"
-        # else:
-        #     raise Exception(
-        #         "bpftool_map_update: Instruction not implemented (invalid value_type).")
-        cmd = f"bpftool map update pinned {map_reference} key {key} {key} {key} {key} value {value} {value} {value} {value} {value} {value} {value} {value}"
+        if value_type == "pinned":
+            cmd = f"bpftool map update pinned {map_reference} key hex {key_string} value pinned {value}"
+        elif value_type == "hex":
+            value_string = " ".join(value)
+            cmd = f"bpftool map update pinned {map_reference} key hex {key_string} value hex {value_string}"
+        else:
+            raise Exception(
+                "bpftool_map_update: Instruction not implemented (invalid value_type).")
     else:
         raise Exception(
             "bpftool_map_update: Instruction not implemented (invalid map_reference_type).")

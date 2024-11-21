@@ -69,8 +69,8 @@ def bpftool_map_update(map_reference, key, value, map_reference_type="pinned", v
 
     if map_reference_type == "pinned":
         if isinstance(key, int):
-            key_string = hex(key) 
-        elif isinstance(key, list): 
+            key_string = hex(key)  # Converte il valore intero in esadecimale
+        elif isinstance(key, list):  # Se è una lista, unisce gli elementi in una stringa
             key_string = " ".join(hex(k) for k in key)
         else:
             raise TypeError(f"Expected 'key' to be an int or list, got {type(key)}")

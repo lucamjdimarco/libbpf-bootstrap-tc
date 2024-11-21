@@ -188,39 +188,39 @@ def main():
     #     exit(1)
 
     try:
-        response = requests.get(URL_IPV6, params=params)
-        response.raise_for_status()
-        data = response.json()
-        
-        # Variabile per tracciare il flowid massimo
-        max_flowid = None
-        
-        # Verifica se ci sono risultati
-        if "series" in data["results"][0]:
-            series = data["results"][0]["series"]
-            for value in series[0]["values"]:
-                id_value = value[1]  # Estrai la stringa completa "machine_id:interface:flowid"
-                flowid = int(str(id_value).split(":")[-1])  # Estrai il flowid come intero
-                
-                # Aggiorna il massimo flowid
-                if max_flowid is None or flowid > max_flowid:
-                    max_flowid = flowid
+    response = requests.get(URL_IPV6, params=params)
+    response.raise_for_status()
+    data = response.json()
+    
+    # Variabile per tracciare il flowid massimo
+    max_flowid = None
+    
+    # Verifica se ci sono risultati
+    if "series" in data["results"][0]:
+        series = data["results"][0]["series"]
+        for value in series[0]["values"]:
+            id_value = value[1]  # Estrai la stringa completa "machine_id:interface:flowid"
+            flowid = int(str(id_value).split(":")[-1])  # Estrai il flowid come intero
             
-            # Stampa il flowid massimo trovato
-            if max_flowid is not None:
-                print(f"Flow ID massimo: {max_flowid}")
-                
-                # Aggiorna la mappa eBPF (decommenta se necessario)
-                # ebpf_map_path = "/sys/fs/bpf/flow_map"  # Percorso della mappa
-                # cal_map_update(ebpf_map_path, key=interface, value=max_flowid)
-            else:
-                print("Nessun flowid trovato.")
+            # Aggiorna il massimo flowid
+            if max_flowid is None or flowid > max_flowid:
+                max_flowid = flowid
+        
+        # Stampa il flowid massimo trovato
+        if max_flowid is not None:
+            print(f"Flow ID massimo: {max_flowid}")
+            
+            # Aggiorna la mappa eBPF (decommenta se necessario)
+            # ebpf_map_path = "/sys/fs/bpf/flow_map"  # Percorso della mappa
+            # cal_map_update(ebpf_map_path, key=interface, value=max_flowid)
         else:
-            print("Nessun risultato trovato.")
-    except requests.exceptions.RequestException as e:
-        print(f"Errore nella richiesta: {e}")
-    except ValueError as e:
-        print(f"Errore nella conversione del flowid: {e}")
+            print("Nessun flowid trovato.")
+    else:
+        print("Nessun risultato trovato.")
+except requests.exceptions.RequestException as e:
+    print(f"Errore nella richiesta: {e}")
+except ValueError as e:
+    print(f"Errore nella conversione del flowid: {e}")
 
 
 

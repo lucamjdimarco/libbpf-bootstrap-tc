@@ -210,7 +210,7 @@ def main():
                     try:
                         # Estrai il flowid
                         flowid = int(id_value.split(":")[-1])
-                        #print(f"Flow ID estratto: {flowid}")
+                        print(f"Flow ID estratto: {flowid}")
                         
                         # Aggiorna il massimo flowid
                         if max_flowid is None or flowid > max_flowid:

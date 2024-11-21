@@ -203,14 +203,14 @@ def main():
             for value in series[0]["values"]:
                 id_value = value[1]  # Assumendo che "rate.id" sia il secondo valore della riga
                 
-                #print(f"Valore grezzo id_value: {id_value}")
+                print(f"Valore grezzo id_value: {id_value}")
                 
                 # Assicurati che sia una stringa e valida
                 if isinstance(id_value, str) and ":" in id_value:
                     try:
                         # Estrai il flowid
                         flowid = int(id_value.split(":")[-1])
-                        #print(f"Flow ID estratto: {flowid}")
+                        print(f"Flow ID estratto: {flowid}")
                         
                         # Aggiorna il massimo flowid
                         if max_flowid is None or flowid > max_flowid:

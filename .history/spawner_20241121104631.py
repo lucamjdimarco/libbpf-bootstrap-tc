@@ -39,8 +39,8 @@ def main():
             [c_program, interface, protocol],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,  # Assicura che l'output venga trattato come testo
-            bufsize=1,  # Buffer di riga
+            # bufsize=1,  # Usa un buffer a riga per output in tempo reale
+            # text=True   # Decodifica automaticamente l'output in stringhe
         )
     except FileNotFoundError:
         print("C program not found.")
@@ -52,8 +52,8 @@ def main():
             ["python3", python_program, interface],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,  # Assicura che l'output venga trattato come testo
-            bufsize=1,  # Buffer di riga
+            # bufsize=1,
+            # text=True
         )
     except FileNotFoundError:
         print("EFE-controller.py not found.")
@@ -69,7 +69,7 @@ def main():
     Thread(target=reader, args=[c_process.stdout, c_stdout_queue, "C stdout"]).start()
     Thread(target=reader, args=[c_process.stderr, c_stderr_queue, "C stderr"]).start()
     Thread(target=reader, args=[python_process.stdout, py_stdout_queue, "Py stdout"]).start()
-    Thread(target=reader, args=[python_process.stderr, py_stderr_queue, "Py stderr"]).start()
+    Thread(target=reader, args=[python_process, py_stderr_queue, "Py stderr"]).start()
     # Thread(target=reader, args=[python_process.stdout, py_stdout_queue, "Python stdout"]).start()
     # Thread(target=reader, args=[python_process.stderr, py_stderr_queue, "Python stderr"]).start()
 

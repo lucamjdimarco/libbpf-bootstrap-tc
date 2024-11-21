@@ -69,7 +69,7 @@ def main():
     Thread(target=reader, args=[c_process.stdout, c_stdout_queue, "C stdout"]).start()
     Thread(target=reader, args=[c_process.stderr, c_stderr_queue, "C stderr"]).start()
     Thread(target=reader, args=[python_process.stdout, py_stdout_queue, "Py stdout"]).start()
-    Thread(target=reader, args=[python_process.stderr, py_stderr_queue, "Py stderr"]).start()
+    Thread(target=reader, args=[python_process, py_stderr_queue, "Py stderr"]).start()
     # Thread(target=reader, args=[python_process.stdout, py_stdout_queue, "Python stdout"]).start()
     # Thread(target=reader, args=[python_process.stderr, py_stderr_queue, "Python stderr"]).start()
 

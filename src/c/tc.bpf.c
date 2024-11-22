@@ -693,14 +693,14 @@ int tc_ingress(struct __sk_buff *ctx)
 	/* Se non trovo il flow_id nella mappa pinnata faccio passare */
 	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
 
-	if(flow_id_ret == NULL){
+	/*if(flow_id_ret == NULL){
 		bpf_printk("flow_id not found\n");
 		return TC_ACT_OK;
 	} else {
 		//inserisco l'ulitmo flow_id trovato in counter --> counter viene usato in update packet 
 		counter = *flow_id_ret;
 
-	}
+	}*/
 
 	// Process IPv4 and IPv6 packets
 	switch (eth_proto) {

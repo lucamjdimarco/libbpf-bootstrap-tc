@@ -82,7 +82,7 @@ int write_data_influxdb(MHandler_t *h,
     }
 
     obj = static_cast<InfluxDBWrapper *>(h->obj);
-    return obj->writeData(ts, *tags, counter);
+    return obj->writeData(ts, tags, counter);
 }
 
 

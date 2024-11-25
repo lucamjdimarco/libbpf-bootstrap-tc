@@ -87,7 +87,7 @@ int write_data_influxdb(MHandler_t *h,
 
 
 // int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, uint64_t *flowid, uint64_t *counter, size_t count) {
-int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, TagInfluxDBC **tags, uint64_t *counter, size_t count) {
+int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, TagInfluxDB **tags, uint64_t *counter, size_t count) {
     InfluxDBWrapper *obj;
 
     if (h == nullptr || ts == nullptr || tags == nullptr || counter == nullptr) {

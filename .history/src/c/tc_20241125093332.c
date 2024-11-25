@@ -20,30 +20,24 @@ struct event_t_formatted events_buffer[BATCH_SIZE];
 int events_count = 0;
 int last_watched_event_time;
 int current_time;
-//char initial_formatted_value[MAX_FORMATTED_STRING_SIZE];
+char initial_formatted_value[MAX_FORMATTED_STRING_SIZE];
 char machine_id[MAX_MACHINE_ID_SIZE];
-const char *interface_name;
 
 typedef struct {
 	char *machine_id;
 	char *interface;
 	__u64 flowid;
-} TagInfluxDB;
+}
 
-// typedef struct {
-// 	char *measurement; // Ad esempio, "rate"
-// 	//uint64_t flowid; // L'identificatore dell'evento
-// 	char *str_identifier; // Stringa composta come "machine_id:interface:flowid"
 
-// 	double counter; // Il valore del contatore
-// 	uint64_t timestamp; // Il timestamp dell'evento
-// } InfluxDBPoint;
+
 
 typedef struct {
-    char *measurement; 
-    TagInfluxDB tags; 
-    double counter;    
-    uint64_t timestamp;
+	char *measurement; // Ad esempio, "rate"
+	//uint64_t flowid; // L'identificatore dell'evento
+	char *str_identifier; // Stringa composta come "machine_id:interface:flowid"
+	double counter; // Il valore del contatore
+	uint64_t timestamp; // Il timestamp dell'evento
 } InfluxDBPoint;
 
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
@@ -338,8 +332,8 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 
 // --------------------------------------------
 //uint64_t flowid
-InfluxDBPoint *create_influxdb_point(const char *measurement, const char *machine_id, const char *interface,
-                                     uint64_t flowid , double counter, uint64_t timestamp)
+InfluxDBPoint *create_influxdb_point(const char *measurement, const char *str_id , double counter,
+				     uint64_t timestamp)
 {
 	InfluxDBPoint *point = (InfluxDBPoint *)malloc(sizeof(InfluxDBPoint));
 	if (!point) {
@@ -348,32 +342,8 @@ InfluxDBPoint *create_influxdb_point(const char *measurement, const char *machin
 	}
 
 	point->measurement = strdup(measurement);
-	if (!point->measurement) {
-        fprintf(stderr, "Memory allocation failed for measurement\n");
-        free(point);
-        return NULL;
-    }
-
-	/* Gestione della struttura */
-	point->tags.machine_id = strdup(machine_id);
-    if (!point->tags.machine_id) {
-        fprintf(stderr, "Memory allocation failed for machine_id\n");
-        free(point->measurement);
-        free(point);
-        return NULL;
-    }
-	point->tags.interface = strdup(interface);
-    if (!point->tags.interface) {
-        fprintf(stderr, "Memory allocation failed for interface\n");
-        free(point->tags.machine_id);
-        free(point->measurement);
-        free(point);
-        return NULL;
-    }
-	point->tags.flowid = flowid;
-	/* ----- */
 	//point->flowid = flowid;
-	//point->str_identifier = strdup(str_id);
+	point->str_identifier = strdup(str_id);
 	point->counter = counter;
 	point->timestamp = timestamp;
 
@@ -385,9 +355,7 @@ void free_influxdb_point(InfluxDBPoint *point)
 	if (point) {
 		free(point->measurement);
 		/* -- Aggiunto --*/
-		//free(point->str_identifier);
-		free(point->tags.machine_id);
-        free(point->tags.interface);
+		free(point->str_identifier);
 		/* -- Fine --*/
 		free(point);
 	}
@@ -403,26 +371,22 @@ InfluxDBPoint **create_points_batch(struct event_t_formatted *events_buffer, int
 	}
 
 	for (int i = 0; i < events_count; i++) {
-        points_batch[i] = create_influxdb_point(
-            "rate",                                  // Misurazione
-            events_buffer[i].machine_id,             // machine_id
-            events_buffer[i].interface,              // interface
-            events_buffer[i].flowid,                 // flowid
-            (double)events_buffer[i].counter,        // counter
-            events_buffer[i].ts                      // timestamp
-        );
-
-        // Verifica se la creazione del punto è riuscita
-        if (!points_batch[i]) {
-            fprintf(stderr, "Failed to create point for event %d\n", i);
-            // Libera i punti e le loro risorse allocate finora in caso di errore
-            for (int j = 0; j < i; j++) {
-                free_influxdb_point(points_batch[j]);
-            }
-            free(points_batch);
-            return NULL;
-        }
-    }
+		// points_batch[i] = create_influxdb_point("rate", events_buffer[i].flowid,
+		// 					(double)events_buffer[i].counter,
+		// 					events_buffer[i].ts);
+		points_batch[i] = create_influxdb_point("rate", events_buffer[i].str_identifier,
+							(double)events_buffer[i].counter,
+							events_buffer[i].ts);
+		if (!points_batch[i]) {
+			fprintf(stderr, "Failed to create point for event %d\n", i);
+			// Free any previously allocated points in case of error
+			for (int j = 0; j < i; j++) {
+				free_influxdb_point(points_batch[j]);
+			}
+			free(points_batch);
+			return NULL;
+		}
+	}
 
 	return points_batch;
 }
@@ -434,13 +398,27 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	printf("Received event in the ring buffer\n");
 	struct event_t *event = data;
 
+	//21 is the length of the string ":<flowid>" --> __u64 has max 20 digits 
+	size_t len_formatted_value = strlen(initial_formatted_value) + 21;
+
+	char formatted_value[len_formatted_value];
+	sprintf(formatted_value, "%s:%llu", initial_formatted_value, event->flowid);
+	printf("Formatted value: %s\n", formatted_value);
+
 	struct event_t_formatted event_formatted = {
 		.ts = event->ts,
-		.machine_id = machine_id,
-		.interface = interface_name,
-		.flowid = event->flowid,
+		.str_identifier = formatted_value,
 		.counter = event->counter,
 	};
+
+	/*if(isFirst == 0){
+		kernel_time = event->ts;
+		clock_gettime(CLOCK_REALTIME, &ts);
+		long long abs_time = ts.tv_sec * 1000000000LL + ts.tv_nsec;
+		start_of_the_kernel_abs = abs_time - kernel_time;
+		isFirst = 1;
+		return 0;
+	}*/
 
 	MHandler_t *influx_handler = (MHandler_t *)ctx;
 
@@ -473,22 +451,22 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		/*-------------------invio dati batch-------------------*/
 		//Array per contenere i dati del buffer
 		uint64_t timestamps[BATCH_SIZE];
-		TagInfluxDB tags[BATCH_SIZE];
+		//uint64_t flowids[BATCH_SIZE];
+		const char *str_identifiers[BATCH_SIZE];
 		uint64_t counters[BATCH_SIZE];
 
 		// Copia i dati dal buffer negli array
 		for (int i = 0; i < events_count; i++) {
 			timestamps[i] = events_buffer[i].ts;
-			tags[i].machine_id = events_buffer[i].machine_id;
-			tags[i].interface = events_buffer[i].interface;
-			tags[i].flowid = events_buffer[i].flowid;
+			//flowids[i] = events_buffer[i].flowid;
+			str_identifiers[i] = events_buffer[i].str_identifier;
 			counters[i] = events_buffer[i].counter;
 		}
 
 		// Scrivi i dati in InfluxDB
 		// int ret = write_data_influxdb_batch(influx_handler, timestamps, flowids, counters,
 		// 				    events_count);
-		int ret = write_data_influxdb_batch(influx_handler, timestamps, tags, counters,
+		int ret = write_data_influxdb_batch(influx_handler, timestamps, str_identifiers, counters,
 							events_count);
 		if (ret != 0) {
 			fprintf(stderr, "Failed to write data to InfluxDB\n");
@@ -531,8 +509,7 @@ int main(int argc, char **argv)
 
 	show_databases_influxdb(h);
 
-	//const char *interface_name = argv[1];	
-	interface_name = argv[1];	
+	const char *interface_name = argv[1];
 	const char *map_type = argv[2];
 	int index = if_nametoindex(interface_name);
 	if (index == 0) {
@@ -586,6 +563,10 @@ int main(int argc, char **argv)
 
 	printf("Successfully started! Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` "
 	       "to see output of the BPF program.\n");
+
+	// retrieve machine id
+	// --------------------------------
+	//struct bpf_map *map;
 	
     FILE *file = fopen("/etc/machine-id", "r");
     if (!file) {
@@ -601,6 +582,31 @@ int main(int argc, char **argv)
     fclose(file);
 
 	remove_newline(machine_id);
+
+	sprintf(initial_formatted_value, "%s:%s", machine_id, argv[1]);
+
+
+
+	/*int map_descriptor = bpf_obj_get("/sys/fs/bpf/map_start_value");  
+    if (map_descriptor < 0) {
+        perror("Failed to get map");
+        goto detach;
+    }
+
+	int key = 0; 
+    if (bpf_map_update_elem(map_descriptor, &key, machine_id, BPF_ANY) != 0) {
+        perror("Failed to update map");
+       	goto detach;
+    }
+
+	key = 1;
+	if (bpf_map_update_elem(map_descriptor, &key, argv[1], BPF_ANY) != 0) {
+		perror("Failed to update map");
+		goto detach;
+	}
+
+	printf("Machine ID: %s passed\n", machine_id);
+	printf("Interface: %s passed\n", argv[1]);*/
 
 	// --------------------------------
 
@@ -636,9 +642,8 @@ int main(int argc, char **argv)
 					for (int i = 0; i < events_count; i++) {
 						int ret = write_data_influxdb(
 							h, events_buffer[i].ts,
-							events_buffer[i].machine_id,
-							events_buffer[i].interface,
-							events_buffer[i].flowid,
+							//events_buffer[i].flowid,
+							events_buffer[i].str_identifier,
 							events_buffer[i].counter);
 						if (ret != 0) {
 							fprintf(stderr,
@@ -670,9 +675,8 @@ int main(int argc, char **argv)
 					for (int i = 0; i < events_count; i++) {
 						int ret = write_data_influxdb(
 							h, events_buffer[i].ts,
-							events_buffer[i].machine_id,
-							events_buffer[i].interface,
-							events_buffer[i].flowid,
+							//events_buffer[i].flowid,
+							events_buffer[i].formatted_value,
 							events_buffer[i].counter);
 						if (ret != 0) {
 							fprintf(stderr,

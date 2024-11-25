@@ -111,7 +111,7 @@ int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
 			points.push_back(std::move(point));
         }
 
-        db->write(std::move(points));  
+        db->write(std::move(points));  // Scrivi tutti i punti in un'unica richiesta batch
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "Exception while writing data to InfluxDB: " << e.what() << std::endl;

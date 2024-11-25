@@ -84,8 +84,8 @@ int write_data_influxdb(MHandler_t *h,
 int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, TagInfluxDB **tags, uint64_t *counter, size_t count) {
     InfluxDBWrapper *obj;
 
-    if (h == nullptr || ts == nullptr || tags == nullptr || counter == nullptr) {
-        std::cerr << "Error: null pointer passed to write_data_influxdb_batch." << std::endl;
+    if (h == nullptr || ts == nullptr || str_identifier == nullptr || counter == nullptr) {
+        std::cerr << "Error: null pointer passed to write_data_influx_batch." << std::endl;
         return -EINVAL;
     }
 
@@ -93,21 +93,23 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, TagInfluxDB **tags, u
         std::cerr << "Error: h->obj is null." << std::endl;
         return -EINVAL;
     }
-
+	    // Converti gli array C in vettori C++ per passarli alla funzione
     std::vector<uint64_t> ts_vec(ts, ts + count);
-    std::vector<TagInfluxDB> tags_vec;
-    std::vector<uint64_t> counter_vec(counter, counter + count);
+	std::vector<std::string> str_vec;
+	std::vector<uint64_t> counter_vec(counter, counter + count);
 
     for (size_t i = 0; i < count; ++i) {
-        if (tags[i] == nullptr) {
-            std::cerr << "Error: null tag in tags array at index " << i << "." << std::endl;
+        if (str_identifier[i] == nullptr) {
+            std::cerr << "Error: null string in str_identifier array." << std::endl;
             return -EINVAL;
         }
-        tags_vec.emplace_back(*tags[i]);
+        str_vec.emplace_back(str_identifier[i]);
     }
+    
 
     obj = static_cast<InfluxDBWrapper *>(h->obj);
-    return obj->writeDataBatch(ts_vec, tags_vec, counter_vec);
+    
+	return obj->writeDataBatch(ts_vec, str_vec, counter_vec);
 }
 
 

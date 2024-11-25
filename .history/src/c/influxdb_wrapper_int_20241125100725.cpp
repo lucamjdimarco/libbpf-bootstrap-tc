@@ -94,6 +94,7 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, TagInfluxDB **tags, u
         return -EINVAL;
     }
 
+    // Convert arrays to C++ vectors for easier handling
     std::vector<uint64_t> ts_vec(ts, ts + count);
     std::vector<TagInfluxDB> tags_vec;
     std::vector<uint64_t> counter_vec(counter, counter + count);

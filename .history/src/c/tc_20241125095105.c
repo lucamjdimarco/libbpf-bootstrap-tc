@@ -437,7 +437,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	struct event_t_formatted event_formatted = {
 		.ts = event->ts,
 		.machine_id = machine_id,
-		.interface = interface_name,
+		.interface = argv[1],
 		.flowid = event->flowid,
 		.counter = event->counter,
 	};
@@ -473,6 +473,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		/*-------------------invio dati batch-------------------*/
 		//Array per contenere i dati del buffer
 		uint64_t timestamps[BATCH_SIZE];
+		//uint64_t flowids[BATCH_SIZE];
 		TagInfluxDB tags[BATCH_SIZE];
 		uint64_t counters[BATCH_SIZE];
 
@@ -586,6 +587,10 @@ int main(int argc, char **argv)
 
 	printf("Successfully started! Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` "
 	       "to see output of the BPF program.\n");
+
+	// retrieve machine id
+	// --------------------------------
+	//struct bpf_map *map;
 	
     FILE *file = fopen("/etc/machine-id", "r");
     if (!file) {
@@ -636,9 +641,8 @@ int main(int argc, char **argv)
 					for (int i = 0; i < events_count; i++) {
 						int ret = write_data_influxdb(
 							h, events_buffer[i].ts,
-							events_buffer[i].machine_id,
-							events_buffer[i].interface,
-							events_buffer[i].flowid,
+							//events_buffer[i].flowid,
+							events_buffer[i].str_identifier,
 							events_buffer[i].counter);
 						if (ret != 0) {
 							fprintf(stderr,
@@ -670,9 +674,8 @@ int main(int argc, char **argv)
 					for (int i = 0; i < events_count; i++) {
 						int ret = write_data_influxdb(
 							h, events_buffer[i].ts,
-							events_buffer[i].machine_id,
-							events_buffer[i].interface,
-							events_buffer[i].flowid,
+							//events_buffer[i].flowid,
+							events_buffer[i].formatted_value,
 							events_buffer[i].counter);
 						if (ret != 0) {
 							fprintf(stderr,

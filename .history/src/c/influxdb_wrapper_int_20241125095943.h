@@ -8,6 +8,13 @@
 
 extern "C" {
 #endif
+
+typedef struct {
+    char *machine_id;
+    char *interface;
+    __u64 flowid;
+} TagInfluxDB;
+
 	/* The purpose of declaring a struct in a header file without
 	 * defining it is to allow other source files that include the header
 	 * to use pointers to the struct without needing to know the full
@@ -20,19 +27,20 @@ extern "C" {
 	struct MHandler;
 
 	typedef struct MHandler MHandler_t;
-	typedef struct TagInfluxDB TagInfluxDB;
 
 	MHandler_t *create_influxdb(const char *);
 	void show_databases_influxdb(MHandler_t *);
 	int write_temp_influxdb(MHandler_t *, const char *, double);
 	void destroy_influxdb(MHandler_t *);
+	// int write_data_influxdb(MHandler_t *,
+	// 			    uint64_t, uint64_t, uint64_t);
+	//int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, uint64_t *flowid, uint64_t *counter, size_t count);
 	int write_data_influxdb(MHandler_t *h,
-                        uint64_t ts, const TagInfluxDB *tag, uint64_t counter);
+			    uint64_t ts, const char *str_identifier, uint64_t counter);
 	
-	int write_data_influxdb_batch(MHandler_t *h,
-                              uint64_t *ts, const TagInfluxDB **tags,
-                              uint64_t *counter, size_t count);
+	int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *str_identifier[BATCH_SIZE], uint64_t *counter, size_t count);
 
+	//void show_data_influxdb(MHandler_t *h, const char *measurement);
 #ifdef __cplusplus
 }
 #endif

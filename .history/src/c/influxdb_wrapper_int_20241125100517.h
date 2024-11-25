@@ -29,10 +29,9 @@ extern "C" {
 	int write_data_influxdb(MHandler_t *h,
                         uint64_t ts, const TagInfluxDB *tag, uint64_t counter);
 	
-	int write_data_influxdb_batch(MHandler_t *h,
-                              uint64_t *ts, const TagInfluxDB **tags,
-                              uint64_t *counter, size_t count);
+	int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *str_identifier[BATCH_SIZE], uint64_t *counter, size_t count);
 
+	//void show_data_influxdb(MHandler_t *h, const char *measurement);
 #ifdef __cplusplus
 }
 #endif

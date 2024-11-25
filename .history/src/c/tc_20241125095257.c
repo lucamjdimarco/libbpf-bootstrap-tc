@@ -473,6 +473,7 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		/*-------------------invio dati batch-------------------*/
 		//Array per contenere i dati del buffer
 		uint64_t timestamps[BATCH_SIZE];
+		//uint64_t flowids[BATCH_SIZE];
 		TagInfluxDB tags[BATCH_SIZE];
 		uint64_t counters[BATCH_SIZE];
 

@@ -103,15 +103,14 @@ int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
 			point.addTag("machine_id", tags_batch[i].machine_id);
 			point.addTag("interface", tags_batch[i].interface);
 			point.addTag("flowid", std::to_string(tags_batch[i].flowid));
-            point.addField("value", static_cast<double>(counters[i]));
-            
+            //point.setTimestamp(std::chrono::milliseconds(timestamps[i]));
             std::chrono::time_point<std::chrono::system_clock> timestamp_point = 
 				std::chrono::system_clock::time_point(std::chrono::nanoseconds(timestamps[i]));
 			point.setTimestamp(timestamp_point);
 			points.push_back(std::move(point));
         }
 
-        db->write(std::move(points));  
+        db->write(std::move(points));  // Scrivi tutti i punti in un'unica richiesta batch
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "Exception while writing data to InfluxDB: " << e.what() << std::endl;

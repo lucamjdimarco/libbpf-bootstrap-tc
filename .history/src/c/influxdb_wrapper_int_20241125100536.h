@@ -33,6 +33,7 @@ extern "C" {
                               uint64_t *ts, const TagInfluxDB **tags,
                               uint64_t *counter, size_t count);
 
+	//void show_data_influxdb(MHandler_t *h, const char *measurement);
 #ifdef __cplusplus
 }
 #endif

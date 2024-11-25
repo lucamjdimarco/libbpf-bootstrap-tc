@@ -81,12 +81,12 @@ int InfluxDBWrapper::writeData(uint64_t ts, const TagInfluxDB &tags, uint64_t co
 
 
 int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
-                                    const std::vector<TagInfluxDB>& tags_batch,
+                                    const std::vector<std::string>& str_identifiers,
                                     const std::vector<uint64_t>& counters) {
-    if (timestamps.size() != tags_batch.size() || tags_batch.size() != counters.size()) {
-		std::cerr << "Error: Mismatched sizes of input vectors." << std::endl;
-		return -EINVAL;
-	}
+    if (timestamps.size() != str_identifiers.size() || str_identifiers.size() != counters.size()) {
+        std::cerr << "Error: Mismatched sizes of input vectors." << std::endl;
+        return -EINVAL;
+    }
 
     if (db == nullptr) {
         std::cerr << "Error: db pointer is null." << std::endl;
@@ -99,19 +99,17 @@ int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
 
         for (size_t i = 0; i < timestamps.size(); ++i) {
             influxdb::Point point("rate");
-            
-			point.addTag("machine_id", tags_batch[i].machine_id);
-			point.addTag("interface", tags_batch[i].interface);
-			point.addTag("flowid", std::to_string(tags_batch[i].flowid));
+            // point.addTag("flowid", std::to_string(flowids[i]));
+			point.addTag("id", str_identifiers[i]);
             point.addField("value", static_cast<double>(counters[i]));
-            
+            //point.setTimestamp(std::chrono::milliseconds(timestamps[i]));
             std::chrono::time_point<std::chrono::system_clock> timestamp_point = 
 				std::chrono::system_clock::time_point(std::chrono::nanoseconds(timestamps[i]));
 			point.setTimestamp(timestamp_point);
 			points.push_back(std::move(point));
         }
 
-        db->write(std::move(points));  
+        db->write(std::move(points));  // Scrivi tutti i punti in un'unica richiesta batch
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "Exception while writing data to InfluxDB: " << e.what() << std::endl;

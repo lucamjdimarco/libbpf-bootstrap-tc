@@ -108,7 +108,7 @@ int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
 			point.addTag("interface", interfaces[i]);
 			point.addTag("flowid", std::to_string(flowids[i]));
             point.addField("value", static_cast<double>(counters[i]));
-
+            //point.setTimestamp(std::chrono::milliseconds(timestamps[i]));
             std::chrono::time_point<std::chrono::system_clock> timestamp_point = 
 				std::chrono::system_clock::time_point(std::chrono::nanoseconds(timestamps[i]));
 			point.setTimestamp(timestamp_point);

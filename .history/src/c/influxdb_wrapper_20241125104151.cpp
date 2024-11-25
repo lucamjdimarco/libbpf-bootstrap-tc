@@ -55,11 +55,12 @@ int InfluxDBWrapper::writeData(uint64_t ts, const std::string& machine_id,
 	influxdb::Point point("rate");
 	double ccnt = 1.0D * counter;
 	
-	point.addTag("machine_id", machine_id);
-	point.addTag("interface", interface);
-	point.addTag("flowid", std::to_string(flowid));
+	point.addTag("id", str_identifier);
 	point.addField("value", ccnt);
 
+	//FIXME: use ts instead of now()
+	//point.setTimestamp(std::chrono::system_clock::now());
+	// Convert ts (nanoseconds) to std::chrono::time_point in system_clock
     std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::time_point(
         std::chrono::nanoseconds(ts)
     );
@@ -84,11 +85,9 @@ int InfluxDBWrapper::writeData(uint64_t ts, const std::string& machine_id,
 
 
 int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
-                                    const std::vector<std::string>& machine_ids,
-									const std::vector<std::string>& interfaces,
-									const std::vector<uint64_t>& flowids,
+                                    const std::vector<std::string>& str_identifiers,
                                     const std::vector<uint64_t>& counters) {
-    if (timestamps.size() != machine_ids.size() || interfaces.size() != counters.size() || flowids.size() != counters.size()) {
+    if (timestamps.size() != str_identifiers.size() || str_identifiers.size() != counters.size()) {
         std::cerr << "Error: Mismatched sizes of input vectors." << std::endl;
         return -EINVAL;
     }
@@ -104,11 +103,10 @@ int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
 
         for (size_t i = 0; i < timestamps.size(); ++i) {
             influxdb::Point point("rate");
-			point.addTag("machine_id", machine_ids[i]);
-			point.addTag("interface", interfaces[i]);
-			point.addTag("flowid", std::to_string(flowids[i]));
+            // point.addTag("flowid", std::to_string(flowids[i]));
+			point.addTag("id", str_identifiers[i]);
             point.addField("value", static_cast<double>(counters[i]));
-
+            //point.setTimestamp(std::chrono::milliseconds(timestamps[i]));
             std::chrono::time_point<std::chrono::system_clock> timestamp_point = 
 				std::chrono::system_clock::time_point(std::chrono::nanoseconds(timestamps[i]));
 			point.setTimestamp(timestamp_point);

@@ -115,7 +115,7 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *machine_i
             std::cerr << "Error: null string in str_interface array." << std::endl;
             return -EINVAL;
         }
-        str_interface.emplace_back(interfaces[i]);
+        str_machine_id.emplace_back(machine_ids[i]);
     }
 	
     

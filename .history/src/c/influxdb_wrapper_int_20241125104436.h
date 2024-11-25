@@ -25,6 +25,9 @@ extern "C" {
 	void show_databases_influxdb(MHandler_t *);
 	int write_temp_influxdb(MHandler_t *, const char *, double);
 	void destroy_influxdb(MHandler_t *);
+	// int write_data_influxdb(MHandler_t *,
+	// 			    uint64_t, uint64_t, uint64_t);
+	//int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, uint64_t *flowid, uint64_t *counter, size_t count);
 	int write_data_influxdb(MHandler_t *h,
 			    uint64_t ts, const char *machine_id, const char *interface, uint64_t flowid, uint64_t counter);
 	

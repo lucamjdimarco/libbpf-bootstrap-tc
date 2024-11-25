@@ -106,16 +106,16 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *machine_i
 
     for (size_t i = 0; i < count; ++i) {
         if (machine_ids[i] == nullptr) {
-            std::cerr << "Error: null string in str_machine_id array." << std::endl;
+            std::cerr << "Error: null string in str_identifier array." << std::endl;
             return -EINVAL;
         }
         str_machine_id.emplace_back(machine_ids[i]);
 
 		if (interfaces[i] == nullptr) {
-            std::cerr << "Error: null string in str_interface array." << std::endl;
+            std::cerr << "Error: null string in str_identifier array." << std::endl;
             return -EINVAL;
         }
-        str_interface.emplace_back(interfaces[i]);
+        str_machine_id.emplace_back(machine_ids[i]);
     }
 	
     

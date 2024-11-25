@@ -12,6 +12,10 @@ public:
 	~InfluxDBWrapper();
 	void showDatabases();
 	int writeTemperature(const char *city, double temp);
+	//int writeData(uint64_t ts, uint64_t flowid, uint64_t counter);
+	// int writeDataBatch(const std::vector<uint64_t>& timestamps,
+	// 					const std::vector<uint64_t>& flowids,
+	// 					const std::vector<uint64_t>& counters);
 	int writeData(uint64_t ts, const std::string& machine_id, const std::string& interface,
 				 uint64_t flowid, uint64_t counter);
 	int writeDataBatch(const std::vector<uint64_t>& timestamps,

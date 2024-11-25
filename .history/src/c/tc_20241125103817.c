@@ -472,6 +472,9 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 			counters[i] = events_buffer[i].counter;
 		}
 
+		// Scrivi i dati in InfluxDB
+		// int ret = write_data_influxdb_batch(influx_handler, timestamps, flowids, counters,
+		// 				    events_count);
 		int ret = write_data_influxdb_batch(influx_handler, timestamps, machine_ids, interfaces, flowids counters,
 							events_count);
 		if (ret != 0) {

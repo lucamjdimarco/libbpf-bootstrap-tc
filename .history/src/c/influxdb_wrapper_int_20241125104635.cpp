@@ -98,26 +98,16 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *machine_i
     }
 	    // Converti gli array C in vettori C++ per passarli alla funzione
     std::vector<uint64_t> ts_vec(ts, ts + count);
-	std::vector<std::string> str_machine_id;
-	std::vector<std::string> str_interface;
-	
-	std::vector<uint64_t> flowid_vec(flowids, flowids + count);
+	std::vector<std::string> str_vec;
 	std::vector<uint64_t> counter_vec(counter, counter + count);
 
     for (size_t i = 0; i < count; ++i) {
-        if (machine_ids[i] == nullptr) {
-            std::cerr << "Error: null string in str_machine_id array." << std::endl;
+        if (str_identifier[i] == nullptr) {
+            std::cerr << "Error: null string in str_identifier array." << std::endl;
             return -EINVAL;
         }
-        str_machine_id.emplace_back(machine_ids[i]);
-
-		if (interfaces[i] == nullptr) {
-            std::cerr << "Error: null string in str_interface array." << std::endl;
-            return -EINVAL;
-        }
-        str_interface.emplace_back(interfaces[i]);
+        str_vec.emplace_back(str_identifier[i]);
     }
-	
     
 
     obj = static_cast<InfluxDBWrapper *>(h->obj);

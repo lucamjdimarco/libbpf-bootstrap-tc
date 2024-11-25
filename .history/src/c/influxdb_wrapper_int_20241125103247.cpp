@@ -61,8 +61,7 @@ int write_temp_influxdb(MHandler_t *h, const char *city, double temp)
 // int write_data_influxdb(MHandler_t *h,
 // 			    uint64_t ts, uint64_t flowid, uint64_t counter)
 int write_data_influxdb(MHandler_t *h,
-			    uint64_t ts, const char *machine_id, const char *interface, 
-				uint64_t flowid, uint64_t counter)
+			    uint64_t ts, const char *str_identifier, uint64_t counter)
 {
 	InfluxDBWrapper *obj;
 
@@ -77,17 +76,15 @@ int write_data_influxdb(MHandler_t *h,
     }
 
 	obj = static_cast<InfluxDBWrapper *>(h->obj);
-	return obj->writeData(ts, machine_id, interface, flowid,  counter);
+	return obj->writeData(ts, str_identifier, counter);
 }
 
 
 // int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, uint64_t *flowid, uint64_t *counter, size_t count) {
-int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *machine_ids[BATCH_SIZE], 
-	const char *interfaces[BATCH_SIZE], uint64_t *flowids, uint64_t *counter, size_t count) {
+int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *str_identifier[3], uint64_t *counter, size_t count) {
     InfluxDBWrapper *obj;
 
-    if (h == nullptr || ts == nullptr || machine_ids == nullptr || interfaces == nullptr || 
-		flowids == nullptr || counter == nullptr) {
+    if (h == nullptr || ts == nullptr || str_identifier == nullptr || counter == nullptr) {
         std::cerr << "Error: null pointer passed to write_data_influx_batch." << std::endl;
         return -EINVAL;
     }
@@ -98,26 +95,16 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *machine_i
     }
 	    // Converti gli array C in vettori C++ per passarli alla funzione
     std::vector<uint64_t> ts_vec(ts, ts + count);
-	std::vector<std::string> str_machine_id;
-	std::vector<std::string> str_interface;
-	
-	std::vector<uint64_t> flowid_vec(flowids, flowids + count);
+	std::vector<std::string> str_vec;
 	std::vector<uint64_t> counter_vec(counter, counter + count);
 
     for (size_t i = 0; i < count; ++i) {
-        if (machine_ids[i] == nullptr) {
-            std::cerr << "Error: null string in str_machine_id array." << std::endl;
+        if (str_identifier[i] == nullptr) {
+            std::cerr << "Error: null string in str_identifier array." << std::endl;
             return -EINVAL;
         }
-        str_machine_id.emplace_back(machine_ids[i]);
-
-		if (interfaces[i] == nullptr) {
-            std::cerr << "Error: null string in str_interface array." << std::endl;
-            return -EINVAL;
-        }
-        str_interface.emplace_back(interfaces[i]);
+        str_vec.emplace_back(str_identifier[i]);
     }
-	
     
 
     obj = static_cast<InfluxDBWrapper *>(h->obj);

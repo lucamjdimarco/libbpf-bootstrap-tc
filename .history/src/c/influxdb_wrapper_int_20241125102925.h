@@ -19,12 +19,6 @@ extern "C" {
 	 */
 	struct MHandler;
 
-	typedef struct {
-		char *machine_id;
-		char *interface;
-		uint64_t flowid;
-	} TagInfluxDB;
-
 	typedef struct MHandler MHandler_t;
 
 	MHandler_t *create_influxdb(const char *);

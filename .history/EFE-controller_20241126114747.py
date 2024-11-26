@@ -139,8 +139,9 @@ def bpftool_map_lookup(map_reference, key, map_reference_type="pinned"):
         return None
 
     try:
+        # Prova a interpretare l'output JSON
         result_json = json.loads(result.stdout)
-        return result_json.get("value") 
+        return result_json.get("value")  # Restituisci solo il valore
     except json.JSONDecodeError as e:
         print(f"Error parsing lookup result: {e}")
         return None

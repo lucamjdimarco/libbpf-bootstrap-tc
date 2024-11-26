@@ -126,23 +126,21 @@ def bpftool_map_lookup(map_reference, key, map_reference_type="pinned"):
     key_bytes = struct.pack("<I", key)
     key_data_string = " ".join(hex(n) for n in key_bytes)
 
-    if map_reference_type == "pinned":
-        cmd = f"bpftool map lookup --json pinned {map_reference} key {key_data_string}"
-    else:
-        raise Exception("bpftool_map_lookup: Invalid map_reference_type.")
-
+    cmd = f"bpftool map lookup pinned {map_reference} key {key_hex} --json"
     print(f"Exec: {cmd}")
-    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, text=True)
+    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    if result.returncode != 0:
-        print(f"Map lookup failed for {map_reference} with key {key}.")
-        return None
-
-    try:
-        result_json = json.loads(result.stdout)
-        return result_json.get("value") 
-    except json.JSONDecodeError as e:
-        print(f"Error parsing lookup result: {e}")
+    if result.returncode == 0:
+        output = result.stdout.decode("utf-8")
+        try:
+            value_hex = eval(output)["value"]
+            value_bytes = bytes.fromhex(value_hex.replace(" ", ""))
+            return struct.unpack("<Q", value_bytes)[0] 
+        except Exception as e:
+            print(f"Error parsing lookup result: {e}")
+            return None
+    else:
+        print(f"Lookup failed: {result.stderr.decode('utf-8')}")
         return None
 
 

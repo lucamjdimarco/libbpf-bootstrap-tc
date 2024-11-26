@@ -388,8 +388,6 @@ InfluxDBPoint *create_influxdb_point(const char *measurement, const char *machin
 	point->machine_id = strdup(machine_id);
     if (!point->machine_id) {
         fprintf(stderr, "Memory allocation failed for machine_id\n");
-		fflush(stdout);
-		fflush(stderr);
         free(point->measurement);
         free(point);
         return NULL;
@@ -397,8 +395,6 @@ InfluxDBPoint *create_influxdb_point(const char *measurement, const char *machin
 	point->interface = strdup(interface);
     if (!point->interface) {
         fprintf(stderr, "Memory allocation failed for interface\n");
-		fflush(stdout);
-		fflush(stderr);
         free(point->machine_id);
         free(point->measurement);
         free(point);
@@ -430,8 +426,6 @@ InfluxDBPoint **create_points_batch(struct event_t_formatted *events_buffer, int
 		(InfluxDBPoint **)malloc(events_count * sizeof(InfluxDBPoint *));
 	if (!points_batch) {
 		fprintf(stderr, "Memory allocation failed for points batch\n");
-		fflush(stdout);
-		fflush(stderr);
 		return NULL;
 	}
 
@@ -453,8 +447,6 @@ InfluxDBPoint **create_points_batch(struct event_t_formatted *events_buffer, int
                 free_influxdb_point(points_batch[j]);
             }
             free(points_batch);
-			fflush(stdout);
-			fflush(stderr);
             return NULL;
         }
     }
@@ -522,8 +514,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	}
 
 	printf("**********\n");
-	fflush(stdout);
-	fflush(stderr);
 
 	return 0;
 }
@@ -539,8 +529,6 @@ int main(int argc, char **argv)
 {
 	if (argc != 3) {
 		fprintf(stderr, "Usage: %s <interface> <ipv4|ipv6>\n", argv[0]);
-		fflush(stdout);
-		fflush(stderr);
 		return 1;
 	}
 
@@ -549,8 +537,6 @@ int main(int argc, char **argv)
 	MHandler_t *h = create_influxdb(INFLUXDB_URL);
 	if (!h) {
 		printf("Cannot create MHandler\n");
-		fflush(stdout);
-		fflush(stderr);
 		return -EINVAL;
 	}
 
@@ -562,8 +548,6 @@ int main(int argc, char **argv)
 	int index = if_nametoindex(interface_name);
 	if (index == 0) {
 		perror("if_nametoindex");
-		fflush(stdout);
-		fflush(stderr);
 		return -EINVAL;
 	}
 
@@ -581,8 +565,6 @@ int main(int argc, char **argv)
 	skel = tc_bpf__open_and_load();
 	if (!skel) {
 		fprintf(stderr, "Failed to open BPF skeleton\n");
-		fflush(stdout);
-		fflush(stderr);
 		return 1;
 	}
 
@@ -597,8 +579,6 @@ int main(int argc, char **argv)
 		hook_created = true;
 	if (err && err != -EEXIST) {
 		fprintf(stderr, "Failed to create TC hook: %d\n", err);
-		fflush(stdout);
-		fflush(stderr);
 		goto cleanup;
 	}
 
@@ -606,36 +586,26 @@ int main(int argc, char **argv)
 	err = bpf_tc_attach(&tc_hook, &tc_opts);
 	if (err) {
 		fprintf(stderr, "Failed to attach TC: %d\n", err);
-		fflush(stdout);
-		fflush(stderr);
 		goto cleanup;
 	}
 
 	if (signal(SIGINT, sig_int) == SIG_ERR) {
 		err = errno;
 		fprintf(stderr, "Can't set signal handler: %s\n", strerror(errno));
-		fflush(stdout);
-		fflush(stderr);
 		goto cleanup;
 	}
 
 	printf("Successfully started! Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` "
 	       "to see output of the BPF program.\n");
-	fflush(stdout);
-	fflush(stderr);
 	
     FILE *file = fopen("/etc/machine-id", "r");
     if (!file) {
         perror("Failed to open /etc/machine-id");
-		fflush(stdout);
-		fflush(stderr);
         goto detach;
     }
 
 	if (fgets(machine_id, sizeof(machine_id), file) == NULL) {
         perror("Failed to read machine-id");
-		fflush(stdout);
-		fflush(stderr);
         fclose(file);
         goto detach;
     }
@@ -653,8 +623,6 @@ int main(int argc, char **argv)
 	rb = ring_buffer__new(bpf_map__fd(skel->maps.rbuf_events), handle_event, h, NULL);
 	if (!rb) {
 		fprintf(stderr, "Failed to create ring buffer\n");
-		fflush(stdout);
-		fflush(stderr);
 		goto cleanup;
 	}
 
@@ -667,8 +635,6 @@ int main(int argc, char **argv)
 			err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
-				fflush(stdout);
-				fflush(stderr);
 				goto detach;
 			} else if (err == 0) {
 				/* se err == 0 allora è scaduto il timeout --> nessun dato è passato nel ring_buff */
@@ -689,15 +655,9 @@ int main(int argc, char **argv)
 							fprintf(stderr,
 								"Failed to write event %d to InfluxDB\n",
 								i);
-							fflush(stdout);
-							fflush(stderr);
 						}
-						fflush(stdout);
-						fflush(stderr);
 					}
 					printf("Events written to InfluxDB for timeout\n");
-					fflush(stdout);
-					fflush(stderr);
 					events_count = 0;
 					last_watched_event_time = current_time;
 				}
@@ -711,8 +671,6 @@ int main(int argc, char **argv)
 			err = ring_buffer__poll(rb, 5000 /* timeout, ms */);
 			if (err < 0) {
 				fprintf(stderr, "Error polling ring buffer: %d\n", err);
-				fflush(stdout);
-				fflush(stderr);
 				goto detach;
 			} else if (err == 0) {
 				continue;
@@ -731,23 +689,17 @@ int main(int argc, char **argv)
 							fprintf(stderr,
 								"Failed to write event %d to InfluxDB\n",
 								i);
-							fflush(stdout);
-							fflush(stderr);
 						}
 					}
 					printf("Events written to InfluxDB for timeout\n");
 					events_count = 0;
 					last_watched_event_time = current_time;
-					fflush(stdout);
-					fflush(stderr);
 				}
 				process_ipv6_map(map_fd, map_type);
 			}
 #endif
 		} else {
 			fprintf(stderr, "Invalid map type\n");
-			fflush(stdout);
-			fflush(stderr);
 			goto detach;
 		}
 
@@ -778,8 +730,6 @@ detach:
 	err = bpf_tc_detach(&tc_hook, &tc_opts);
 	if (err) {
 		fprintf(stderr, "Failed to detach TC: %d\n", err);
-		fflush(stdout);
-		fflush(stderr);
 		goto cleanup;
 	}
 

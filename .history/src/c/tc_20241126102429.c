@@ -746,8 +746,6 @@ int main(int argc, char **argv)
 #endif
 		} else {
 			fprintf(stderr, "Invalid map type\n");
-			fflush(stdout);
-			fflush(stderr);
 			goto detach;
 		}
 
@@ -778,8 +776,6 @@ detach:
 	err = bpf_tc_detach(&tc_hook, &tc_opts);
 	if (err) {
 		fprintf(stderr, "Failed to detach TC: %d\n", err);
-		fflush(stdout);
-		fflush(stderr);
 		goto cleanup;
 	}
 

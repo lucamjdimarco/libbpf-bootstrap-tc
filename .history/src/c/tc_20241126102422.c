@@ -738,16 +738,12 @@ int main(int argc, char **argv)
 					printf("Events written to InfluxDB for timeout\n");
 					events_count = 0;
 					last_watched_event_time = current_time;
-					fflush(stdout);
-					fflush(stderr);
 				}
 				process_ipv6_map(map_fd, map_type);
 			}
 #endif
 		} else {
 			fprintf(stderr, "Invalid map type\n");
-			fflush(stdout);
-			fflush(stderr);
 			goto detach;
 		}
 
@@ -778,8 +774,6 @@ detach:
 	err = bpf_tc_detach(&tc_hook, &tc_opts);
 	if (err) {
 		fprintf(stderr, "Failed to detach TC: %d\n", err);
-		fflush(stdout);
-		fflush(stderr);
 		goto cleanup;
 	}
 

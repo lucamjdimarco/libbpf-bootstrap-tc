@@ -69,14 +69,14 @@ def main():
     Thread(target=reader, args=[python_process.stderr, py_stderr_queue, "Py stderr"]).start()
 
     try:
-        
+        # Loop principale per leggere e stampare i dati in tempo reale
         while True:
             c_stdout = c_stdout_queue.get()
             c_stderr = c_stderr_queue.get()
             py_stdout = py_stdout_queue.get()
             py_stderr = py_stderr_queue.get()
 
-
+            # Interrompi il ciclo se entrambi i processi hanno terminato
             if c_stdout is None and c_stderr is None and py_stdout is None and py_stderr is None:
                 break
 
@@ -94,6 +94,7 @@ def main():
         c_process.terminate()
         python_process.terminate()
 
+    # Controlla i codici di ritorno
     c_exit_code = c_process.wait()
     python_exit_code = python_process.wait()
 

@@ -94,6 +94,7 @@ def main():
         c_process.terminate()
         python_process.terminate()
 
+    # Controlla i codici di ritorno
     c_exit_code = c_process.wait()
     python_exit_code = python_process.wait()
 

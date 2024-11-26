@@ -17,7 +17,10 @@
 __u64 counter = 0;
 
 /* ---- */
+//__u32 isFirst = 0;
 __u64 flow_id = -1;
+//char *machine_id;
+//char *interface;
 /* ---- */
 
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };
@@ -37,7 +40,16 @@ struct {
 	__uint(max_entries, 1);
 	__type(key, __u32);
 	__type(value, __u64);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flowpy_map SEC(".maps");
+
+// struct {
+//     __uint(type, BPF_MAP_TYPE_HASH);
+//     __type(key, int); // 0 = interface, 1 = machine ID
+//     __type(value, char[32]);  // Machine ID size
+//     __uint(max_entries, 2);
+// 	__uint(pinning, LIBBPF_PIN_BY_NAME);
+// } map_start_value SEC(".maps");
 /* ---- */
 
 #ifdef CLASSIFY_IPV4
@@ -283,6 +295,7 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 {
 	struct value_packet *packet = NULL;
 	int ret;
+	u32 key = 0; 
 
 	//__u64 flow_id = -1;
 
@@ -293,9 +306,16 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 		// Costruisci un nuovo flow_id
 		flow_id = build_flowid(args->flow_type, __sync_fetch_and_add(args->counter, 1));
 
+
 		if (flow_id == -1) {
 			bpf_printk("Failed to build flow_id\n");
 			return -EFAULT;
+		}
+
+		ret = bpf_map_update_elem(&flowpy_map, &key, &counter, BPF_ANY);
+		if(ret){
+			bpf_printk("Failed to update flow_id\n");
+			return TC_ACT_OK;
 		}
 
 		// Crea un nuovo valore per il pacchetto
@@ -620,25 +640,14 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct vlan_hdr *vlan;
 	int ret;
 
-	/* ---- */
-
 	u32 key = 0; 
-	__u64 temp = 0;
-	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
+	//__u64 temp = 0;
 
-	if(flow_id_ret == NULL){
-		bpf_printk("flow_id not found\n");
+	__u32 ifindex = ctx->ifindex;
+	if(ifindex != NULL){
 		return TC_ACT_OK;
-	} else {
-		flow_id = *flow_id_ret;
-		temp = flow_id + 1;
-		ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
-		if(ret){
-			bpf_printk("Failed to update flow_id\n");
-			return TC_ACT_OK;
-		}
-
 	}
+
 
 	/* ---- */
 	
@@ -684,6 +693,19 @@ int tc_ingress(struct __sk_buff *ctx)
 	} else {
 		data = (void *)(eth + 1);
 	}
+
+
+	/* Se non trovo il flow_id nella mappa pinnata faccio passare */
+	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
+
+	/*if(flow_id_ret == NULL){
+		bpf_printk("flow_id not found\n");
+		return TC_ACT_OK;
+	} else {
+		//inserisco l'ulitmo flow_id trovato in counter --> counter viene usato in update packet 
+		counter = *flow_id_ret;
+
+	}*/
 
 	// Process IPv4 and IPv6 packets
 	switch (eth_proto) {

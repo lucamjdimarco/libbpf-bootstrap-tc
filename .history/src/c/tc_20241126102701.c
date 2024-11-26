@@ -20,8 +20,24 @@ struct event_t_formatted events_buffer[BATCH_SIZE];
 int events_count = 0;
 int last_watched_event_time;
 int current_time;
+//char initial_formatted_value[MAX_FORMATTED_STRING_SIZE];
 char machine_id[MAX_MACHINE_ID_SIZE];
 const char *interface_name;
+
+// typedef struct {
+// 	char *machine_id;
+// 	char *interface;
+// 	__u64 flowid;
+// } TagInfluxDB;
+
+// typedef struct {
+// 	char *measurement; // Ad esempio, "rate"
+// 	//uint64_t flowid; // L'identificatore dell'evento
+// 	char *str_identifier; // Stringa composta come "machine_id:interface:flowid"
+
+// 	double counter; // Il valore del contatore
+// 	uint64_t timestamp; // Il timestamp dell'evento
+// } InfluxDBPoint;
 
 typedef struct {
     char *measurement; 

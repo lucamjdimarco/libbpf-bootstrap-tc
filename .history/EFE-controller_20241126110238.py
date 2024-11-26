@@ -12,7 +12,6 @@ import time
 import os
 import requests
 import sys
-import struct
 
 # REDIS #
 r = redis.Redis(host='redis', port=6379, db=0)
@@ -68,21 +67,28 @@ def bpftool_map_update(map_reference, key, value, map_reference_type="pinned", v
     
 
     if map_reference_type == "pinned":
-        # converto key e value in formato little-endian
+        # Converti key e value in formato little-endian
         key_bytes = struct.pack("<I", key)  # 32-bit unsigned integer
         value_bytes = struct.pack("<Q", value)  # 64-bit unsigned integer
 
         key_hex = " ".join(f"0x{b:02x}" for b in key_bytes)
         value_hex = " ".join(f"0x{b:02x}" for b in value_bytes)
 
-        cmd = f"bpftool map update pinned {map_reference} key {key_hex} value {value_hex}"
+        # Costruisci il comando bpftool
+        cmd = f"bpftool map update pinned {map_path} key {key_hex} value {value_hex}"
         print(f"Exec: {cmd}")
         ret = os.system(cmd)
         if ret != 0:
-            raise Exception(f"Failed to update map at {map_reference} with key {key_hex} and value {value_hex}")
+            raise Exception(f"Failed to update map at {map_path} with key {key} and value {value}")
     else:
         raise Exception(
             "bpftool_map_update: Instruction not implemented (invalid map_reference_type).")
+
+    print(f"Exec: {cmd}")
+    ret = os.system(cmd)
+
+    if ret != 0:
+        raise Exception(f"Map update {map_reference} failed.")
 
     # unittest
     return True
@@ -122,26 +128,24 @@ def bpftool_map_lookup(map_reference, key, map_reference_type="pinned"):
     """Call bpftool map lookup and return the result
     """
     # bpftool map lookup --json pinned /sys/fs/bpf/maps/system/hvm_chain_map key 0x40 0x00 0x00 0x00
-    # formato little-endian
+    import struct
     key_bytes = struct.pack("<I", key)
-    key_hex = " ".join(f"0x{b:02x}" for b in key_bytes)
+    key_data_string = (" ".join(hex(n)
+                                for n in key_bytes))
 
-    cmd = f"bpftool map lookup pinned {map_reference} key {key_hex} --json"
-    print(f"Exec: {cmd}")
-    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    if result.returncode == 0:
-        output = result.stdout.decode("utf-8")
-        try:
-            value_hex = eval(output)["value"]
-            value_bytes = bytes.fromhex(value_hex.replace(" ", ""))
-            return struct.unpack("<Q", value_bytes)[0] 
-        except Exception as e:
-            print(f"Error parsing lookup result: {e}")
-            return None
+    if map_reference_type == "pinned":
+        cmd = f"bpftool map lookup --json pinned {map_reference} key {key_data_string}"
     else:
-        print(f"Lookup failed: {result.stderr.decode('utf-8')}")
-        return None
+        raise Exception(
+            "bpftool_map_lookup: Instruction not implemented (invalid map_reference_type).")
+
+    print(f"Exec: {cmd}")
+    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
+
+    if result.returncode != 0:
+        raise Exception(f"Map lookup {map_reference} failed.")
+    else:
+        return result.stdout.decode("utf-8")
 
 
 def bpftool_map_create(map_name, map_path, key_size, value_size, max_entries, type="hash"):

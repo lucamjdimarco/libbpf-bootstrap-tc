@@ -122,20 +122,22 @@ def bpftool_map_lookup(map_reference, key, map_reference_type="pinned"):
     """Call bpftool map lookup and return the result
     """
     # bpftool map lookup --json pinned /sys/fs/bpf/maps/system/hvm_chain_map key 0x40 0x00 0x00 0x00
-    # formato little-endian
+    # Converti la chiave in formato little-endian
     key_bytes = struct.pack("<I", key)
     key_hex = " ".join(f"0x{b:02x}" for b in key_bytes)
 
-    cmd = f"bpftool map lookup pinned {map_reference} key {key_hex} --json"
+    # Costruisci il comando bpftool
+    cmd = f"bpftool map lookup pinned {map_path} key {key_hex} --json"
     print(f"Exec: {cmd}")
     result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     if result.returncode == 0:
+        # Parse JSON output per ottenere il valore
         output = result.stdout.decode("utf-8")
         try:
             value_hex = eval(output)["value"]
             value_bytes = bytes.fromhex(value_hex.replace(" ", ""))
-            return struct.unpack("<Q", value_bytes)[0] 
+            return struct.unpack("<Q", value_bytes)[0]  # Little-endian unpack
         except Exception as e:
             print(f"Error parsing lookup result: {e}")
             return None

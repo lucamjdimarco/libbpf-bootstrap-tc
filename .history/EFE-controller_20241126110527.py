@@ -131,11 +131,12 @@ def bpftool_map_lookup(map_reference, key, map_reference_type="pinned"):
     result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     if result.returncode == 0:
+        # Parse JSON output per ottenere il valore
         output = result.stdout.decode("utf-8")
         try:
             value_hex = eval(output)["value"]
             value_bytes = bytes.fromhex(value_hex.replace(" ", ""))
-            return struct.unpack("<Q", value_bytes)[0] 
+            return struct.unpack("<Q", value_bytes)[0]  # Little-endian unpack
         except Exception as e:
             print(f"Error parsing lookup result: {e}")
             return None

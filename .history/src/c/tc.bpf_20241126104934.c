@@ -16,7 +16,6 @@
 
 __u64 counter = 0;
 __u64 flow_id = -1;
-__u32 ifindex = -1;
 
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };
 
@@ -293,17 +292,6 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 	if (!packet) {
 		// Costruisci un nuovo flow_id
 		flow_id = build_flowid(args->flow_type, __sync_fetch_and_add(args->counter, 1));
-
-		/* ---- */
-		int ret = bpf_map_update_elem(&flowpy_map, &ifindex, &flow_id, BPF_ANY);
-		if (ret) {
-			bpf_printk("Failed to update map for ifindex %u\n", ifindex);
-			return TC_ACT_OK;
-		}
-
-		bpf_printk("Updated map for ifindex %u with new flowid: %llu\n", ifindex, flowid);
-
-		/* ---- */
 
 
 		if (flow_id == -1) {
@@ -642,11 +630,11 @@ int tc_ingress(struct __sk_buff *ctx)
 	u32 key = 0; 
 
 	if(flow_id == -1){
-		ifindex = ctx->ifindex;
+		__u32 ifindex = ctx->ifindex;
 		u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &ifindex);
 
 		if(flow_id_ret == NULL){
-			bpf_printk("flow_id not found - skip\n");
+			bpf_printk("flow_id not found\n");
 			return TC_ACT_OK;
 		} else {
 			flow_id = *flow_id_ret;

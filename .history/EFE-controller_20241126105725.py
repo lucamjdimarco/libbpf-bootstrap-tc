@@ -12,7 +12,6 @@ import time
 import os
 import requests
 import sys
-import struct
 
 # REDIS #
 r = redis.Redis(host='redis', port=6379, db=0)
@@ -22,7 +21,8 @@ machine_id = os.popen("cat /etc/machine-id").read().strip()
 URL_IPV4 = "http://influxdb:8086/query?db=tc_db"
 URL_IPV6 = "http://10.89.0.30:8086/query?db=tc_db"
 
-FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/flowpy_map"
+MOUNT_POINT = "/sys/fs/bpf"
+
 
 
 def mount_bpf(mount_point):
@@ -68,21 +68,33 @@ def bpftool_map_update(map_reference, key, value, map_reference_type="pinned", v
     
 
     if map_reference_type == "pinned":
-        # converto key e value in formato little-endian
-        key_bytes = struct.pack("<I", key)  # 32-bit unsigned integer
-        value_bytes = struct.pack("<Q", value)  # 64-bit unsigned integer
+        # if isinstance(key, int):
+        #     key_string = hex(key) 
+        # elif isinstance(key, list): 
+        #     key_string = " ".join(hex(k) for k in key)
+        # else:
+        #     raise TypeError(f"Expected 'key' to be an int or list, got {type(key)}")
+        #key_string = " ".join(key)
 
-        key_hex = " ".join(f"0x{b:02x}" for b in key_bytes)
-        value_hex = " ".join(f"0x{b:02x}" for b in value_bytes)
 
-        cmd = f"bpftool map update pinned {map_reference} key {key_hex} value {value_hex}"
-        print(f"Exec: {cmd}")
-        ret = os.system(cmd)
-        if ret != 0:
-            raise Exception(f"Failed to update map at {map_reference} with key {key_hex} and value {value_hex}")
+        # if value_type == "pinned":
+        #     cmd = f"bpftool map update pinned {map_reference} key hex {key_string} value pinned {value}"
+        # elif value_type == "hex":
+        #     value_string = " ".join(value)
+        #     cmd = f"bpftool map update pinned {map_reference} key hex {key_string} value hex {value_string}"
+        # else:
+        #     raise Exception(
+        #         "bpftool_map_update: Instruction not implemented (invalid value_type).")
+        cmd = f"bpftool map update pinned {map_reference} key {key} {key} {key} {key} value {value} {value} {value} {value} {value} {value} {value} {value}"
     else:
         raise Exception(
             "bpftool_map_update: Instruction not implemented (invalid map_reference_type).")
+
+    print(f"Exec: {cmd}")
+    ret = os.system(cmd)
+
+    if ret != 0:
+        raise Exception(f"Map update {map_reference} failed.")
 
     # unittest
     return True
@@ -122,26 +134,24 @@ def bpftool_map_lookup(map_reference, key, map_reference_type="pinned"):
     """Call bpftool map lookup and return the result
     """
     # bpftool map lookup --json pinned /sys/fs/bpf/maps/system/hvm_chain_map key 0x40 0x00 0x00 0x00
-    # formato little-endian
+    import struct
     key_bytes = struct.pack("<I", key)
-    key_hex = " ".join(f"0x{b:02x}" for b in key_bytes)
+    key_data_string = (" ".join(hex(n)
+                                for n in key_bytes))
 
-    cmd = f"bpftool map lookup pinned {map_reference} key {key_hex} --json"
-    print(f"Exec: {cmd}")
-    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    if result.returncode == 0:
-        output = result.stdout.decode("utf-8")
-        try:
-            value_hex = eval(output)["value"]
-            value_bytes = bytes.fromhex(value_hex.replace(" ", ""))
-            return struct.unpack("<Q", value_bytes)[0] 
-        except Exception as e:
-            print(f"Error parsing lookup result: {e}")
-            return None
+    if map_reference_type == "pinned":
+        cmd = f"bpftool map lookup --json pinned {map_reference} key {key_data_string}"
     else:
-        print(f"Lookup failed: {result.stderr.decode('utf-8')}")
-        return None
+        raise Exception(
+            "bpftool_map_lookup: Instruction not implemented (invalid map_reference_type).")
+
+    print(f"Exec: {cmd}")
+    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
+
+    if result.returncode != 0:
+        raise Exception(f"Map lookup {map_reference} failed.")
+    else:
+        return result.stdout.decode("utf-8")
 
 
 def bpftool_map_create(map_name, map_path, key_size, value_size, max_entries, type="hash"):
@@ -242,7 +252,7 @@ def main():
 
     #Debug stampa ogni 2 secondi una stringa
     
-    
+    FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/flowpy_map"
 
     if len(os.sys.argv) != 2:
         print("Usage: python3 script.py <interface>")

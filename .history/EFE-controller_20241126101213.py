@@ -170,95 +170,79 @@ def bpftool_map_create(map_name, map_path, key_size, value_size, max_entries, ty
     
 def main():
     
-    # if len(sys.argv) < 2:
-    #     print("Usage: python3 EFE-controller.py <interface>")
-    #     sys.exit(1)
+    if len(sys.argv) < 2:
+        print("Usage: python3 EFE-controller.py <interface>")
+        sys.exit(1)
 
     
-    # interface = sys.argv[1]
-    # print(f"Received interface: {interface}")
+    interface = sys.argv[1]
+    print(f"Received interface: {interface}")
 
     
-    # query = f"""
-    # SELECT * 
-    # FROM "tc_db"."autogen"."rate" 
-    # WHERE "id" =~ /^{machine_id}:{interface}:/
-    # """
+    query = f"""
+    SELECT * 
+    FROM "tc_db"."autogen"."rate" 
+    WHERE "id" =~ /^{machine_id}:{interface}:/
+    """
 
-    # params = {
-    #     "db": "tc_db",
-    #     "q": query
-    # }
+    params = {
+        "db": "tc_db",
+        "q": query
+    }
 
-    # try:
-    #     mount_bpf(BPF_FS_PATH)
-    #     print(f"BPF filesystem montato su {BPF_FS_PATH}")
-    # except OSError as e:
-    #     print(f"Errore durante il montaggio del filesystem BPF: {e}")
-    #     exit(1)
-
-    # try:
-    #     response = requests.get(URL_IPV6, params=params)
-    #     response.raise_for_status()
-    #     data = response.json()
-
-    #     #print(json.dumps(data, indent=4))
-        
-        
-    #     max_flowid = None
-        
-    #     # Verifica se ci sono risultati
-    #     if "series" in data["results"][0]:
-    #         series = data["results"][0]["series"]
-    #         for value in series[0]["values"]:
-    #             id_value = value[1] 
-                
-    #             #print(f"Valore grezzo id_value: {id_value}")
-                
-    #             if isinstance(id_value, str) and ":" in id_value:
-    #                 try:
-    #                     flowid = int(id_value.split(":")[-1])
-    #                     #print(f"Flow ID estratto: {flowid}")
-                        
-    #                     if max_flowid is None or flowid > max_flowid:
-    #                         max_flowid = flowid
-    #                 except ValueError:
-    #                     print(f"Errore: Impossibile convertire {id_value} in un intero.")
-    #             else:
-    #                 print(f"Formato non valido per id_value: {id_value}")
-            
-    #         if max_flowid is not None:
-    #             print(f"Flow ID massimo trovato: {max_flowid}")
-    #         else:
-    #             print("Nessun flowid valido trovato.")
-    #     else:
-            
-    #         print("Nessun risultato trovato nella query.")
-    #         # Se non ci sono risultati, aggiorna la mappa flowpy_map
-    #         bpftool_map_update("/sys/fs/bpf/flowpy_map", 0, 0)  # Mappa eBPF a chiave 0 e valore 0
-    # except requests.exceptions.RequestException as e:
-    #     print(f"Errore nella richiesta: {e}")
-    # except ValueError as e:
-    #     print(f"Errore nella conversione del flowid: {e}")
-
-    #Debug stampa ogni 2 secondi una stringa
-    
     try:
         mount_bpf(BPF_FS_PATH)
         print(f"BPF filesystem montato su {BPF_FS_PATH}")
     except OSError as e:
         print(f"Errore durante il montaggio del filesystem BPF: {e}")
         exit(1)
-    
-    try:
 
-        while True:
-            print("Ciao")
-            time.sleep(2)
-    
-    except KeyboardInterrupt:
-        print("Processo interrotto.")
-        exit(0)
+    try:
+        response = requests.get(URL_IPV6, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        #print(json.dumps(data, indent=4))
+        
+        
+        max_flowid = None
+        
+        # Verifica se ci sono risultati
+        if "series" in data["results"][0]:
+            series = data["results"][0]["series"]
+            for value in series[0]["values"]:
+                id_value = value[1] 
+                
+                #print(f"Valore grezzo id_value: {id_value}")
+                
+                if isinstance(id_value, str) and ":" in id_value:
+                    try:
+                        flowid = int(id_value.split(":")[-1])
+                        #print(f"Flow ID estratto: {flowid}")
+                        
+                        if max_flowid is None or flowid > max_flowid:
+                            max_flowid = flowid
+                    except ValueError:
+                        print(f"Errore: Impossibile convertire {id_value} in un intero.")
+                else:
+                    print(f"Formato non valido per id_value: {id_value}")
+            
+            if max_flowid is not None:
+                print(f"Flow ID massimo trovato: {max_flowid}")
+            else:
+                print("Nessun flowid valido trovato.")
+        else:
+            
+            print("Nessun risultato trovato nella query.")
+            # Se non ci sono risultati, aggiorna la mappa flowpy_map
+            bpftool_map_update("/sys/fs/bpf/flowpy_map", 0, 0)  # Mappa eBPF a chiave 0 e valore 0
+    except requests.exceptions.RequestException as e:
+        print(f"Errore nella richiesta: {e}")
+    except ValueError as e:
+        print(f"Errore nella conversione del flowid: {e}")
+
+
+
 
 
 if __name__ == "__main__":

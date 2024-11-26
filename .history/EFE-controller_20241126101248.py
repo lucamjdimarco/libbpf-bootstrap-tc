@@ -242,23 +242,12 @@ def main():
     #     print(f"Errore nella conversione del flowid: {e}")
 
     #Debug stampa ogni 2 secondi una stringa
-    
-    try:
-        mount_bpf(BPF_FS_PATH)
-        print(f"BPF filesystem montato su {BPF_FS_PATH}")
-    except OSError as e:
-        print(f"Errore durante il montaggio del filesystem BPF: {e}")
-        exit(1)
-    
-    try:
+    while True:
+        print("Ciao")
+        time.sleep(2)
 
-        while True:
-            print("Ciao")
-            time.sleep(2)
-    
-    except KeyboardInterrupt:
-        print("Processo interrotto.")
-        exit(0)
+
+
 
 
 if __name__ == "__main__":

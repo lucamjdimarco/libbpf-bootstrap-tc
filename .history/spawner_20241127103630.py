@@ -61,9 +61,9 @@ def main():
 
     execute_make(type_of_classifier)
 
-    # if not os.path.isfile(c_program):
-    #     print(f"C program '{c_program}' does not exist.")
-    #     sys.exit(1)
+    if not os.path.isfile(c_program):
+        print(f"C program '{c_program}' does not exist.")
+        sys.exit(1)
 
     try:
         c_process = subprocess.Popen(

@@ -67,7 +67,7 @@ def main():
 
     try:
         c_process = subprocess.Popen(
-            [c_program_path, interface, protocol],
+            [c_program, interface, protocol],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             bufsize=1, 

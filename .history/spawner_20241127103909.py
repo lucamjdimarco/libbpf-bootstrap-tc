@@ -61,13 +61,13 @@ def main():
 
     execute_make(type_of_classifier)
 
-    if not os.path.isfile(c_program_path):
-        print(f"C program '{c_program_path}' does not exist.")
-        sys.exit(1)
+    # if not os.path.isfile(c_program):
+    #     print(f"C program '{c_program}' does not exist.")
+    #     sys.exit(1)
 
     try:
         c_process = subprocess.Popen(
-            [c_program_path, interface, protocol],
+            [c_program, interface, protocol],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             bufsize=1, 

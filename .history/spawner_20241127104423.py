@@ -88,7 +88,7 @@ def main():
 
     execute_make(type_of_classifier)
 
-    #os.chdir("../..") 
+    os.chdir("../..") 
 
     if not os.path.isfile(c_program_path):
         print(f"C program '{c_program_path}' does not exist.")

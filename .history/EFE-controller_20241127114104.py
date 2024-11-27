@@ -331,7 +331,7 @@ def main():
                         for entry in data_formatted:
                             flow_id = entry["flow_id"]
                             redis_key = f"flow:{flow_id}"
-                            write_to_redis(r, redis_key, entry)
+                            write_to_redis(redis_client, redis_key, entry)
 
             # Wait for 2 seconds
             time.sleep(2)

@@ -254,21 +254,11 @@ def parse_map_dump_to_json(dump_data):
             })
 
         # Return the formatted data as JSON
-        #return json.dumps(formatted_data, indent=4)
-        return formatted_data
+        return json.dumps(formatted_data, indent=4)
 
     except Exception as e:
         print(f"Error parsing map dump: {e}")
         return json.dumps({"error": str(e)}, indent=4)
-    
-def write_to_redis(redis_client, key, data):
-    """
-    Write data to Redis, overwriting existing entries.
-    """
-    try:
-        redis_client.set(key, json.dumps(data))
-    except Exception as e:
-        print(f"Error writing to Redis: {e}")
     
 def get_map_path(type_of_classifier):
     try:
@@ -322,20 +312,7 @@ def main():
                 
                 if map_contents:
                     data_formatted = parse_map_dump_to_json(map_contents)
-                    #print(data_formatted)  # Pretty-print the map contents
-
-                    if "error" in data_formatted:
-                        print(f"Error in parsing: {data_formatted['error']}")
-                    else:
-                        # Write each entry to Redis
-                        for entry in data_formatted:
-                            flow_id = entry["flow_id"]
-                            redis_key = f"flow:{flow_id}"
-                            write_to_redis(r, redis_key, entry)
-
-            # Wait for 2 seconds
-            time.sleep(2)
-
+                    print(data_formatted)  # Pretty-print the map contents
                 else:
                     print(f"No data found in map: {map_path}")
                 time.sleep(5)

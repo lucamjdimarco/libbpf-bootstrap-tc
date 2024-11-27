@@ -322,20 +322,7 @@ def main():
                 
                 if map_contents:
                     data_formatted = parse_map_dump_to_json(map_contents)
-                    #print(data_formatted)  # Pretty-print the map contents
-
-                    if "error" in data_formatted:
-                        print(f"Error in parsing: {data_formatted['error']}")
-                    else:
-                        # Write each entry to Redis
-                        for entry in data_formatted:
-                            flow_id = entry["flow_id"]
-                            redis_key = f"flow:{flow_id}"
-                            write_to_redis(r, redis_key, entry)
-
-            # Wait for 2 seconds
-            time.sleep(2)
-
+                    print(data_formatted)  # Pretty-print the map contents
                 else:
                     print(f"No data found in map: {map_path}")
                 time.sleep(5)

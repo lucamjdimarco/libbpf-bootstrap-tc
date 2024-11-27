@@ -38,7 +38,7 @@ def main():
     
     try:
         python_process = subprocess.Popen(
-            ["python3", "-u", python_program, interface, protocol, type_of_classifier],
+            ["python3", "-u", python_program, interface, protocol],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             bufsize=1, 

@@ -22,29 +22,16 @@ def main():
     parser = argparse.ArgumentParser(description="Exec C program and Python program")
     parser.add_argument("interface", help="Specify the interface to monitor.")
     parser.add_argument("protocol", choices=["ipv4", "ipv6"], help="Specify the protocol (ipv4 or ipv6).")
-    parser.add_argument("type_of_classifier", choices=["1","2","3","4","5","6"], help="Specify the classifier to use.")
 
     args = parser.parse_args()
     protocol = args.protocol
     interface = args.interface
-    type_of_classifier = args.type_of_classifier
 
     c_program = os.path.join("src", "c", "tc")
     python_program = "EFE-controller.py"
 
     if not os.path.isfile(c_program):
         print(f"C program '{c_program}' does not exist.")
-        sys.exit(1)
-    
-    try:
-        python_process = subprocess.Popen(
-            ["python3", "-u", python_program, interface, protocol, type_of_classifier],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=1, 
-        )
-    except FileNotFoundError:
-        print("EFE-controller.py not found.")
         sys.exit(1)
 
     try:
@@ -58,7 +45,16 @@ def main():
         print("C program not found.")
         sys.exit(1)
 
-    
+    try:
+        python_process = subprocess.Popen(
+            ["python3", "-u", python_program, interface, protocol],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1, 
+        )
+    except FileNotFoundError:
+        print("EFE-controller.py not found.")
+        sys.exit(1)
 
 
     c_stdout_queue = Queue()

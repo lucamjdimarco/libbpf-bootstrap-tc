@@ -228,19 +228,19 @@ def execute_make():
         print(f"An error occurred: {e}")
 
 
-# def get_map_name(value: str):
-#     try:
-#         # Convert the input string to an integer
-#         numeric_value = int(value)
-#         map_type = MapType(numeric_value)
+def get_map_name(value: str):
+    try:
+        # Convert the input string to an integer
+        numeric_value = int(value)
+        map_type = MapType(numeric_value)
 
-#         return map_type.name
-#     except ValueError:
-#         print(f"Invalid value: {value}")
-#         return None
-#     except KeyError:
-#         print(f"No map type matches the value: {value}")
-#         return None
+        return map_type.name
+    except ValueError:
+        print(f"Invalid value: {value}")
+        return None
+    except KeyError:
+        print(f"No map type matches the value: {value}")
+        return None
     
 def dump_map_contents(map_path):
     try:
@@ -248,16 +248,6 @@ def dump_map_contents(map_path):
         return json.loads(map_dump)  
     except Exception as e:
         print(f"Error dumping map contents for {map_path}: {e}")
-        return None
-    
-def get_map_path(type_of_classifier):
-    try:
-        classifier_enum = MapType(int(type_of_classifier))
-        map_name = classifier_enum.name  
-        map_path = f"{BPF_FS_PATH}/{map_name}" 
-        return map_path
-    except ValueError:
-        print(f"Invalid type_of_classifier: {type_of_classifier}")
         return None
     
 def main():
@@ -289,20 +279,11 @@ def main():
         # Update the map
         bpftool_map_update(FLOWPY_MAP_PATH, ifindex, flow_id)
 
-        # Get the map path for the classifier type
-        map_path = get_map_path(type_of_classifier)
-        if not map_path:
-            print("Failed to determine map path for the given classifier type.")
-            exit(1)
-
-        # Periodically dump and print the map contents
+        # Periodically check and print the map value
         while True:
             try:
-                map_contents = dump_map_contents(map_path)
-                if map_contents:
-                    print(json.dumps(map_contents, indent=4))  # Pretty-print the map contents
-                else:
-                    print(f"No data found in map: {map_path}")
+                current_value = bpftool_map_lookup(FLOWPY_MAP_PATH, ifindex)
+                print(f"Current value for ifindex {ifindex}: {current_value}")
                 time.sleep(2)
             except KeyboardInterrupt:
                 print("Process interrupted.")

@@ -35,17 +35,6 @@ def main():
     if not os.path.isfile(c_program):
         print(f"C program '{c_program}' does not exist.")
         sys.exit(1)
-    
-    try:
-        python_process = subprocess.Popen(
-            ["python3", "-u", python_program, interface, protocol, type_of_classifier],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=1, 
-        )
-    except FileNotFoundError:
-        print("EFE-controller.py not found.")
-        sys.exit(1)
 
     try:
         c_process = subprocess.Popen(
@@ -58,7 +47,16 @@ def main():
         print("C program not found.")
         sys.exit(1)
 
-    
+    try:
+        python_process = subprocess.Popen(
+            ["python3", "-u", python_program, interface, protocol],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1, 
+        )
+    except FileNotFoundError:
+        print("EFE-controller.py not found.")
+        sys.exit(1)
 
 
     c_stdout_queue = Queue()

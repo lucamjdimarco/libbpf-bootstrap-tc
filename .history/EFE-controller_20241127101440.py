@@ -14,14 +14,6 @@ import requests
 import sys
 import struct
 
-class MapType(Enum):
-    map_ipv4 = 1
-    map_ipv6 = 2
-    map_only_addr_ipv4 = 3
-    map_only_addr_ipv6 = 4
-    map_only_dest_ipv4 = 5
-    map_only_dest_ipv6 = 6
-
 
 # REDIS #
 r = redis.Redis(host='redis', port=6379, db=0)
@@ -30,7 +22,7 @@ machine_id = os.popen("cat /etc/machine-id").read().strip()
 DB_NAME = "tc_db"
 
 protocol = sys.argv[2]
-type_of_classifier = sys.argv[3]
+type_classifier = sys.argv[3]
 
 
 # INFLUXDB #
@@ -202,67 +194,10 @@ def query_influxdb(machine_id, interface):
         print(f"Error querying InfluxDB: {e}")
     return None
 
-def execute_make():
-    try:
-        # Directory target
-        os.chdir("src/c")
-        cflags_extra = f"CFLAGS_EXTRA=-DCLASS={type_of_classifier}"
-        command = ["make", "-j6", cflags_extra]
-        
-        result = subprocess.run(
-            command, 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE, 
-            text=True
-        )
-        
-        if result.returncode == 0:
-            print("Command executed successfully.")
-            print("Output:")
-            print(result.stdout)
-        else:
-            print("Command failed.")
-            print("Error:")
-            print(result.stderr)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-
-# def get_map_name(value: str):
-#     try:
-#         # Convert the input string to an integer
-#         numeric_value = int(value)
-#         map_type = MapType(numeric_value)
-
-#         return map_type.name
-#     except ValueError:
-#         print(f"Invalid value: {value}")
-#         return None
-#     except KeyError:
-#         print(f"No map type matches the value: {value}")
-#         return None
-    
-def dump_map_contents(map_path):
-    try:
-        map_dump = bpftool_map_dump(map_path)
-        return json.loads(map_dump)  
-    except Exception as e:
-        print(f"Error dumping map contents for {map_path}: {e}")
-        return None
-    
-def get_map_path(type_of_classifier):
-    try:
-        classifier_enum = MapType(int(type_of_classifier))
-        map_name = classifier_enum.name  
-        map_path = f"{BPF_FS_PATH}/{map_name}" 
-        return map_path
-    except ValueError:
-        print(f"Invalid type_of_classifier: {type_of_classifier}")
-        return None
     
 def main():
-    if len(sys.argv) != 4:
-        print("Usage: python3 script.py <interface> <protocol> <type_of_classifier>") 
+    if len(sys.argv) != 2:
+        print("Usage: python3 script.py <interface>")
         exit(1)
 
     interface_name = sys.argv[1]
@@ -289,20 +224,11 @@ def main():
         # Update the map
         bpftool_map_update(FLOWPY_MAP_PATH, ifindex, flow_id)
 
-        # Get the map path for the classifier type
-        map_path = get_map_path(type_of_classifier)
-        if not map_path:
-            print("Failed to determine map path for the given classifier type.")
-            exit(1)
-
-        # Periodically dump and print the map contents
+        # Periodically check and print the map value
         while True:
             try:
-                map_contents = dump_map_contents(map_path)
-                if map_contents:
-                    print(json.dumps(map_contents, indent=4))  # Pretty-print the map contents
-                else:
-                    print(f"No data found in map: {map_path}")
+                current_value = bpftool_map_lookup(FLOWPY_MAP_PATH, ifindex)
+                print(f"Current value for ifindex {ifindex}: {current_value}")
                 time.sleep(2)
             except KeyboardInterrupt:
                 print("Process interrupted.")

@@ -205,6 +205,22 @@ def query_influxdb(machine_id, interface):
     except Exception as e:
         print(f"Error querying InfluxDB: {e}")
     return None
+
+
+
+# def get_map_name(value: str):
+#     try:
+#         # Convert the input string to an integer
+#         numeric_value = int(value)
+#         map_type = MapType(numeric_value)
+
+#         return map_type.name
+#     except ValueError:
+#         print(f"Invalid value: {value}")
+#         return None
+#     except KeyError:
+#         print(f"No map type matches the value: {value}")
+#         return None
     
 def dump_map_contents(map_path):
     try:
@@ -213,45 +229,6 @@ def dump_map_contents(map_path):
     except Exception as e:
         print(f"Error dumping map contents for {map_path}: {e}")
         return None
-
-def parse_map_dump_to_json(dump_data):
-    """
-    Parse and format map dump data from bpftool and return as a JSON structure.
-    """
-    try:
-        # Parse the JSON-like dump data
-        map_entries = json.loads(dump_data)
-
-        formatted_data = []  # List to hold formatted entries
-
-        for entry in map_entries:
-            # Extract key and value
-            key = entry.get("key", {})
-            value = entry.get("value", {})
-
-            src_ip = socket.inet_ntoa(struct.pack('!I', key.get("src_ip", 0)))
-            dst_ip = socket.inet_ntoa(struct.pack('!I', key.get("dst_ip", 0)))
-
-            src_port = key.get("src_port", 0)
-            dst_port = key.get("dst_port", 0)
-            protocol = key.get("protocol", 0)
-
-            flow_id = value.get("flow_id", 0)
-
-            # Add formatted data to the list
-            formatted_data.append({
-                "flow_id": flow_id,
-                "source": {"ip": src_ip, "port": src_port},
-                "destination": {"ip": dst_ip, "port": dst_port},
-                "protocol": protocol
-            })
-
-        # Return the formatted data as JSON
-        return json.dumps(formatted_data, indent=4)
-
-    except Exception as e:
-        print(f"Error parsing map dump: {e}")
-        return json.dumps({"error": str(e)}, indent=4)
     
 def get_map_path(type_of_classifier):
     try:
@@ -302,10 +279,8 @@ def main():
         while True:
             try:
                 map_contents = dump_map_contents(map_path)
-                
                 if map_contents:
-                    data_formatted = parse_map_dump_to_json(map_contents)
-                    print(data_formatted)  # Pretty-print the map contents
+                    print(json.dumps(map_contents, indent=4))  # Pretty-print the map contents
                 else:
                     print(f"No data found in map: {map_path}")
                 time.sleep(2)

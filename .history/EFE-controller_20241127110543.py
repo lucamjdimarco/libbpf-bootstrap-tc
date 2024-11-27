@@ -229,13 +229,16 @@ def parse_map_dump_to_json(dump_data):
             key = entry.get("key", {})
             value = entry.get("value", {})
 
+            # Convert src_ip and dst_ip to dotted notation
             src_ip = socket.inet_ntoa(struct.pack('!I', key.get("src_ip", 0)))
             dst_ip = socket.inet_ntoa(struct.pack('!I', key.get("dst_ip", 0)))
 
+            # Extract ports and protocol
             src_port = key.get("src_port", 0)
             dst_port = key.get("dst_port", 0)
             protocol = key.get("protocol", 0)
 
+            # Extract flow_id
             flow_id = value.get("flow_id", 0)
 
             # Add formatted data to the list
@@ -304,8 +307,8 @@ def main():
                 map_contents = dump_map_contents(map_path)
                 
                 if map_contents:
-                    data_formatted = parse_map_dump_to_json(map_contents)
-                    print(data_formatted)  # Pretty-print the map contents
+                    data_formatted = parse_and_print_map_dump(map_contents)
+                    print(json.dumps(data_formatted, indent=4))  # Pretty-print the map contents
                 else:
                     print(f"No data found in map: {map_path}")
                 time.sleep(2)

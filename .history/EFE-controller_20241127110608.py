@@ -305,7 +305,7 @@ def main():
                 
                 if map_contents:
                     data_formatted = parse_map_dump_to_json(map_contents)
-                    print(data_formatted)  # Pretty-print the map contents
+                    print(json.dumps(data_formatted, indent=4))  # Pretty-print the map contents
                 else:
                     print(f"No data found in map: {map_path}")
                 time.sleep(2)

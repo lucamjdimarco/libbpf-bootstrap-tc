@@ -18,7 +18,8 @@ def reader(pipe, queue, source_name):
     finally:
         queue.put(None)
 
-def execute_make(type_of_classifier):
+
+def execute_make():
     try:
         # Directory target
         os.chdir("src/c")
@@ -57,19 +58,6 @@ def main():
 
     c_program = os.path.join("src", "c", "tc")
     python_program = "EFE-controller.py"
-
-    execute_make(type_of_classifier)
-
-    try:
-        c_process = subprocess.Popen(
-            [c_program, interface, protocol],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=1, 
-        )
-    except FileNotFoundError:
-        print("C program not found.")
-        sys.exit(1)
     
     try:
         python_process = subprocess.Popen(
@@ -80,6 +68,21 @@ def main():
         )
     except FileNotFoundError:
         print("EFE-controller.py not found.")
+        sys.exit(1)
+    
+    if not os.path.isfile(c_program):
+        print(f"C program '{c_program}' does not exist.")
+        sys.exit(1)
+
+    try:
+        c_process = subprocess.Popen(
+            [c_program, interface, protocol],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1, 
+        )
+    except FileNotFoundError:
+        print("C program not found.")
         sys.exit(1)
 
     

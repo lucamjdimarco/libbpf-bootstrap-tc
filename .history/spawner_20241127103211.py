@@ -18,32 +18,6 @@ def reader(pipe, queue, source_name):
     finally:
         queue.put(None)
 
-def execute_make(type_of_classifier):
-    try:
-        # Directory target
-        os.chdir("src/c")
-        cflags_extra = f"CFLAGS_EXTRA=-DCLASS={type_of_classifier}"
-        command = ["make", "-j6", cflags_extra]
-        
-        result = subprocess.run(
-            command, 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE, 
-            text=True
-        )
-        
-        if result.returncode == 0:
-            print("Command executed successfully.")
-            print("Output:")
-            print(result.stdout)
-        else:
-            print("Command failed.")
-            print("Error:")
-            print(result.stderr)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-
 def main():
     parser = argparse.ArgumentParser(description="Exec C program and Python program")
     parser.add_argument("interface", help="Specify the interface to monitor.")
@@ -57,19 +31,6 @@ def main():
 
     c_program = os.path.join("src", "c", "tc")
     python_program = "EFE-controller.py"
-
-    execute_make(type_of_classifier)
-
-    try:
-        c_process = subprocess.Popen(
-            [c_program, interface, protocol],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=1, 
-        )
-    except FileNotFoundError:
-        print("C program not found.")
-        sys.exit(1)
     
     try:
         python_process = subprocess.Popen(
@@ -80,6 +41,19 @@ def main():
         )
     except FileNotFoundError:
         print("EFE-controller.py not found.")
+        sys.exit(1)
+    
+    
+
+    try:
+        c_process = subprocess.Popen(
+            [c_program, interface, protocol],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1, 
+        )
+    except FileNotFoundError:
+        print("C program not found.")
         sys.exit(1)
 
     

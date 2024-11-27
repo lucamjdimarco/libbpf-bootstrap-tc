@@ -173,7 +173,7 @@ def query_influxdb(machine_id, interface):
             flowids = [
                 int(row[1])  # `flowid` is the second column
                 for row in series[0]["values"]
-                if row[1].isdigit() 
+                if row[1].isdigit()  # Ensure the value is numeric
             ]
             if flowids:
                 # Get the maximum `flowid`
@@ -185,6 +185,7 @@ def query_influxdb(machine_id, interface):
         else:
             print("No series found in query result.")
     except Exception as e:
+        # Handle any exceptions and log the error
         print(f"Error querying InfluxDB: {e}")
     return None
 

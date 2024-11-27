@@ -161,9 +161,9 @@ def query_influxdb(machine_id, interface):
     params = {"q": query, "db": DB_NAME}
 
     try:
-        # GET request to InfluxDB with the query
+        # Make a GET request to InfluxDB with the query
         response = requests.get(INFLUXDB_URL_IPV6, params=params)
-        response.raise_for_status() 
+        response.raise_for_status()  # Raise an exception if the request fails
         data = response.json()
 
         # Extract series from the query result
@@ -171,9 +171,9 @@ def query_influxdb(machine_id, interface):
         if series:
             # Extract all `flowid` values from the result
             flowids = [
-                int(row[1])  # `flowid` is the second column
+                int(row[1])  # Assuming `flowid` is the second column
                 for row in series[0]["values"]
-                if row[1].isdigit() 
+                if row[1].isdigit()  # Ensure the value is numeric
             ]
             if flowids:
                 # Get the maximum `flowid`
@@ -185,6 +185,7 @@ def query_influxdb(machine_id, interface):
         else:
             print("No series found in query result.")
     except Exception as e:
+        # Handle any exceptions and log the error
         print(f"Error querying InfluxDB: {e}")
     return None
 

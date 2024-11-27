@@ -185,6 +185,7 @@ def query_influxdb(machine_id, interface):
         else:
             print("No series found in query result.")
     except Exception as e:
+        # Handle any exceptions and log the error
         print(f"Error querying InfluxDB: {e}")
     return None
 

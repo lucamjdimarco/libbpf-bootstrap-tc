@@ -219,12 +219,8 @@ def parse_map_dump_to_json(dump_data):
     Parse and format map dump data from bpftool and return as a JSON structure.
     """
     try:
-        # Check if dump_data is already a Python list
-        if isinstance(dump_data, list):
-            map_entries = dump_data
-        else:
-            # Parse the JSON-like dump data
-            map_entries = json.loads(dump_data)
+        # Parse the JSON-like dump data
+        map_entries = json.loads(dump_data)
 
         formatted_data = []  # List to hold formatted entries
 
@@ -233,16 +229,13 @@ def parse_map_dump_to_json(dump_data):
             key = entry.get("key", {})
             value = entry.get("value", {})
 
-            # Convert src_ip and dst_ip to dotted notation
             src_ip = socket.inet_ntoa(struct.pack('!I', key.get("src_ip", 0)))
             dst_ip = socket.inet_ntoa(struct.pack('!I', key.get("dst_ip", 0)))
 
-            # Extract ports and protocol
             src_port = key.get("src_port", 0)
             dst_port = key.get("dst_port", 0)
             protocol = key.get("protocol", 0)
 
-            # Extract flow_id
             flow_id = value.get("flow_id", 0)
 
             # Add formatted data to the list

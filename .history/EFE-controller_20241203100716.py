@@ -333,7 +333,7 @@ def main():
             exit(1)
 
         print("Waiting for user input to associate a friendly name with a Machine ID.")
-        get_friendlyname()
+    get_friendlyname()
 
         # Periodically dump and print the map contents
         while True:

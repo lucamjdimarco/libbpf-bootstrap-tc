@@ -285,13 +285,14 @@ def get_friendlyname():
     Wait for user input to associate a friendly name with a machine ID.
     """
     try:
+        
         friendlyname = input("Enter the Friendlyname: ").strip()
         if not friendlyname:
             print("Friendlyname cannot be empty. Please try again.")
             return
 
         # Save to Redis
-        r.set(machine_id, friendlyname)
+        redis_client.set(machine_id, friendlyname)
         print(f"Friendlyname '{friendlyname}' saved for Machine ID '{machine_id}'!")
 
     except Exception as e:
@@ -331,9 +332,6 @@ def main():
         if not map_path:
             print("Failed to determine map path for the given classifier type.")
             exit(1)
-
-        print("Waiting for user input to associate a friendly name with a Machine ID.")
-        get_friendlyname()
 
         # Periodically dump and print the map contents
         while True:

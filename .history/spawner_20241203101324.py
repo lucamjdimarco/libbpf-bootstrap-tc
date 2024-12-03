@@ -77,9 +77,6 @@ def execute_make(type_of_classifier):
 
 def main():
 
-    """
-    Wait for user input to associate a friendly name with a machine ID.
-    """
     try:
         friendlyname = input("Enter the Friendlyname: ").strip()
         if not friendlyname:

@@ -731,7 +731,6 @@ int main(int argc, char **argv)
 							h, events_buffer[i].ts,
 							events_buffer[i].machine_id,
 							events_buffer[i].interface,
-							events_buffer[i].fname,
 							events_buffer[i].flowid,
 							events_buffer[i].counter);
 						if (ret != 0) {

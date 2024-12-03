@@ -96,7 +96,7 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *machine_i
         std::cerr << "Error: h->obj is null." << std::endl;
         return -EINVAL;
     }
-	
+	    // Converti gli array C in vettori C++ per passarli alla funzione
     std::vector<uint64_t> ts_vec(ts, ts + count);
 	std::vector<std::string> str_machine_id;
 	std::vector<std::string> str_interface;

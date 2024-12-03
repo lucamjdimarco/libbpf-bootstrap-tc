@@ -57,7 +57,6 @@ int InfluxDBWrapper::writeData(uint64_t ts, const std::string& machine_id,
 	
 	point.addTag("machine_id", machine_id);
 	point.addTag("interface", interface);
-	point.addTag("friendlyname", fname);
 	point.addTag("flowid", std::to_string(flowid));
 	point.addField("value", ccnt);
 
@@ -87,10 +86,9 @@ int InfluxDBWrapper::writeData(uint64_t ts, const std::string& machine_id,
 int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
                                     const std::vector<std::string>& machine_ids,
 									const std::vector<std::string>& interfaces,
-									const std::vector<std::string>& fnames,
 									const std::vector<uint64_t>& flowids,
                                     const std::vector<uint64_t>& counters) {
-    if (timestamps.size() != machine_ids.size() || interfaces.size() != counters.size() || flowids.size() != counters.size() || fnames.size() != counters.size()) {
+    if (timestamps.size() != machine_ids.size() || interfaces.size() != counters.size() || flowids.size() != counters.size()) {
         std::cerr << "Error: Mismatched sizes of input vectors." << std::endl;
         return -EINVAL;
     }
@@ -108,7 +106,6 @@ int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
             influxdb::Point point("rate");
 			point.addTag("machine_id", machine_ids[i]);
 			point.addTag("interface", interfaces[i]);
-			point.addTag("friendlyname", fnames[i]);
 			point.addTag("flowid", std::to_string(flowids[i]));
             point.addField("value", static_cast<double>(counters[i]));
 

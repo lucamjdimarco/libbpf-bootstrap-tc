@@ -324,9 +324,9 @@ def main():
         if not map_path:
             print("Failed to determine map path for the given classifier type.")
             exit(1)
-        
-        # Set the friendlyname in Redis
-        set_friendlyname(sys.argv[4])
+
+        print("Waiting for user input to associate a friendly name with a Machine ID.")
+        get_friendlyname()
 
         # Periodically dump and print the map contents
         while True:

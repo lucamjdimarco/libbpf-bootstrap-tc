@@ -108,7 +108,6 @@ int InfluxDBWrapper::writeDataBatch(const std::vector<uint64_t>& timestamps,
             influxdb::Point point("rate");
 			point.addTag("machine_id", machine_ids[i]);
 			point.addTag("interface", interfaces[i]);
-			point.addTag("friendlyname", fnames[i]);
 			point.addTag("flowid", std::to_string(flowids[i]));
             point.addField("value", static_cast<double>(counters[i]));
 

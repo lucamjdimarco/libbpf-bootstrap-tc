@@ -5,9 +5,6 @@ import os
 from threading import Thread
 from queue import Queue
 
-
-friendlyname = ""
-
 def reader(pipe, queue, source_name):
     """Legge l'output da una pipe e lo mette in una coda."""
     try:
@@ -77,9 +74,6 @@ def execute_make(type_of_classifier):
 
 def main():
 
-    """
-    Wait for user input to associate a friendly name with a machine ID.
-    """
     try:
         friendlyname = input("Enter the Friendlyname: ").strip()
         if not friendlyname:
@@ -112,7 +106,7 @@ def main():
 
     try:
         c_process = subprocess.Popen(
-            [c_program_path, interface, protocol, friendlyname],
+            [c_program_path, interface, protocol],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             bufsize=1, 
@@ -123,7 +117,7 @@ def main():
     
     try:
         python_process = subprocess.Popen(
-            ["python3", "-u", python_program, interface, protocol, type_of_classifier, friendlyname],
+            ["python3", "-u", python_program, interface, protocol, type_of_classifier],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             bufsize=1, 

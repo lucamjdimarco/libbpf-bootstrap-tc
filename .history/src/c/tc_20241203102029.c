@@ -438,7 +438,6 @@ InfluxDBPoint **create_points_batch(struct event_t_formatted *events_buffer, int
             "rate",                                  // Misurazione
             events_buffer[i].machine_id,             // machine_id
             events_buffer[i].interface,              // interface
-			events_buffer[i].fname,                  // friendlyname
             events_buffer[i].flowid,                 // flowid
             (double)events_buffer[i].counter,        // counter
             events_buffer[i].ts                      // timestamp
@@ -472,7 +471,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		.ts = event->ts,
 		.machine_id = machine_id,
 		.interface = interface_name,
-		.fname = friendlyname,
 		.flowid = event->flowid,
 		.counter = event->counter,
 	};
@@ -496,7 +494,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		uint64_t timestamps[BATCH_SIZE];
 		const char *machine_ids[BATCH_SIZE];
 		const char *interfaces[BATCH_SIZE];
-		const char *fnames[BATCH_SIZE];
 		uint64_t flowids[BATCH_SIZE];
 		uint64_t counters[BATCH_SIZE];
 
@@ -505,12 +502,11 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 			timestamps[i] = events_buffer[i].ts;
 			machine_ids[i] = events_buffer[i].machine_id;
 			interfaces[i] = events_buffer[i].interface;
-			fnames[i] = events_buffer[i].fname;
 			flowids[i] = events_buffer[i].flowid;
 			counters[i] = events_buffer[i].counter;
 		}
 
-		int ret = write_data_influxdb_batch(influx_handler, timestamps, machine_ids, interfaces, fnames, flowids, counters, events_count);
+		int ret = write_data_influxdb_batch(influx_handler, timestamps, machine_ids, interfaces, flowids, counters, events_count);
 		if (ret != 0) {
 			fprintf(stderr, "Failed to write data to InfluxDB\n");
 		} else {
@@ -688,7 +684,6 @@ int main(int argc, char **argv)
 							h, events_buffer[i].ts,
 							events_buffer[i].machine_id,
 							events_buffer[i].interface,
-							events_buffer[i].fname,
 							events_buffer[i].flowid,
 							events_buffer[i].counter);
 						if (ret != 0) {
@@ -731,7 +726,6 @@ int main(int argc, char **argv)
 							h, events_buffer[i].ts,
 							events_buffer[i].machine_id,
 							events_buffer[i].interface,
-							events_buffer[i].fname,
 							events_buffer[i].flowid,
 							events_buffer[i].counter);
 						if (ret != 0) {

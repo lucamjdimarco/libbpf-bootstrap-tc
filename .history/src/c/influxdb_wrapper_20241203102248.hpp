@@ -17,7 +17,6 @@ public:
 	int writeDataBatch(const std::vector<uint64_t>& timestamps,
                                     const std::vector<std::string>& machine_ids,
 									const std::vector<std::string>& interfaces,
-									const std::vector<std::string>& fnames,
 									const std::vector<uint64_t>& flowids,
                                     const std::vector<uint64_t>& counters);
 	//void showData(const std::string& measurement);

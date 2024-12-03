@@ -83,10 +83,10 @@ int write_data_influxdb(MHandler_t *h,
 
 // int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, uint64_t *flowid, uint64_t *counter, size_t count) {
 int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *machine_ids[BATCH_SIZE], 
-	const char *interfaces[BATCH_SIZE], const char *fnames[BATCH_SIZE], uint64_t *flowids, uint64_t *counter, size_t count) {
+	const char *interfaces[BATCH_SIZE], uint64_t *flowids, uint64_t *counter, size_t count) {
     InfluxDBWrapper *obj;
 
-    if (h == nullptr || ts == nullptr || machine_ids == nullptr || interfaces == nullptr || fnames == nullptr ||
+    if (h == nullptr || ts == nullptr || machine_ids == nullptr || interfaces == nullptr || 
 		flowids == nullptr || counter == nullptr) {
         std::cerr << "Error: null pointer passed to write_data_influx_batch." << std::endl;
         return -EINVAL;
@@ -96,11 +96,10 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *machine_i
         std::cerr << "Error: h->obj is null." << std::endl;
         return -EINVAL;
     }
-	
+	    // Converti gli array C in vettori C++ per passarli alla funzione
     std::vector<uint64_t> ts_vec(ts, ts + count);
 	std::vector<std::string> str_machine_id;
 	std::vector<std::string> str_interface;
-	std::vector<std::string> str_fname;
 	
 	std::vector<uint64_t> flowid_vec(flowids, flowids + count);
 	std::vector<uint64_t> counter_vec(counter, counter + count);
@@ -117,12 +116,6 @@ int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *machine_i
             return -EINVAL;
         }
         str_interface.emplace_back(interfaces[i]);
-
-		if (fnames[i] == nullptr) {
-			std::cerr << "Error: null string in str_fname array." << std::endl;
-			return -EINVAL;
-		}
-		str_fname.emplace_back(fnames[i]);
     }
 	
     

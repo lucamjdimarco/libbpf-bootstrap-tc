@@ -329,11 +329,19 @@ def get_map_path(type_of_classifier):
         print(f"Invalid type_of_classifier: {type_of_classifier}")
         return None
 
+def set_friendlyname(friendlyname):
+    
+    try:
+        # Save to Redis
+        r.set(machine_id, friendlyname)
+        print(f"Friendlyname '{friendlyname}' saved for Machine ID '{machine_id}'!")
 
+    except Exception as e:
+        print(f"An error occurred: {e}")
     
 def main():
-    if len(sys.argv) != 4:
-        print("Usage: python3 script.py <interface> <protocol> <type_of_classifier>") 
+    if len(sys.argv) != 5:
+        print("Usage: python3 script.py <interface> <protocol> <type_of_classifier> <friendlyname>") 
         exit(1)
 
     interface_name = sys.argv[1]
@@ -365,7 +373,9 @@ def main():
         if not map_path:
             print("Failed to determine map path for the given classifier type.")
             exit(1)
-    
+        
+        # Set the friendlyname in Redis
+        #set_friendlyname(sys.argv[4])
 
         # Periodically dump and print the map contents
         while True:

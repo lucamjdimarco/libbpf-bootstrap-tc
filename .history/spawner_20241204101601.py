@@ -16,11 +16,11 @@ def set_friendlyname():
         # Check if a value exists for the machine_id
         existing_value = r.get(machine_id)
         if existing_value:
-        
+            # If a value exists, decode and print it
             friendlyname = existing_value.decode('utf-8')
             print(f"Friendlyname already exists for Machine ID '{machine_id}': {friendlyname}")
         else:
-        
+            # If no value exists, prompt the user for input
             friendlyname = input("Enter a friendlyname for the machine: ")
             r.set(machine_id, friendlyname)
             print(f"Friendlyname '{friendlyname}' saved for Machine ID '{machine_id}'!")
@@ -97,7 +97,17 @@ def execute_make(type_of_classifier):
 
 def main():
 
-    set_friendlyname()
+    """
+    Wait for user input to associate a friendly name with a machine ID.
+    """
+    try:
+        friendlyname = input("Enter the friendlyname (if it isn't in Redis): ").strip()
+        if not friendlyname:
+            print("Friendlyname cannot be empty. Please try again.")
+            return
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
     parser = argparse.ArgumentParser(description="Exec C program and Python program")
     parser.add_argument("interface", help="Specify the interface to monitor.")

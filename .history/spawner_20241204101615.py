@@ -97,7 +97,17 @@ def execute_make(type_of_classifier):
 
 def main():
 
-    set_friendlyname()
+    """
+    Wait for user input to associate a friendly name with a machine ID.
+    """
+    try:
+        friendlyname = input("Enter the friendlyname (if it isn't in Redis): ").strip()
+        if not friendlyname:
+            print("Friendlyname cannot be empty. Please try again.")
+            return
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
     parser = argparse.ArgumentParser(description="Exec C program and Python program")
     parser.add_argument("interface", help="Specify the interface to monitor.")

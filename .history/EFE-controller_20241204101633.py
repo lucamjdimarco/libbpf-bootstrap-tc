@@ -333,7 +333,7 @@ def get_map_path(type_of_classifier):
     
 def main():
     if len(sys.argv) != 4:
-        print("Usage: python3 script.py <interface> <protocol> <type_of_classifier>") 
+        print("Usage: python3 script.py <interface> <protocol> <type_of_classifier> <friendlyname>") 
         exit(1)
 
     interface_name = sys.argv[1]
@@ -365,7 +365,9 @@ def main():
         if not map_path:
             print("Failed to determine map path for the given classifier type.")
             exit(1)
-    
+        
+        # Set the friendlyname in Redis
+        #set_friendlyname(sys.argv[4])
 
         # Periodically dump and print the map contents
         while True:

@@ -651,7 +651,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		ifindex = ctx->ifindex;
 		u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &ifindex);
 
-		bpf_printk("flow_id: %llu\n", *flow_id_ret);
+		bpf_printk("flow_id: %llu\n", flow_id);
 
 		if(flow_id_ret == NULL){
 			bpf_printk("flow_id not found - skip\n");

@@ -107,8 +107,6 @@ def main():
     interface = args.interface
     type_of_classifier = args.type_of_classifier
 
-    set_friendlyname()
-
     c_program_path = os.path.abspath(os.path.join("src", "c", "tc"))
     python_program = "EFE-controller.py"
 
@@ -133,7 +131,7 @@ def main():
     
     try:
         python_process = subprocess.Popen(
-            ["python3", "-u", python_program, interface, protocol, type_of_classifier],
+            ["python3", "-u", python_program, interface, protocol, type_of_classifier, friendlyname],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             bufsize=1, 

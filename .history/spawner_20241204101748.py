@@ -107,8 +107,6 @@ def main():
     interface = args.interface
     type_of_classifier = args.type_of_classifier
 
-    set_friendlyname()
-
     c_program_path = os.path.abspath(os.path.join("src", "c", "tc"))
     python_program = "EFE-controller.py"
 

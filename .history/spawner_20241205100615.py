@@ -5,8 +5,6 @@ import os
 from threading import Thread
 from queue import Queue
 import redis
-import signal
-
 
 
 friendlyname = ""
@@ -118,10 +116,6 @@ def terminate_processes(signum, frame):
 
 def main():
 
-    global c_process, python_process
-    signal.signal(signal.SIGINT, terminate_processes)  # Handle Ctrl+C
-    signal.signal(signal.SIGTERM, terminate_processes)  # Handle termination signals
-
     parser = argparse.ArgumentParser(description="Exec C program and Python program")
     parser.add_argument("interface", help="Specify the interface to monitor.")
     parser.add_argument("protocol", choices=["ipv4", "ipv6"], help="Specify the protocol (ipv4 or ipv6).")
@@ -203,8 +197,9 @@ def main():
                 print(f"{py_stderr[0]}: {py_stderr[1]}")
 
     except KeyboardInterrupt:
-        terminate_processes(None, None)
-
+        print("Process interrupted.")
+        c_process.terminate()
+        python_process.terminate()
 
     c_exit_code = c_process.wait()
     python_exit_code = python_process.wait()

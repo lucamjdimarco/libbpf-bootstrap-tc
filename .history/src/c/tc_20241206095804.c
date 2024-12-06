@@ -183,8 +183,8 @@ void print_ipv6_address(uint8_t *addr)
 	fflush(stderr);
 }
 
-// Funzione per stampare il contenuto della mappa flow_id_info_ipv6
-void print_flow_id_info_ipv6(int map_fd)
+// Funzione per stampare il contenuto della mappa ipv6_flow
+void print_ipv6_flow(int map_fd)
 {
 	__u64 *key, *prev_key;
 
@@ -308,13 +308,13 @@ int initialize_map_fd(const char *map_type, struct tc_bpf *skel, int *map_fd, in
 	} else if (strcmp(map_type, "ipv6") == 0) {
 #ifdef CLASSIFY_IPV6
 		*map_fd = bpf_map__fd(skel->maps.map_ipv6);
-		*map_fd_flow = bpf_map__fd(skel->maps.flow_id_info_ipv6);
+		*map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
 #elif defined(CLASSIFY_ONLY_ADDRESS_IPV6)
 		*map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv6);
-		*map_fd_flow = bpf_map__fd(skel->maps.flow_id_info_ipv6);
+		*map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
 #elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 		*map_fd = bpf_map__fd(skel->maps.map_only_dest_ipv6);
-		*map_fd_flow = bpf_map__fd(skel->maps.flow_id_info_ipv6);
+		*map_fd_flow = bpf_map__fd(skel->maps.ipv6_flow);
 #endif
 	} else {
 		fprintf(stderr, "Invalid map type\n");
@@ -770,7 +770,7 @@ int main(int argc, char **argv)
 	} else if (strcmp(map_type, "ipv6") == 0) {
 #if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
 	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-		print_flow_id_info_ipv6(map_fd_flow);
+		print_ipv6_flow(map_fd_flow);
 #endif
 	} else {
 		fprintf(stderr, "Invalid map type\n");

@@ -289,8 +289,8 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args)
 {
 	struct value_packet *packet = NULL;
-	//int ret;
-	//u32 key = 0; 
+	int ret;
+	u32 key = 0; 
 
 	//__u64 flow_id = -1;
 
@@ -647,7 +647,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct vlan_hdr *vlan;
 	int ret;
 
-	//u32 key = 0; 
+	u32 key = 0; 
 
 	if(flow_id == -1){
 		ifindex = ctx->ifindex;

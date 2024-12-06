@@ -647,7 +647,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct vlan_hdr *vlan;
 	int ret;
 
-	//u32 key = 0; 
+	u32 key = 0; 
 
 	if(flow_id == -1){
 		ifindex = ctx->ifindex;

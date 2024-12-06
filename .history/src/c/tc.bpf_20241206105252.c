@@ -47,8 +47,7 @@ struct {
 
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
-    __uint(max_entries, 1 << 24);
-	__uint(pinning, LIBBPF_PIN_BY_NAME);
+    __uint(max_entries, 1 << 24); // 4KB buffer
 } ringbuf_signaling_new_flow SEC(".maps");
 /* ---- */
 

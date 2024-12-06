@@ -290,7 +290,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	return 0;
 }
 
-static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args, struct __sk_buff *ctx)
+static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args)
 {
 	struct value_packet *packet = NULL;
 	//int ret;

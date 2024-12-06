@@ -290,7 +290,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	return 0;
 }
 
-static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args, struct __sk_buff *ctx)
+static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args)
 {
 	struct value_packet *packet = NULL;
 	//int ret;
@@ -321,7 +321,7 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		bpf_printk("Updated map for ifindex %u with new flowid: %llu\n", ifindex, flow_id);
 
-		ret = bpf_perf_event_output(ctx, &signaling_new_flow, BPF_F_CURRENT_CPU, &flow_id, sizeof(flow_id));
+		ret = bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &flow_id, sizeof(flow_id));
 
 		/* ---- */
 
@@ -727,7 +727,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.new_info = &new_info;
 		args.map_flow = &flow_id_info_ipv4;
 		args.flow_type = QUINTUPLA;
-		ret = classify_packet_and_update_map(&args, &ctx);
+		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {
 			return TC_ACT_OK;
 		}

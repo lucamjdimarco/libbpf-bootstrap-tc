@@ -346,7 +346,6 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		*new_flow_event = flow_id;
 		bpf_printk("Flow ID %llu sent to user-space\n", flow_id);
-		bpf_ringbuf_submit(new_flow_event, 0);
 
 		/* ---- */
 

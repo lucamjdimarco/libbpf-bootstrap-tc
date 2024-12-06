@@ -299,21 +299,21 @@ int initialize_map_fd(const char *map_type, struct tc_bpf *skel, int *map_fd, in
 		*map_fd = bpf_map__fd(skel->maps.flow_info_ipv4);
 		*map_fd_flow = bpf_map__fd(skel->maps.flow_id_info_ipv4);
 #elif defined(CLASSIFY_ONLY_ADDRESS_IPV4)
-		*map_fd = bpf_map__fd(skel->maps.flow_info_only_addr_ipv4);
+		*map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv4);
 		*map_fd_flow = bpf_map__fd(skel->maps.flow_id_info_ipv4);
 #elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-		*map_fd = bpf_map__fd(skel->maps.flow_info_only_dest_ipv4);
+		*map_fd = bpf_map__fd(skel->maps.map_only_dest_ipv4);
 		*map_fd_flow = bpf_map__fd(skel->maps.flow_id_info_ipv4);
 #endif
 	} else if (strcmp(map_type, "ipv6") == 0) {
 #ifdef CLASSIFY_IPV6
-		*map_fd = bpf_map__fd(skel->maps.flow_info_ipv6);
+		*map_fd = bpf_map__fd(skel->maps.map_ipv6);
 		*map_fd_flow = bpf_map__fd(skel->maps.flow_id_info_ipv6);
 #elif defined(CLASSIFY_ONLY_ADDRESS_IPV6)
-		*map_fd = bpf_map__fd(skel->maps.flow_info_only_addr_ipv6);
+		*map_fd = bpf_map__fd(skel->maps.map_only_addr_ipv6);
 		*map_fd_flow = bpf_map__fd(skel->maps.flow_id_info_ipv6);
 #elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-		*map_fd = bpf_map__fd(skel->maps.flow_info_only_dest_ipv6);
+		*map_fd = bpf_map__fd(skel->maps.map_only_dest_ipv6);
 		*map_fd_flow = bpf_map__fd(skel->maps.flow_id_info_ipv6);
 #endif
 	} else {

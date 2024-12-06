@@ -44,11 +44,6 @@ struct {
 //     __uint(value_size, sizeof(__u32));
 // 	__uint(pinning, LIBBPF_PIN_BY_NAME);
 // } signaling_new_flow SEC(".maps");
-
-struct {
-    __uint(type, BPF_MAP_TYPE_RINGBUF);
-    __uint(max_entries, 4096); // 4KB buffer
-} ringbuf_signaling_new_flow SEC(".maps");
 /* ---- */
 
 #ifdef CLASSIFY_IPV4
@@ -330,22 +325,12 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		bpf_printk("Updated map for ifindex %u with new flowid: %llu\n", ifindex, flow_id);
 
-		// ret = bpf_perf_event_output(ctx, &signaling_new_flow, BPF_F_CURRENT_CPU, &flow_id, sizeof(flow_id));
-		// if (ret < 0) {
-		// 	bpf_printk("Failed to send flow_id event\n");
-		// 	return TC_ACT_OK;
-		// }
-
-		__u64 *new_flow_event;
-		new_flow_event = bpf_ringbuf_reserve(&ringbuf_signaling_new_flow, sizeof(__u64), 0);
-		if (!new_flow_event) {
-			bpf_printk("Failed to reserve ring buffer space\n");
+		ret = bpf_perf_event_output(ctx, &signaling_new_flow, BPF_F_CURRENT_CPU, &flow_id, sizeof(flow_id));
+		if (ret < 0) {
+			bpf_printk("Failed to send flow_id event\n");
 			return TC_ACT_OK;
 		}
 
-		*new_flow_event = flow_id;
-		bpf_ringbuf_submit(new_flow_event, 0);
-		bpf_printk("Flow ID %llu sent to user-space\n", *new_flow_event);
 
 		/* ---- */
 
@@ -751,8 +736,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.new_info = &new_info;
 		args.map_flow = &flow_id_info_ipv4;
 		args.flow_type = QUINTUPLA;
-		//ret = classify_packet_and_update_map(&args, ctx);
-		ret = classify_packet_and_update_map(&args);
+		ret = classify_packet_and_update_map(&args, ctx);
 		if (ret < 0) {
 			return TC_ACT_OK;
 		}

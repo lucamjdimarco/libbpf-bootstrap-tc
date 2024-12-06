@@ -347,6 +347,8 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 		bpf_ringbuf_submit(new_flow_event, 0);
 		bpf_printk("Flow ID %llu sent to user-space\n", *new_flow_event);
 
+
+
 		/* ---- */
 
 		// ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &key, &counter, BPF_ANY);

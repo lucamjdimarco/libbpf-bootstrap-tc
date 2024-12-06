@@ -42,26 +42,57 @@ INFLUXDB_URL_IPV4 = "http://influxdb:8086/query?db=tc_db"
 INFLUXDB_URL_IPV6 = "http://10.89.0.30:8086/query?db=tc_db"
 
 FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/last_flow_id_by_ifindex"
-RINGBUF_PATH = "/sys/fs/bpf/ringbuf"
 
-def read_ring_buffer(ringbuf_path):
+# ------- polling for new flow ------- #
+def listen_to_perf_events(perf_map_path):
     """
-    Poll the ring buffer for new events and process them.
+    Listen to events from the perf event map and handle them.
     """
     try:
-        with open(ringbuf_path, "rb") as ringbuf:
-            while True:
-                # Read a single event (8 bytes for u64)
-                data = ringbuf.read(8)  # 64-bit unsigned integer
-                if not data:
-                    time.sleep(0.1)  # No data available; wait before polling again
-                    continue
-
-                # Unpack the u64 from the binary data
-                flow_id = struct.unpack("Q", data)[0]  # Unpack as little-endian unsigned long long
-                print(f"Received flow_id: {flow_id}")
+        with open(perf_map_path, "rb") as f:
+            perf_fd = int.from_bytes(f.read(4), byteorder="little")
+        print(f"Opened perf event map at {perf_map_path} with FD {perf_fd}")
     except Exception as e:
-        print(f"Error reading ring buffer: {e}")
+        print(f"Error opening perf event map: {e}")
+        return
+
+    # Initialize epoll to listen to perf events
+    poller = epoll()
+    poller.register(perf_fd, EPOLLIN)
+
+    print("Listening for perf events...")
+    try:
+        while True:
+            events = poller.poll(1)
+            for fd, event in events:
+                if event & EPOLLIN:
+                    handle_perf_event(fd)
+    except KeyboardInterrupt:
+        print("Process interrupted.")
+    finally:
+        poller.unregister(perf_fd)
+
+def handle_perf_event(fd):
+    """
+    Read an event from the perf map and query the eBPF map using flow_id.
+    """
+    try:
+        event_data = os.read(fd, 8) 
+        flow_id = struct.unpack("Q", event_data)[0]
+        print(f"Received event with flow_id: {flow_id}")
+
+        # Query the map with flow_id
+        # map_data = query_map_with_flow_id(map_path, flow_id)
+        # if map_data:
+        #     print(f"Data for flow_id {flow_id}: {map_data}")
+        #     redis_key = f"flow:{flow_id}"
+        #     write_to_redis(r, redis_key, map_data)
+        # else:
+        #     print(f"No data found in map for flow_id {flow_id}")
+    except Exception as e:
+        print(f"Error handling perf event: {e}")
+
+# ------- polling for new flow ------- #
 
 def mount_bpf(mount_point):
     """
@@ -389,29 +420,28 @@ def main():
 
         # Periodically dump and print the map contents
         while True:
-            read_ring_buffer(RINGBUF_PATH)
-            # try:
-            #     map_contents = dump_map_contents(map_path)
+            try:
+                map_contents = dump_map_contents(map_path)
                 
-            #     if map_contents:
-            #         data_formatted = parse_map_dump_to_json(map_contents, int(type_of_classifier))
-            #         #print(data_formatted)  # Pretty-print the map contents
+                if map_contents:
+                    data_formatted = parse_map_dump_to_json(map_contents, int(type_of_classifier))
+                    #print(data_formatted)  # Pretty-print the map contents
 
-            #         if "error" in data_formatted:
-            #             print(f"Error in parsing: {data_formatted['error']}")
-            #         else:
-            #             # Write each entry to Redis
-            #             for entry in data_formatted:
-            #                 flow_id = entry["flow_id"]
-            #                 redis_key = f"flow:{flow_id}"
-            #                 write_to_redis(r, redis_key, entry)
+                    if "error" in data_formatted:
+                        print(f"Error in parsing: {data_formatted['error']}")
+                    else:
+                        # Write each entry to Redis
+                        for entry in data_formatted:
+                            flow_id = entry["flow_id"]
+                            redis_key = f"flow:{flow_id}"
+                            write_to_redis(r, redis_key, entry)
 
-            #     else:
-            #         print(f"No data found in map: {map_path}")
-            #     time.sleep(5)
-            # except KeyboardInterrupt:
-            #     print("Process interrupted.")
-            #     break
+                else:
+                    print(f"No data found in map: {map_path}")
+                time.sleep(5)
+            except KeyboardInterrupt:
+                print("Process interrupted.")
+                break
 
     except Exception as e:
         print(f"Error: {e}")

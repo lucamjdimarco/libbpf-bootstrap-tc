@@ -338,14 +338,12 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		__u64 *new_flow_event;
 		new_flow_event = bpf_ringbuf_reserve(&ringbuf_signaling_new_flow, sizeof(__u64), 0);
-		if (!new_flow_event) {
+		if (!event) {
 			bpf_printk("Failed to reserve ring buffer space\n");
 			return TC_ACT_OK;
 		}
 
-		*new_flow_event = flow_id;
-		bpf_ringbuf_submit(new_flow_event, 0);
-		bpf_printk("Flow ID %llu sent to user-space\n", *new_flow_event);
+
 
 		/* ---- */
 

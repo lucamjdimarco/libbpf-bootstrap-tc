@@ -16,7 +16,7 @@ import time
 import os
 import requests
 import sys
-from select import epoll, EPOLLIN
+import struct
 
 class MapType(Enum):
     flow_info_ipv4 = 1
@@ -43,57 +43,6 @@ INFLUXDB_URL_IPV6 = "http://10.89.0.30:8086/query?db=tc_db"
 
 FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/last_flow_id_by_ifindex"
 perf_map_path = f"{BPF_FS_PATH}/signaling_new_flow"
-
-# ------- polling for new flow ------- #
-def listen_to_perf_events(perf_map_path):
-    """
-    Listen to events from the perf event map and handle them.
-    """
-    try:
-        with open(perf_map_path, "rb") as f:
-            perf_fd = int.from_bytes(f.read(4), byteorder="little")
-        print(f"Opened perf event map at {perf_map_path} with FD {perf_fd}")
-    except Exception as e:
-        print(f"Error opening perf event map: {e}")
-        return
-
-    # Initialize epoll to listen to perf events
-    poller = epoll()
-    poller.register(perf_fd, EPOLLIN)
-
-    print("Listening for perf events...")
-    try:
-        while True:
-            events = poller.poll(1)
-            for fd, event in events:
-                if event & EPOLLIN:
-                    handle_perf_event(fd)
-    except KeyboardInterrupt:
-        print("Process interrupted.")
-    finally:
-        poller.unregister(perf_fd)
-
-def handle_perf_event(fd):
-    """
-    Read an event from the perf map and query the eBPF map using flow_id.
-    """
-    try:
-        event_data = os.read(fd, 8) 
-        flow_id = struct.unpack("Q", event_data)[0]
-        print(f"Received event with flow_id: {flow_id}")
-
-        # Query the map with flow_id
-        # map_data = query_map_with_flow_id(map_path, flow_id)
-        # if map_data:
-        #     print(f"Data for flow_id {flow_id}: {map_data}")
-        #     redis_key = f"flow:{flow_id}"
-        #     write_to_redis(r, redis_key, map_data)
-        # else:
-        #     print(f"No data found in map for flow_id {flow_id}")
-    except Exception as e:
-        print(f"Error handling perf event: {e}")
-
-# ------- polling for new flow ------- #
 
 def mount_bpf(mount_point):
     """

@@ -16,7 +16,7 @@ import time
 import os
 import requests
 import sys
-from select import epoll, EPOLLIN
+import struct
 
 class MapType(Enum):
     flow_info_ipv4 = 1
@@ -83,13 +83,13 @@ def handle_perf_event(fd):
         print(f"Received event with flow_id: {flow_id}")
 
         # Query the map with flow_id
-        # map_data = query_map_with_flow_id(map_path, flow_id)
-        # if map_data:
-        #     print(f"Data for flow_id {flow_id}: {map_data}")
-        #     redis_key = f"flow:{flow_id}"
-        #     write_to_redis(r, redis_key, map_data)
-        # else:
-        #     print(f"No data found in map for flow_id {flow_id}")
+        map_data = query_map_with_flow_id(map_path, flow_id)
+        if map_data:
+            print(f"Data for flow_id {flow_id}: {map_data}")
+            redis_key = f"flow:{flow_id}"
+            write_to_redis(r, redis_key, map_data)
+        else:
+            print(f"No data found in map for flow_id {flow_id}")
     except Exception as e:
         print(f"Error handling perf event: {e}")
 

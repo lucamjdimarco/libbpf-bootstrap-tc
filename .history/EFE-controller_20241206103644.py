@@ -16,7 +16,7 @@ import time
 import os
 import requests
 import sys
-from select import epoll, EPOLLIN
+import struct
 
 class MapType(Enum):
     flow_info_ipv4 = 1

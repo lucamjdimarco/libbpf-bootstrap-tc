@@ -38,6 +38,13 @@ struct {
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } last_flow_id_by_ifindex SEC(".maps");
 
+// struct {
+//     __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
+//     __uint(key_size, sizeof(__u32));
+//     __uint(value_size, sizeof(__u32));
+// 	__uint(pinning, LIBBPF_PIN_BY_NAME);
+// } signaling_new_flow SEC(".maps");
+
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1 << 24);

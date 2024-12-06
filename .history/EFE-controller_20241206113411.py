@@ -390,29 +390,29 @@ def main():
 
         # Periodically dump and print the map contents
         while True:
-            #read_ring_buffer(RINGBUF_PATH)
-            try:
-                map_contents = dump_map_contents(map_path)
+            //read_ring_buffer(RINGBUF_PATH)
+            # try:
+            #     map_contents = dump_map_contents(map_path)
                 
-                if map_contents:
-                    data_formatted = parse_map_dump_to_json(map_contents, int(type_of_classifier))
-                    #print(data_formatted)  # Pretty-print the map contents
+            #     if map_contents:
+            #         data_formatted = parse_map_dump_to_json(map_contents, int(type_of_classifier))
+            #         #print(data_formatted)  # Pretty-print the map contents
 
-                    if "error" in data_formatted:
-                        print(f"Error in parsing: {data_formatted['error']}")
-                    else:
-                        # Write each entry to Redis
-                        for entry in data_formatted:
-                            flow_id = entry["flow_id"]
-                            redis_key = f"flow:{flow_id}"
-                            write_to_redis(r, redis_key, entry)
+            #         if "error" in data_formatted:
+            #             print(f"Error in parsing: {data_formatted['error']}")
+            #         else:
+            #             # Write each entry to Redis
+            #             for entry in data_formatted:
+            #                 flow_id = entry["flow_id"]
+            #                 redis_key = f"flow:{flow_id}"
+            #                 write_to_redis(r, redis_key, entry)
 
-                else:
-                    print(f"No data found in map: {map_path}")
-                time.sleep(5)
-            except KeyboardInterrupt:
-                print("Process interrupted.")
-                break
+            #     else:
+            #         print(f"No data found in map: {map_path}")
+            #     time.sleep(5)
+            # except KeyboardInterrupt:
+            #     print("Process interrupted.")
+            #     break
 
     except Exception as e:
         print(f"Error: {e}")

@@ -49,7 +49,6 @@ def read_ring_buffer(ringbuf_path):
     Poll the ring buffer for new events and process them.
     """
     try:
-        time.sleep(1)
         with open(ringbuf_path, "rb") as ringbuf:
             while True:
                 # Read a single event (8 bytes for u64)

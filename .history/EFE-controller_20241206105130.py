@@ -54,7 +54,7 @@ def read_ring_buffer(ringbuf_path):
                 # Read a single event (8 bytes for u64)
                 data = ringbuf.read(8)  # 64-bit unsigned integer
                 if not data:
-                    time.sleep(1)  # No data available; wait before polling again
+                    time.sleep(0.1)  # No data available; wait before polling again
                     continue
 
                 # Unpack the u64 from the binary data

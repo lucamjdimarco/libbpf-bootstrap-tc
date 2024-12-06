@@ -29,8 +29,7 @@ extern "C" {
 			    uint64_t ts, const char *machine_id, const char *interface, const char *fname, uint64_t flowid, uint64_t counter);
 	
 	int write_data_influxdb_batch(MHandler_t *h, uint64_t *ts, const char *machine_ids[BATCH_SIZE], 
-									const char *interfaces[BATCH_SIZE], const char *fnames[BATCH_SIZE], 
-									uint64_t *flowids, uint64_t *counter, size_t count);
+			const char *interfaces[BATCH_SIZE], const char *fnames[BATCH_SIZE], uint64_t *flowids, uint64_t *counter, size_t count);
 
 	//void show_data_influxdb(MHandler_t *h, const char *measurement);
 #ifdef __cplusplus

@@ -15,10 +15,8 @@
 #define SWIN_TIMER_TIMEOUT (SWIN_SCALER << 1ul)
 
 __u64 counter = 0;
-
-/* ---- */
 __u64 flow_id = -1;
-/* ---- */
+__u32 ifindex = -1;
 
 enum FlowIdType { QUINTUPLA = 0, ONLY_ADDRESS = 1, ONLY_DEST_ADDRESS = 2 };
 
@@ -34,19 +32,22 @@ struct classify_packet_args {
 /* ---- */
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
-	__uint(max_entries, 1);
+	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u32);
 	__type(value, __u64);
-} flowpy_map SEC(".maps");
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} last_flow_id_by_ifindex SEC(".maps");
 /* ---- */
 
 #ifdef CLASSIFY_IPV4
+//flowinfo 
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, struct packet_info);
 	__type(value, struct value_packet);
-} map_ipv4 SEC(".maps");
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} flow_info_ipv4 SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_IPV6
@@ -55,7 +56,8 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, struct packet_info_ipv6);
 	__type(value, struct value_packet);
-} map_ipv6 SEC(".maps");
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} flow_info_ipv6 SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
@@ -64,7 +66,8 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, struct only_addr_ipv4);
 	__type(value, struct value_packet);
-} map_only_addr_ipv4 SEC(".maps");
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} flow_info_only_addr_ipv4 SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
@@ -73,7 +76,8 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, struct only_addr_ipv6);
 	__type(value, struct value_packet);
-} map_only_addr_ipv6 SEC(".maps");
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} flow_info_only_addr_ipv6 SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
@@ -82,7 +86,8 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, struct only_dest_ipv4);
 	__type(value, struct value_packet);
-} map_only_dest_ipv4 SEC(".maps");
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} flow_info_only_dest_ipv4 SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
@@ -91,16 +96,18 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, struct only_dest_ipv6);
 	__type(value, struct value_packet);
-} map_only_dest_ipv6 SEC(".maps");
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} flow_info_only_dest_ipv6 SEC(".maps");
 #endif
 
+//flow_id_info 
 #ifdef CLASSIFY_IPV4
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct packet_info);
-} ipv4_flow SEC(".maps");
+} flow_id_info_ipv4 SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
@@ -109,7 +116,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_addr_ipv4);
-} ipv4_flow SEC(".maps");
+} flow_id_info_ipv4 SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
@@ -118,7 +125,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_dest_ipv4);
-} ipv4_flow SEC(".maps");
+} flow_id_info_ipv4 SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_IPV6
@@ -127,7 +134,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct packet_info_ipv6);
-} ipv6_flow SEC(".maps");
+} flow_id_info_ipv6 SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
@@ -136,7 +143,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_addr_ipv6);
-} ipv6_flow SEC(".maps");
+} flow_id_info_ipv6 SEC(".maps");
 #endif
 
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
@@ -145,7 +152,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_dest_ipv6);
-} ipv6_flow SEC(".maps");
+} flow_id_info_ipv6 SEC(".maps");
 #endif
 
 // Ring buffer per gli eventi
@@ -283,6 +290,7 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 {
 	struct value_packet *packet = NULL;
 	int ret;
+	u32 key = 0; 
 
 	//__u64 flow_id = -1;
 
@@ -293,9 +301,27 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 		// Costruisci un nuovo flow_id
 		flow_id = build_flowid(args->flow_type, __sync_fetch_and_add(args->counter, 1));
 
+		/* ---- */
+		int ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &ifindex, &flow_id, BPF_ANY);
+		if (ret) {
+			bpf_printk("Failed to update map for ifindex %u\n", ifindex);
+			return TC_ACT_OK;
+		}
+
+		bpf_printk("Updated map for ifindex %u with new flowid: %llu\n", ifindex, flow_id);
+
+		/* ---- */
+
+
 		if (flow_id == -1) {
 			bpf_printk("Failed to build flow_id\n");
 			return -EFAULT;
+		}
+
+		ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &key, &counter, BPF_ANY);
+		if(ret){
+			bpf_printk("Failed to update flow_id\n");
+			return TC_ACT_OK;
 		}
 
 		// Crea un nuovo valore per il pacchetto
@@ -620,32 +646,22 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct vlan_hdr *vlan;
 	int ret;
 
-	/* ---- */
-
 	u32 key = 0; 
-	__u64 temp = 0;
-	u64 *flow_id_ret = bpf_map_lookup_elem(&flowpy_map, &key);
 
-	if(flow_id_ret == NULL){
-		bpf_printk("flow_id not found, initializing to 0\n");
-    temp = 0;  // Inizializza il flow_id a 0
-    int ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
-    if (ret) {
-        bpf_printk("Failed to initialize flow_id\n");
-        return TC_ACT_OK;
-    }
-	} else {
-		flow_id = *flow_id_ret;
-		temp = flow_id + 1;
-		ret = bpf_map_update_elem(&flowpy_map, &key, &temp, BPF_ANY);
-		if(ret){
-			bpf_printk("Failed to update flow_id\n");
+	if(flow_id == -1){
+		ifindex = ctx->ifindex;
+		u64 *flow_id_ret = bpf_map_lookup_elem(&last_flow_id_by_ifindex, &ifindex);
+
+		if(flow_id_ret == NULL){
+			bpf_printk("flow_id not found - skip\n");
 			return TC_ACT_OK;
+		} else {
+			flow_id = *flow_id_ret;
+			counter = *flow_id_ret;
+			bpf_printk("flow_id found: %llu\n", flow_id);
 		}
-
 	}
-
-	/* ---- */
+	
 	
 
 	__u32 packet_length = ctx->len;
@@ -690,6 +706,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		data = (void *)(eth + 1);
 	}
 
+
 	// Process IPv4 and IPv6 packets
 	switch (eth_proto) {
 #ifdef CLASSIFY_IPV4
@@ -699,9 +716,9 @@ int tc_ingress(struct __sk_buff *ctx)
 		if (ret < 0) {
 			return TC_ACT_OK;
 		}
-		args.map_name = &map_ipv4;
+		args.map_name = &flow_info_ipv4;
 		args.new_info = &new_info;
-		args.map_flow = &ipv4_flow;
+		args.map_flow = &flow_id_info_ipv4;
 		args.flow_type = QUINTUPLA;
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {
@@ -718,9 +735,9 @@ int tc_ingress(struct __sk_buff *ctx)
 		if (ret < 0) {
 			return TC_ACT_OK;
 		}
-		args.map_name = &map_only_addr_ipv4;
+		args.map_name = &flow_info_only_addr_ipv4;
 		args.new_info = &new_info_only_addr_ipv4;
-		args.map_flow = &ipv4_flow;
+		args.map_flow = &flow_id_info_ipv4;
 		args.flow_type = ONLY_ADDRESS;
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {
@@ -738,9 +755,9 @@ int tc_ingress(struct __sk_buff *ctx)
 		if (ret < 0) {
 			return TC_ACT_OK;
 		}
-		args.map_name = &map_only_dest_ipv4;
+		args.map_name = &flow_info_only_dest_ipv4;
 		args.new_info = &new_info_only_dest_ipv4;
-		args.map_flow = &ipv4_flow;
+		args.map_flow = &flow_id_info_ipv4;
 		args.flow_type = ONLY_DEST_ADDRESS;
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {
@@ -757,9 +774,9 @@ int tc_ingress(struct __sk_buff *ctx)
 		if (ret < 0) {
 			return TC_ACT_OK;
 		}
-		args.map_name = &map_ipv6;
+		args.map_name = &flow_info_ipv6;
 		args.new_info = &new_info_ipv6;
-		args.map_flow = &ipv6_flow;
+		args.map_flow = &flow_id_info_ipv6;
 		args.flow_type = QUINTUPLA;
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {
@@ -776,9 +793,9 @@ int tc_ingress(struct __sk_buff *ctx)
 		if (ret < 0) {
 			return TC_ACT_OK;
 		}
-		args.map_name = &map_only_addr_ipv6;
+		args.map_name = &flow_info_only_addr_ipv6;
 		args.new_info = &new_info_only_addr_ipv6;
-		args.map_flow = &ipv6_flow;
+		args.map_flow = &flow_id_info_ipv6;
 		args.flow_type = ONLY_ADDRESS;
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {
@@ -788,7 +805,6 @@ int tc_ingress(struct __sk_buff *ctx)
 	}
 #endif
 
-//TOFIX: non funziona!!!
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 	case bpf_htons(ETH_P_IPV6): {
 		struct only_dest_ipv6 new_info_only_dest_ipv6 = {};
@@ -797,9 +813,9 @@ int tc_ingress(struct __sk_buff *ctx)
 		if (ret < 0) {
 			return TC_ACT_OK;
 		}
-		args.map_name = &map_only_dest_ipv6;
+		args.map_name = &flow_info_only_dest_ipv6;
 		args.new_info = &new_info_only_dest_ipv6;
-		args.map_flow = &ipv6_flow;
+		args.map_flow = &flow_id_info_ipv6;
 		args.flow_type = ONLY_DEST_ADDRESS;
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {

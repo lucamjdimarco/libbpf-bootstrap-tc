@@ -338,12 +338,12 @@ def main():
 
     interface_name = sys.argv[1]
 
-    # try:
-    #     mount_bpf(BPF_FS_PATH)
-    #     print(f"BPF filesystem mounted on {BPF_FS_PATH}")
-    # except OSError as e:
-    #     print(f"Error mounting BPF filesystem: {e}")
-    #     exit(1)
+    try:
+        mount_bpf(BPF_FS_PATH)
+        print(f"BPF filesystem mounted on {BPF_FS_PATH}")
+    except OSError as e:
+        print(f"Error mounting BPF filesystem: {e}")
+        exit(1)
 
     try:
         ifindex = get_ifindex(interface_name)

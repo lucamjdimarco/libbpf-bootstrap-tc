@@ -294,22 +294,18 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 	//__u64 flow_id = -1;
 
+	// Cerca l'elemento nella mappa
 	packet = bpf_map_lookup_elem(args->map_name, args->new_info);
 
 	if (!packet) {
+		// Costruisci un nuovo flow_id
 		flow_id = build_flowid(args->flow_type, __sync_fetch_and_add(args->counter, 1));
 
-		if (flow_id == -1) {
-			bpf_printk("Failed to build flow_id\n");
-			return -EFAULT;
-		}
-
 		/* ---- */
-		// Copy the original flow_id into a temporary variable
 		__u64 flow_id_temp = flow_id;
-		// Mask out the first byte of the temporary variable
+		// 
 		flow_id_temp &= 0x00FFFFFFFFFFFFFF;
-		int ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &ifindex, &flow_id_temp, BPF_ANY);
+		int ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &ifindex, &flow_id, BPF_ANY);
 		if (ret) {
 			bpf_printk("Failed to update map for ifindex %u\n", ifindex);
 			return TC_ACT_OK;
@@ -319,11 +315,17 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		/* ---- */
 
-		// ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &key, &counter, BPF_ANY);
-		// if(ret){
-		// 	bpf_printk("Failed to update flow_id\n");
-		// 	return TC_ACT_OK;
-		// }
+
+		if (flow_id == -1) {
+			bpf_printk("Failed to build flow_id\n");
+			return -EFAULT;
+		}
+
+		ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &key, &counter, BPF_ANY);
+		if(ret){
+			bpf_printk("Failed to update flow_id\n");
+			return TC_ACT_OK;
+		}
 
 		// Crea un nuovo valore per il pacchetto
 		struct value_packet new_value = {

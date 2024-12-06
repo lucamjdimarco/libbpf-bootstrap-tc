@@ -6,7 +6,6 @@ from threading import Thread
 from queue import Queue
 import redis
 import signal
-from settings import BPF_FS_PATH
 
 
 
@@ -16,7 +15,6 @@ machine_id = os.popen("cat /etc/machine-id").read().strip()
 c_process = None
 python_process = None
 
-# Mount the bpf filesystem - Function passed from EFE-controller.py
 def mount_bpf(mount_point):
     """
     mount -t bpf bpf /sys/fs/bpf/
@@ -138,15 +136,6 @@ def terminate_processes(signum, frame):
 def main():
 
     global c_process, python_process
-
-    try:
-        mount_bpf(BPF_FS_PATH)
-        print(f"BPF filesystem mounted on {BPF_FS_PATH}")
-    except OSError as e:
-        print(f"Error mounting BPF filesystem: {e}")
-        exit(1)
-
-    
     signal.signal(signal.SIGINT, terminate_processes)  # Handle Ctrl+C
     signal.signal(signal.SIGTERM, terminate_processes)  # Handle termination signals
 

@@ -41,7 +41,7 @@ type_of_classifier = sys.argv[3]
 INFLUXDB_URL_IPV4 = "http://influxdb:8086/query?db=tc_db"
 INFLUXDB_URL_IPV6 = "http://10.89.0.30:8086/query?db=tc_db"
 
-FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/last_flow_id_by_ifindex"
+FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/flowpy_map"
 
 
 def mount_bpf(mount_point):
@@ -338,12 +338,12 @@ def main():
 
     interface_name = sys.argv[1]
 
-    # try:
-    #     mount_bpf(BPF_FS_PATH)
-    #     print(f"BPF filesystem mounted on {BPF_FS_PATH}")
-    # except OSError as e:
-    #     print(f"Error mounting BPF filesystem: {e}")
-    #     exit(1)
+    try:
+        mount_bpf(BPF_FS_PATH)
+        print(f"BPF filesystem mounted on {BPF_FS_PATH}")
+    except OSError as e:
+        print(f"Error mounting BPF filesystem: {e}")
+        exit(1)
 
     try:
         ifindex = get_ifindex(interface_name)

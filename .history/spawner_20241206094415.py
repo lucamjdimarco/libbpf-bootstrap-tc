@@ -138,15 +138,6 @@ def terminate_processes(signum, frame):
 def main():
 
     global c_process, python_process
-
-    try:
-        mount_bpf(BPF_FS_PATH)
-        print(f"BPF filesystem mounted on {BPF_FS_PATH}")
-    except OSError as e:
-        print(f"Error mounting BPF filesystem: {e}")
-        exit(1)
-
-    
     signal.signal(signal.SIGINT, terminate_processes)  # Handle Ctrl+C
     signal.signal(signal.SIGTERM, terminate_processes)  # Handle termination signals
 

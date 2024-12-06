@@ -319,11 +319,14 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		/* ---- */
 
-		// ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &key, &counter, BPF_ANY);
-		// if(ret){
-		// 	bpf_printk("Failed to update flow_id\n");
-		// 	return TC_ACT_OK;
-		// }
+
+		
+
+		ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &key, &counter, BPF_ANY);
+		if(ret){
+			bpf_printk("Failed to update flow_id\n");
+			return TC_ACT_OK;
+		}
 
 		// Crea un nuovo valore per il pacchetto
 		struct value_packet new_value = {

@@ -246,28 +246,13 @@ def parse_map_dump_to_json(dump_data, classifier):
             value = entry.get("value", {})
 
             if classifier == 1:  # IPv4 quintuple
-                # src_ip = socket.inet_ntoa(struct.pack('<I', key.get("src_ip", 0)))
-                # dst_ip = socket.inet_ntoa(struct.pack('<I', key.get("dst_ip", 0)))
-                # src_port = key.get("src_port", 0)
-                # dst_port = key.get("dst_port", 0)
-                # protocol = key.get("protocol", 0)
-                # flow_id = value.get("flow_id", 0)
+                src_ip = socket.inet_ntoa(struct.pack('<I', key.get("src_ip", 0)))
+                dst_ip = socket.inet_ntoa(struct.pack('<I', key.get("dst_ip", 0)))
+                src_port = key.get("src_port", 0)
+                dst_port = key.get("dst_port", 0)
+                protocol = key.get("protocol", 0)
+                flow_id = value.get("flow_id", 0)
 
-                # formatted_data.append({
-                #     "flow_id": flow_id,
-                #     "source": {"ip": src_ip, "port": src_port},
-                #     "destination": {"ip": dst_ip, "port": dst_port},
-                #     "protocol": protocol
-                # })
-
-                # Extract packet_info fields from the value
-                src_ip = socket.inet_ntoa(struct.pack('<I', value.get("src_ip", 0)))
-                dst_ip = socket.inet_ntoa(struct.pack('<I', value.get("dst_ip", 0)))
-                src_port = int(value.get("src_port", 0))
-                dst_port = int(value.get("dst_port", 0))
-                protocol = int(value.get("protocol", 0))
-
-                # Append the formatted entry
                 formatted_data.append({
                     "flow_id": flow_id,
                     "source": {"ip": src_ip, "port": src_port},
@@ -400,7 +385,7 @@ def main():
         # Periodically dump and print the map contents
         while True:
             listen_to_redis()
-
+            
 
 
 

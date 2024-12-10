@@ -143,7 +143,6 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct packet_info_ipv6);
-	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv6 SEC(".maps");
 #endif
 
@@ -153,7 +152,6 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_addr_ipv6);
-	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv6 SEC(".maps");
 #endif
 
@@ -163,7 +161,6 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_dest_ipv6);
-	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv6 SEC(".maps");
 #endif
 

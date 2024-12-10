@@ -46,7 +46,7 @@ INFLUXDB_URL_IPV6 = "http://10.89.0.30:8086/query?db=tc_db"
 FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/last_flow_id_by_ifindex"
 
 def listen_to_redis():
-    global type_of_classifier, map_path
+    global type_of_classifier
     client = redis.StrictRedis(host='10.89.0.50', port=6379, decode_responses=True)
 
     # Sottoscrizione al canale "flow_channel"
@@ -60,7 +60,7 @@ def listen_to_redis():
             flow_id = int(message['data'])
             print(f"Received flow_id: {flow_id}")
             # Find flow in the map 
-            flow_info = bpftool_map_lookup(map_path, flow_id)
+            flow_info = bpftool_map_lookup(, flow_id)
             data = parse_map_dump_to_json(flow_info, type_of_classifier)
 
             # Write the data to Redis
@@ -471,9 +471,6 @@ def get_map_path(type_of_classifier):
 
     
 def main():
-
-    global map_path
-
     if len(sys.argv) != 4:
         print("Usage: python3 script.py <interface> <protocol> <type_of_classifier>") 
         exit(1)

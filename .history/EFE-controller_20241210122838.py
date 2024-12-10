@@ -447,20 +447,9 @@ def write_to_redis(redis_client, key, data):
         print(f"Error writing to Redis: {e}")
     
 def get_map_path(type_of_classifier):
-    """
-    Determine the map path based on the classifier type.
-    IPv4 classifiers are odd, IPv6 classifiers are even.
-    """
     try:
-        classifier = int(type_of_classifier)
-        ##classifier_enum = MapType(int(type_of_classifier))
-        if classifier % 2 == 1:  # Odd -> IPv4
-            map_name = "flow_id_info_ipv4"
-        elif classifier % 2 == 0:  # Even -> IPv6
-            map_name = "flow_id_info_ipv6"
-        else:
-            raise ValueError("Invalid classifier value")
-        #map_name = classifier_enum.name  
+        classifier_enum = MapType(int(type_of_classifier))
+        map_name = classifier_enum.name  
         map_path = f"{BPF_FS_PATH}/{map_name}" 
         return map_path
     except ValueError:

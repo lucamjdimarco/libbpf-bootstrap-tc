@@ -700,12 +700,6 @@ int main(int argc, char **argv)
 
 	pthread_t thread2;
 
-	struct thread_args args2 = { .rb = rb2, .ring_buffer_name = "rb for new flows" };
-
-	if (pthread_create(&thread2, NULL, poll_second_ring_buffer, &args2) != 0) {
-        perror("pthread_create for rb for new flows");
-        return 1;
-    }
 
 
 	/* ---- */
@@ -827,9 +821,6 @@ int main(int argc, char **argv)
 		goto detach;
 	}
 
-	/* Attesa per il secondo thread */
-	pthread_join(thread2, NULL);
-
 	//show_data_influxdb(h, "flow_data");
 
 // funzione per detachment del programma BPF
@@ -842,9 +833,6 @@ detach:
 		fflush(stderr);
 		goto cleanup;
 	}
-
-	ring_buffer__free(rb);
-    ring_buffer__free(rb2);
 
 // funzione per cleanup
 cleanup:

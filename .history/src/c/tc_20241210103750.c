@@ -843,7 +843,7 @@ detach:
 		goto cleanup;
 	}
 
-	ring_buffer__free(rb);
+	ring_buffer__free(rb1);
     ring_buffer__free(rb2);
 
 // funzione per cleanup

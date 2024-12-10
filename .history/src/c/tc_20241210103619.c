@@ -827,9 +827,6 @@ int main(int argc, char **argv)
 		goto detach;
 	}
 
-	/* Attesa per il secondo thread */
-	pthread_join(thread2, NULL);
-
 	//show_data_influxdb(h, "flow_data");
 
 // funzione per detachment del programma BPF
@@ -842,9 +839,6 @@ detach:
 		fflush(stderr);
 		goto cleanup;
 	}
-
-	ring_buffer__free(rb);
-    ring_buffer__free(rb2);
 
 // funzione per cleanup
 cleanup:

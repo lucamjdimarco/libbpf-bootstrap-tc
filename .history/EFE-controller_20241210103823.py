@@ -391,7 +391,6 @@ def main():
 
         # Periodically dump and print the map contents
         while True:
-            time.sleep(1)
             # read_ring_buffer(RINGBUF_PATH)
             # try:
             #     map_contents = dump_map_contents(map_path)

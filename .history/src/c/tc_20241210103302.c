@@ -10,7 +10,6 @@
 #include "tc.skel.h"
 #include "common.h"
 #include <time.h>
-#include <pthread.h>
 //#include "../../influxdb-connector/influxdb_wrapper_int.h"
 #include "influxdb_wrapper_int.h"
 
@@ -537,26 +536,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	return 0;
 }
 
-/* Funzione per il polling del secondo thread */
-void *poll_second_ring_buffer(void *args) {
-    struct thread_args *targs = (struct thread_args *)args;
-
-    printf("Starting polling on %s\n", targs->ring_buffer_name);
-
-    while (!exiting) {
-        int err = ring_buffer__poll(targs->rb, 1000 /* timeout in ms */);
-        if (err < 0) {
-            fprintf(stderr, "Error polling %s: %d\n", targs->ring_buffer_name, err);
-            break;
-        }
-        // Se err == 0, nessun evento; continua il polling
-    }
-
-    printf("Stopped polling on %s\n", targs->ring_buffer_name);
-    return NULL;
-}
-
-
 void remove_newline(char *str) {
     size_t len = strlen(str);
     if (len > 0 && str[len - 1] == '\n') {
@@ -698,20 +677,6 @@ int main(int argc, char **argv)
         return 1;
     }
 
-	pthread_t thread2;
-
-	struct thread_args args2 = { .rb = rb2, .ring_buffer_name = "rb for new flows" };
-
-	if (pthread_create(&thread2, NULL, poll_second_ring_buffer, &args2) != 0) {
-        perror("pthread_create for rb for new flows");
-        return 1;
-    }
-
-
-	/* ---- */
-
-
-
 
 	// Main loop per processare i dati
 	while (!exiting) {
@@ -827,9 +792,6 @@ int main(int argc, char **argv)
 		goto detach;
 	}
 
-	/* Attesa per il secondo thread */
-	pthread_join(thread2, NULL);
-
 	//show_data_influxdb(h, "flow_data");
 
 // funzione per detachment del programma BPF
@@ -842,9 +804,6 @@ detach:
 		fflush(stderr);
 		goto cleanup;
 	}
-
-	ring_buffer__free(rb);
-    ring_buffer__free(rb2);
 
 // funzione per cleanup
 cleanup:

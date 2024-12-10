@@ -571,7 +571,7 @@ void *poll_second_ring_buffer(void *args) {
     return NULL;
 }
 
-/* ----- */
+
 
 
 void remove_newline(char *str) {

@@ -538,21 +538,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 }
 
 /* Funzione per il polling del secondo thread */
-
-static int handle_event_rb2(void *ctx, void *data, size_t data_sz) {
-    if (data_sz != sizeof(__u64)) {
-        fprintf(stderr, "Unexpected data size: %zu\n", data_sz);
-        return -1;
-    }
-
-    __u64 flow_id = *(__u64 *)data; 
-    printf("[RB2] Received flow ID: %llu\n", flow_id);
-    fflush(stdout);
-
-    return 0;
-}
-
-
 void *poll_second_ring_buffer(void *args) {
     struct thread_args *targs = (struct thread_args *)args;
 
@@ -570,8 +555,6 @@ void *poll_second_ring_buffer(void *args) {
     printf("Stopped polling on %s\n", targs->ring_buffer_name);
     return NULL;
 }
-
-/* ----- */
 
 
 void remove_newline(char *str) {

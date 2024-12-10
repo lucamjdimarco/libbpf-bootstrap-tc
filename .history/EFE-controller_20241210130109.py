@@ -291,6 +291,20 @@ def parse_map_dump_to_json(dump_data, classifier):
 
 
         elif classifier == 2:  # IPv6 quintuple
+            # src_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("src_ip", [0] * 16)))
+            # dst_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("dst_ip", [0] * 16)))
+            # src_port = key.get("src_port", 0)
+            # dst_port = key.get("dst_port", 0)
+            # protocol = key.get("protocol", 0)
+            # flow_id = value.get("flow_id", 0)
+
+            # formatted_data.append({
+            #     "flow_id": flow_id,
+            #     "source": {"ip": src_ip, "port": src_port},
+            #     "destination": {"ip": dst_ip, "port": dst_port},
+            #     "protocol": protocol
+            # })
+
             src_ip = socket.inet_ntop(socket.AF_INET6, struct.pack('<16s', value.get("src_ip", [0] * 16)))
             dst_ip = socket.inet_ntop(socket.AF_INET6, struct.pack('<16s', value.get("dst_ip", [0] * 16)))
             src_port = struct.unpack('<H', struct.pack('<H', value.get("src_port", 0)))[0]
@@ -306,6 +320,16 @@ def parse_map_dump_to_json(dump_data, classifier):
 
 
         elif classifier == 3:  # Only IPv4 addresses
+            # src_ip = socket.inet_ntoa(struct.pack('<I', key.get("src_ip", 0)))
+            # dst_ip = socket.inet_ntoa(struct.pack('<I', key.get("dst_ip", 0)))
+            # flow_id = value.get("flow_id", 0)
+
+            # formatted_data.append({
+            #     "flow_id": flow_id,
+            #     "source": {"ip": src_ip},
+            #     "destination": {"ip": dst_ip}
+            # })
+
             src_ip = socket.inet_ntoa(struct.pack('<I', value.get("src_ip", 0)))
             dst_ip = socket.inet_ntoa(struct.pack('<I', value.get("dst_ip", 0)))
 
@@ -316,6 +340,16 @@ def parse_map_dump_to_json(dump_data, classifier):
             })
 
         elif classifier == 4:  # Only IPv6 addresses
+            # src_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("src_ip", [0] * 16)))
+            # dst_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("dst_ip", [0] * 16)))
+            # flow_id = value.get("flow_id", 0)
+
+            # formatted_data.append({
+            #     "flow_id": flow_id,
+            #     "source": {"ip": src_ip},
+            #     "destination": {"ip": dst_ip}
+            # })
+
             src_ip = socket.inet_ntop(socket.AF_INET6, struct.pack('<16s', value.get("src_ip", [0] * 16)))
             dst_ip = socket.inet_ntop(socket.AF_INET6, struct.pack('<16s', value.get("dst_ip", [0] * 16)))
 
@@ -326,6 +360,14 @@ def parse_map_dump_to_json(dump_data, classifier):
             })
 
         elif classifier == 5:  # Only IPv4 destination address
+            # dst_ip = socket.inet_ntoa(struct.pack('<I', key.get("dst_ip", 0)))
+            # flow_id = value.get("flow_id", 0)
+
+            # formatted_data.append({
+            #     "flow_id": flow_id,
+            #     "destination": {"ip": dst_ip}
+            # })
+
             dst_ip = socket.inet_ntoa(struct.pack('<I', value.get("dst_ip", 0)))
 
             formatted_data.append({
@@ -334,6 +376,14 @@ def parse_map_dump_to_json(dump_data, classifier):
             })
 
         elif classifier == 6:  # Only IPv6 destination address
+            # dst_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("dst_ip", [0] * 16)))
+            # flow_id = value.get("flow_id", 0)
+
+            # formatted_data.append({
+            #     "flow_id": flow_id,
+            #     "destination": {"ip": dst_ip}
+            # })
+
             dst_ip = socket.inet_ntop(socket.AF_INET6, struct.pack('<16s', value.get("dst_ip", [0] * 16)))
 
             formatted_data.append({

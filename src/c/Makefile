@@ -139,7 +139,7 @@ $(OUTPUT)/%.o: %.cpp $(wildcard %.h) |  $(OUTPUT)
 # Build application binary
 $(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) $(INFLDB_WRP_OBJ) | $(OUTPUT)
 	$(call msg,BINARY,$@)
-	$(Q)$(CC) $(CFLAGS) $^ $(ALL_LDFLAGS) -lelf -lz -lstdc++ -lInfluxDB -o $@
+	$(Q)$(CC) $(CFLAGS) $^ $(ALL_LDFLAGS) -lelf -lz -lstdc++ -lInfluxDB -lhiredis -o $@
 
 # delete failed targets
 .DELETE_ON_ERROR:

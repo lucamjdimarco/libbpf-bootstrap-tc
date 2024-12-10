@@ -385,7 +385,6 @@ def main():
 
         # Periodically dump and print the map contents
         while True:
-            listen_to_redis()
             time.sleep(1)
             # read_ring_buffer(RINGBUF_PATH)
             # try:

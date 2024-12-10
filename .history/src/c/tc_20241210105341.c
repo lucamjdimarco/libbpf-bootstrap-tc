@@ -545,6 +545,7 @@ void publish_flow_id(uint64_t flow_id) {
     redisContext *c;
     redisReply *reply;
 
+    // Connessione a Redis
     c = redisConnect(REDIS_HOST, REDIS_PORT);
     if (c == NULL || c->err) {
         if (c) {
@@ -556,6 +557,7 @@ void publish_flow_id(uint64_t flow_id) {
         return;
     }
 
+    // Formatta il messaggio come stringa
     char flow_id_str[32];
     snprintf(flow_id_str, sizeof(flow_id_str), "%llu", (unsigned long long)flow_id);
 
@@ -585,8 +587,6 @@ static int handle_event_rb2(void *ctx, void *data, size_t data_sz) {
     __u64 flow_id = *(__u64 *)data; 
     printf("[RB2] Received flow ID: %llu\n", flow_id);
     fflush(stdout);
-
-	publish_flow_id(flow_id);
 
     return 0;
 }

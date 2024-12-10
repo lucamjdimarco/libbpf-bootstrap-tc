@@ -46,7 +46,7 @@ RINGBUF_PATH = "/sys/fs/bpf/ringbuf_signaling_new_flow"
 
 def listen_to_redis():
     # Connessione a Redis
-    client = redis.StrictRedis(host='10.89.0.50', port=6379, decode_responses=True)
+    client = redis.StrictRedis(host='127.0.0.1', port=6379, decode_responses=True)
 
     # Sottoscrizione al canale "flow_channel"
     pubsub = client.pubsub()
@@ -54,6 +54,7 @@ def listen_to_redis():
 
     print("Listening for messages on channel 'flow_channel'...")
 
+    # Loop per processare i messaggi
     for message in pubsub.listen():
         if message['type'] == 'message':
             flow_id = int(message['data'])
@@ -385,7 +386,6 @@ def main():
 
         # Periodically dump and print the map contents
         while True:
-            listen_to_redis()
             time.sleep(1)
             # read_ring_buffer(RINGBUF_PATH)
             # try:

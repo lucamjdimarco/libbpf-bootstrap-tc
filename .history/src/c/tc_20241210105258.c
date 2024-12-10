@@ -15,7 +15,7 @@
 //#include "../../influxdb-connector/influxdb_wrapper_int.h"
 #include "influxdb_wrapper_int.h"
 
-#define REDIS_HOST "10.89.0.50"
+#define REDIS_HOST "127.0.0.1"
 #define REDIS_PORT 6379
 
 #define BATCH_SIZE  3
@@ -541,39 +541,6 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	return 0;
 }
 
-void publish_flow_id(uint64_t flow_id) {
-    redisContext *c;
-    redisReply *reply;
-
-    c = redisConnect(REDIS_HOST, REDIS_PORT);
-    if (c == NULL || c->err) {
-        if (c) {
-            printf("Connection error: %s\n", c->errstr);
-            redisFree(c);
-        } else {
-            printf("Connection error: can't allocate redis context\n");
-        }
-        return;
-    }
-
-    char flow_id_str[32];
-    snprintf(flow_id_str, sizeof(flow_id_str), "%llu", (unsigned long long)flow_id);
-
-    // Pubblica il messaggio sul canale "flow_channel"
-    reply = redisCommand(c, "PUBLISH flow_channel %s", flow_id_str);
-    if (reply == NULL) {
-        printf("Failed to publish flow_id to Redis\n");
-        redisFree(c);
-        return;
-    }
-
-    printf("Published flow_id: %llu to Redis\n", (unsigned long long)flow_id);
-
-    freeReplyObject(reply);
-    redisFree(c);
-}
-
-
 /* Funzione per il polling del secondo thread */
 
 static int handle_event_rb2(void *ctx, void *data, size_t data_sz) {
@@ -585,8 +552,6 @@ static int handle_event_rb2(void *ctx, void *data, size_t data_sz) {
     __u64 flow_id = *(__u64 *)data; 
     printf("[RB2] Received flow ID: %llu\n", flow_id);
     fflush(stdout);
-
-	publish_flow_id(flow_id);
 
     return 0;
 }

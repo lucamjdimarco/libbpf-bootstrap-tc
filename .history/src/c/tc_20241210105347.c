@@ -586,8 +586,6 @@ static int handle_event_rb2(void *ctx, void *data, size_t data_sz) {
     printf("[RB2] Received flow ID: %llu\n", flow_id);
     fflush(stdout);
 
-	publish_flow_id(flow_id);
-
     return 0;
 }
 

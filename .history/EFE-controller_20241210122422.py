@@ -63,7 +63,7 @@ def listen_to_redis():
             data = parse_map_dump_to_json(flow_info, type_of_classifier)
 
             # Write the data to Redis
-            write_to_redis(r, flow_id, data)
+            write_to_redis(r, "flow_info", data)
 
 
 def mount_bpf(mount_point):
@@ -498,6 +498,10 @@ def main():
         # Periodically dump and print the map contents
         while True:
             listen_to_redis()
+
+
+
+
             time.sleep(1)
             
 

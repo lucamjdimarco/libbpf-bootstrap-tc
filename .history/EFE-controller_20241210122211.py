@@ -45,7 +45,6 @@ FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/last_flow_id_by_ifindex"
 RINGBUF_PATH = "/sys/fs/bpf/ringbuf_signaling_new_flow"
 
 def listen_to_redis():
-    global type_of_classifier
     client = redis.StrictRedis(host='10.89.0.50', port=6379, decode_responses=True)
 
     # Sottoscrizione al canale "flow_channel"
@@ -58,13 +57,6 @@ def listen_to_redis():
         if message['type'] == 'message':
             flow_id = int(message['data'])
             print(f"Received flow_id: {flow_id}")
-            # Find flow in the map 
-            flow_info = bpftool_map_lookup(FLOWPY_MAP_PATH, flow_id)
-            data = parse_map_dump_to_json(flow_info, type_of_classifier)
-
-            # Write the data to Redis
-            write_to_redis(r, flow_id, data)
-
 
 def mount_bpf(mount_point):
     """
@@ -498,6 +490,10 @@ def main():
         # Periodically dump and print the map contents
         while True:
             listen_to_redis()
+
+
+
+
             time.sleep(1)
             
 

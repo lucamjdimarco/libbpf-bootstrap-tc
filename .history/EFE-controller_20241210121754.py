@@ -45,7 +45,6 @@ FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/last_flow_id_by_ifindex"
 RINGBUF_PATH = "/sys/fs/bpf/ringbuf_signaling_new_flow"
 
 def listen_to_redis():
-    global type_of_classifier
     client = redis.StrictRedis(host='10.89.0.50', port=6379, decode_responses=True)
 
     # Sottoscrizione al canale "flow_channel"
@@ -58,13 +57,6 @@ def listen_to_redis():
         if message['type'] == 'message':
             flow_id = int(message['data'])
             print(f"Received flow_id: {flow_id}")
-            # Find flow in the map 
-            flow_info = bpftool_map_lookup(FLOWPY_MAP_PATH, flow_id)
-            data = parse_map_dump_to_json(flow_info, type_of_classifier)
-
-            # Write the data to Redis
-            write_to_redis(r, flow_id, data)
-
 
 def mount_bpf(mount_point):
     """
@@ -149,75 +141,34 @@ def bpftool_map_dump(map_reference, map_reference_type="pinned"):
         raise Exception(f"Map dump {map_reference} failed.")
     else:
         return result.stdout.decode("utf-8")
-    
-def bpftool_map_lookup(map_reference, flow_id, map_reference_type="pinned"):
+
+
+def bpftool_map_lookup(map_reference, key, map_reference_type="pinned"):
+    """Call bpftool map lookup and return the result
     """
-    Call bpftool map lookup to retrieve a single entry by key.
-    
-    Args:
-        map_reference (str): The path to the pinned map.
-        flow_id (str): The key (flow ID) as a string, which will be converted to a little-endian binary format.
-        map_reference_type (str): The type of map reference, default is "pinned".
-        
-    Returns:
-        dict: Parsed JSON result of the map lookup if successful.
-        
-    Raises:
-        Exception: If the lookup fails or the map reference type is not supported.
-    """
-    if map_reference_type != "pinned":
-        raise Exception("bpftool_map_lookup: Instruction not implemented (invalid map_reference_type).")
-    
-    try:
-        # Convert the flow ID (string) to a little-endian binary format
-        key = int(flow_id)
-        key_bytes = struct.pack("<Q", key)  # 64-bit unsigned integer, little-endian
-        key_hex = " ".join(f"0x{b:02x}" for b in key_bytes)
+    # bpftool map lookup --json pinned /sys/fs/bpf/maps/system/hvm_chain_map key 0x40 0x00 0x00 0x00
+    # formato little-endian
+    key_bytes = struct.pack("<I", key)
+    key_data_string = " ".join(hex(n) for n in key_bytes)
 
-    
-        cmd = f"bpftool map lookup pinned {map_reference} key {key_hex}"
-        print(f"Exec: {cmd}")
-        
-        result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if map_reference_type == "pinned":
+        cmd = f"bpftool map lookup --json pinned {map_reference} key {key_data_string}"
+    else:
+        raise Exception("bpftool_map_lookup: Invalid map_reference_type.")
 
-        # Check the return code
-        if result.returncode != 0:
-            raise Exception(f"Lookup failed for map {map_reference} with key {flow_id}: {result.stderr.strip()}")
+    print(f"Exec: {cmd}")
+    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, text=True)
 
-        # Parse and return the JSON result
-        return json.loads(result.stdout)
-
-    except Exception as e:
-        print(f"Error during map lookup: {e}")
+    if result.returncode != 0:
+        print(f"Map lookup failed for {map_reference} with key {key}.")
         return None
 
-
-# def bpftool_map_lookup(map_reference, key, map_reference_type="pinned"):
-#     """Call bpftool map lookup and return the result
-#     """
-#     # bpftool map lookup --json pinned /sys/fs/bpf/maps/system/hvm_chain_map key 0x40 0x00 0x00 0x00
-#     # formato little-endian
-#     key_bytes = struct.pack("<I", key)
-#     key_data_string = " ".join(hex(n) for n in key_bytes)
-
-#     if map_reference_type == "pinned":
-#         cmd = f"bpftool map lookup --json pinned {map_reference} key {key_data_string}"
-#     else:
-#         raise Exception("bpftool_map_lookup: Invalid map_reference_type.")
-
-#     print(f"Exec: {cmd}")
-#     result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, text=True)
-
-#     if result.returncode != 0:
-#         print(f"Map lookup failed for {map_reference} with key {key}.")
-#         return None
-
-#     try:
-#         result_json = json.loads(result.stdout)
-#         return int(result_json.get("value", "0x0"), 16) 
-#     except (json.JSONDecodeError, ValueError) as e:
-#         print(f"Error parsing lookup result: {e}")
-#         return None
+    try:
+        result_json = json.loads(result.stdout)
+        return int(result_json.get("value", "0x0"), 16) 
+    except (json.JSONDecodeError, ValueError) as e:
+        print(f"Error parsing lookup result: {e}")
+        return None
 
 
 
@@ -367,28 +318,12 @@ def parse_map_dump_to_json(dump_data, classifier):
                 #     "destination": {"ip": dst_ip}
                 # })
 
-                src_ip = socket.inet_ntoa(struct.pack('<I', value.get("src_ip", 0)))
-                dst_ip = socket.inet_ntoa(struct.pack('<I', value.get("dst_ip", 0)))
-
-                formatted_data.append({
-                    "flow_id": flow_id,
-                    "source": {"ip": src_ip},
-                    "destination": {"ip": dst_ip}
-                })
+                
 
             elif classifier == 4:  # Only IPv6 addresses
-                # src_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("src_ip", [0] * 16)))
-                # dst_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("dst_ip", [0] * 16)))
-                # flow_id = value.get("flow_id", 0)
-
-                # formatted_data.append({
-                #     "flow_id": flow_id,
-                #     "source": {"ip": src_ip},
-                #     "destination": {"ip": dst_ip}
-                # })
-
-                src_ip = socket.inet_ntop(socket.AF_INET6, struct.pack('<16s', value.get("src_ip", [0] * 16)))
-                dst_ip = socket.inet_ntop(socket.AF_INET6, struct.pack('<16s', value.get("dst_ip", [0] * 16)))
+                src_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("src_ip", [0] * 16)))
+                dst_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("dst_ip", [0] * 16)))
+                flow_id = value.get("flow_id", 0)
 
                 formatted_data.append({
                     "flow_id": flow_id,
@@ -397,15 +332,8 @@ def parse_map_dump_to_json(dump_data, classifier):
                 })
 
             elif classifier == 5:  # Only IPv4 destination address
-                # dst_ip = socket.inet_ntoa(struct.pack('<I', key.get("dst_ip", 0)))
-                # flow_id = value.get("flow_id", 0)
-
-                # formatted_data.append({
-                #     "flow_id": flow_id,
-                #     "destination": {"ip": dst_ip}
-                # })
-
-                dst_ip = socket.inet_ntoa(struct.pack('<I', value.get("dst_ip", 0)))
+                dst_ip = socket.inet_ntoa(struct.pack('<I', key.get("dst_ip", 0)))
+                flow_id = value.get("flow_id", 0)
 
                 formatted_data.append({
                     "flow_id": flow_id,
@@ -413,15 +341,8 @@ def parse_map_dump_to_json(dump_data, classifier):
                 })
 
             elif classifier == 6:  # Only IPv6 destination address
-                # dst_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("dst_ip", [0] * 16)))
-                # flow_id = value.get("flow_id", 0)
-
-                # formatted_data.append({
-                #     "flow_id": flow_id,
-                #     "destination": {"ip": dst_ip}
-                # })
-
-                dst_ip = socket.inet_ntop(socket.AF_INET6, struct.pack('<16s', value.get("dst_ip", [0] * 16)))
+                dst_ip = socket.inet_ntop(socket.AF_INET6, bytes(key.get("dst_ip", [0] * 16)))
+                flow_id = value.get("flow_id", 0)
 
                 formatted_data.append({
                     "flow_id": flow_id,
@@ -498,6 +419,10 @@ def main():
         # Periodically dump and print the map contents
         while True:
             listen_to_redis()
+
+
+
+
             time.sleep(1)
             
 

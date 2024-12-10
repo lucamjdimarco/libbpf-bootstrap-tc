@@ -297,7 +297,7 @@ def parse_map_dump_to_json(dump_data, classifier):
 
         
         #key = entry.get("key", {})
-        flow_id = entry.get("key", 0)
+        flow_id = entry.get("key")  # Flow ID
         value = entry.get("value", {})
 
         

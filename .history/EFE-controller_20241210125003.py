@@ -286,9 +286,9 @@ def parse_map_dump_to_json(dump_data, classifier):
     try:
         # Check if dump_data is already a Python list
         if isinstance(dump_data, str):
-            entry = json.loads(dump_data)
+            map_entries = json.loads(dump_data)
         elif isinstance(dump_data, dict):
-            entry = dump_data
+            map_entries = dump_data
         else:
             raise ValueError("Invalid dump data format: must be str or dict")
 
@@ -297,7 +297,7 @@ def parse_map_dump_to_json(dump_data, classifier):
 
         
         #key = entry.get("key", {})
-        flow_id = entry.get("key", 0)
+        flow_id = entry.get("key")  # Flow ID
         value = entry.get("value", {})
 
         

@@ -138,6 +138,7 @@ def terminate_processes(signum, frame):
 def main():
 
     global c_process, python_process
+
     
     signal.signal(signal.SIGINT, terminate_processes)  # Handle Ctrl+C
     signal.signal(signal.SIGTERM, terminate_processes)  # Handle termination signals

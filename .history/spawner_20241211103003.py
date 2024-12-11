@@ -138,6 +138,7 @@ def terminate_processes(signum, frame):
 def main():
 
     global c_process, python_process
+
     
     signal.signal(signal.SIGINT, terminate_processes)  # Handle Ctrl+C
     signal.signal(signal.SIGTERM, terminate_processes)  # Handle termination signals
@@ -151,10 +152,6 @@ def main():
     protocol = args.protocol
     interface = args.interface
     type_of_classifier = args.type_of_classifier
-
-    if interface == "eth0":
-        print("Error: eBPF instance cannot be started on interface 'eth0'.")
-        sys.exit(1)
 
     try:
         mount_bpf(BPF_FS_PATH)

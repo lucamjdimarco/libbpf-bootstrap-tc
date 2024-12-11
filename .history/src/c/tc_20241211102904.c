@@ -650,7 +650,7 @@ int main(int argc, char **argv)
 	// eth0 reserverd for control network
 	if (strcmp(interface_name, "eth0") == 0) {
         fprintf(stderr, "Error: eBPF instance cannot be started on interface 'eth0'.\n");
-        return -EINVAL;
+        return 1;
     }
 
 	const char *map_type = argv[2];

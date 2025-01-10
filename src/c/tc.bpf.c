@@ -298,7 +298,31 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	return 0;
 }
 
-//static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args, struct __sk_buff *ctx)
+/**
+ * This function classifies a packet and updates the corresponding flow map.
+ * 
+ * The function first attempts to look up an existing packet entry in the flow map using the provided 
+ * arguments (`args->map_name` and `args->new_info`). If the packet is not found, a new flow ID is created 
+ * using the `build_flowid` function, and the flow ID is updated in the map `last_flow_id_by_ifindex` for 
+ * the current interface index (`ifindex`). The function then signals a new flow event by reserving space 
+ * in a ring buffer and sending the flow ID to user space.
+ * 
+ * A new `value_packet` structure is created with the flow ID, packet length, and initialized with default values. 
+ * This new packet information is inserted into the flow map. Additionally, the flow map is updated with the new 
+ * flow information using the flow ID as the key.
+ * 
+ * If the packet is successfully inserted into the map, a timer is initialized atomically using `bpf_timer_init`. 
+ * The timer is associated with the flow map and set to use the `CLOCK_BOOTTIME` clock. If the timer initialization 
+ * fails, the initialization flag is reset to allow for a retry.
+ * 
+ * If the packet is already present in the flow map, the function updates the existing flow's counters and 
+ * window with the new packet data.
+ * 
+ * Error handling is included for various operations, such as flow ID creation, map updates, ring buffer 
+ * reservations, and timer initialization. In case of failure, appropriate error messages are logged and 
+ * the function returns corresponding error codes.
+ */
+
 static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args)
 {
 	struct value_packet *packet = NULL;
@@ -397,7 +421,31 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 	return TC_ACT_OK;
 }
 
-// classificazione dei pacchetti IPv4
+/**
+ * This function classifies an IPv4 packet and extracts relevant information based on its protocol.
+ * 
+ * The function begins by verifying that the IPv4 header is complete by checking if the pointer to the 
+ * next field (`ip + 1`) is within the packet bounds (`data_end`). If the IPv4 header is incomplete, 
+ * an error message is printed and the function returns `-EFAULT`.
+ * 
+ * The `protocol` field of the IPv4 header is used to determine the protocol type, which could be TCP, 
+ * UDP, or ICMP. Depending on the protocol type, the corresponding header structure is parsed:
+ * 
+ * - For TCP (protocol 6), the TCP header is extracted, and the source and destination ports are 
+ *   retrieved using `bpf_ntohs` to convert them from network byte order to host byte order.
+ * - For UDP (protocol 17), the UDP header is similarly processed, and the source and destination ports 
+ *   are extracted.
+ * - For ICMP (protocol 1), no further fields are extracted, as it does not have source and destination 
+ *   port information.
+ * - For any other protocol, the function logs an error message indicating an unknown protocol and 
+ *   returns `-EFAULT`.
+ * 
+ * The extracted packet information, including source and destination IPs and ports, as well as the protocol,
+ * is stored in the provided `info` structure.
+ * 
+ * The function returns `TC_ACT_OK` to indicate that the packet classification was successful.
+ */
+
 #ifdef CLASSIFY_IPV4
 static __always_inline int classify_ipv4_packet(struct packet_info *info, void *data_end,
 						void *data)
@@ -662,17 +710,30 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv6_packet(struct only_de
 }
 #endif
 
+/**
+ * Main eBPF function for processing ingress packets.
+ * 
+ * It handles the classification of IPv4 and IPv6 packets based on different modes (e.g., full, source/destination address only).
+ * - If the flow ID is not initialized, it looks it up from a map.
+ * - It checks the Ethernet header for VLAN tags and processes IP packets.
+ * - Depending on the packet's protocol (IPv4/IPv6), it classifies the packet based on the defined classification mode.
+ * - If the packet matches one of the modes (e.g., QUINTUPLA, ONLY_ADDRESS), it updates a map with packet details.
+ * - Returns TC_ACT_OK to pass the packet.
+ */
 SEC("tc")
 int tc_ingress(struct __sk_buff *ctx)
 {
-	void *data_end = (void *)(__u64)ctx->data_end;
-	void *data = (void *)(__u64)ctx->data;
+	void *data_end = (void *)(__u64)ctx->data_end; // set the pointer to the end of the packet
+	void *data = (void *)(__u64)ctx->data;		   // set the pointer to the beginning of the packet
 	struct ethhdr *eth;
 	struct vlan_hdr *vlan;
 	int ret;
 
 	//u32 key = 0; 
 
+	/** Check if the flow_id is uninitialized (set to -1). If so, retrieve the flow_id 
+	*   from the BPF map using the interface index (ifindex) from the packet context.
+	*/
 	if(flow_id == -1){
 		ifindex = ctx->ifindex;
 		u64 *flow_id_ret = bpf_map_lookup_elem(&last_flow_id_by_ifindex, &ifindex);
@@ -698,7 +759,9 @@ int tc_ingress(struct __sk_buff *ctx)
 					     .flow_type = 0,
 					     .packet_length = packet_length };
 
-	// Controllo se il pacchetto è un pacchetto IP
+	/**
+	 * Check if the packet is an IP packet (IPv4 or IPv6).
+	 */
 	if (ctx->protocol != bpf_htons(ETH_P_IP) && ctx->protocol != bpf_htons(ETH_P_IPV6)) {
 		bpf_printk("Not an IP packet\n");
 		return TC_ACT_OK;
@@ -732,7 +795,24 @@ int tc_ingress(struct __sk_buff *ctx)
 	}
 
 
-	// Process IPv4 and IPv6 packets
+	/**
+	 * This section of the code processes IPv4 packets based on the Ethernet protocol type (eth_proto).
+	 * 
+	 * It first checks if the Ethernet packet is IPv4 (ETH_P_IP). If it is, it proceeds to classify the packet 
+	 * by calling the `classify_ipv4_packet` function, which analyzes the packet's contents and stores the 
+	 * classification information in the `new_info` structure.
+	 * 
+	 * If the classification is successful, the arguments required to update the flow map (`flow_info_ipv4`) are set up. 
+	 * These include the new classification information (`new_info`), the corresponding flow ID map (`flow_id_info_ipv4`), 
+	 * and the flow type (e.g. QUINTUPLA).
+	 * 
+	 * The function `classify_packet_and_update_map` is then called to update the flow map with the new information.
+	 * If any part of the process fails (either classification or map update), the function returns early and skips further processing.
+	 * 
+	 * The switch block is exited after the IPv4 packet is processed.
+	 * 
+	 * This is done for every supported classification mode (e.g., QUINTUPLA, ONLY_ADDRESS, ONLY_DEST_ADDRESS) and for both IPv4 and IPv6 packets.
+	 */
 	switch (eth_proto) {
 #ifdef CLASSIFY_IPV4
 	case bpf_htons(ETH_P_IP): {

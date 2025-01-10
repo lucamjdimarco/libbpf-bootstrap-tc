@@ -718,7 +718,6 @@ int main(int argc, char **argv)
 
 		free(pin_path_flow_info);
 		free(pin_path_flow_id_info);
-		free(pin_path);
 
 	} else {
 		perror("Failed to allocate memory for BPF pin path");
@@ -968,6 +967,9 @@ detach:
 
 	ring_buffer__free(rb);
     ring_buffer__free(rb2);
+	free(pin_path);
+	free(pin_path_flow_info);
+	free(pin_path_flow_id_info);
 
 // funzione per cleanup
 cleanup:

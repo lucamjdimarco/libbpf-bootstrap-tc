@@ -718,7 +718,6 @@ int main(int argc, char **argv)
 
 		free(pin_path_flow_info);
 		free(pin_path_flow_id_info);
-		free(pin_path);
 
 	} else {
 		perror("Failed to allocate memory for BPF pin path");

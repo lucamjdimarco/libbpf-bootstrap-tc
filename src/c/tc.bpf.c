@@ -53,7 +53,7 @@ struct {
 	__type(key, struct packet_info);
 	__type(value, struct value_packet);
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
-} flow_info_ipv4 SEC(".maps");
+} flow_info_ipv4 SEC(".maps.eth1");
 #endif
 
 #ifdef CLASSIFY_IPV6

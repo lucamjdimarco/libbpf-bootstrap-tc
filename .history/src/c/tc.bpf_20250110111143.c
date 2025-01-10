@@ -37,6 +37,12 @@ struct {
 	__type(value, __u64);
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } last_flow_id_by_ifindex SEC(".maps");
+
+struct {
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 1 << 24);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} ringbuf_signaling_new_flow SEC(".maps");
 /* ---- */
 
 #ifdef CLASSIFY_IPV4
@@ -47,7 +53,7 @@ struct {
 	__type(key, struct packet_info);
 	__type(value, struct value_packet);
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
-} flow_info_ipv4 SEC(".maps");
+} flow_info_ipv4 SEC(".maps/eth1");
 #endif
 
 #ifdef CLASSIFY_IPV6
@@ -107,6 +113,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct packet_info);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv4 SEC(".maps");
 #endif
 
@@ -116,6 +123,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_addr_ipv4);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv4 SEC(".maps");
 #endif
 
@@ -125,6 +133,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_dest_ipv4);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv4 SEC(".maps");
 #endif
 
@@ -134,6 +143,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct packet_info_ipv6);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv6 SEC(".maps");
 #endif
 
@@ -143,6 +153,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_addr_ipv6);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv6 SEC(".maps");
 #endif
 
@@ -152,6 +163,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_dest_ipv6);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv6 SEC(".maps");
 #endif
 
@@ -286,23 +298,31 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	return 0;
 }
 
+//static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args, struct __sk_buff *ctx)
 static __always_inline int classify_packet_and_update_map(struct classify_packet_args *args)
 {
 	struct value_packet *packet = NULL;
-	int ret;
-	u32 key = 0; 
+	//int ret;
+	//u32 key = 0; 
 
 	//__u64 flow_id = -1;
 
-	// Cerca l'elemento nella mappa
 	packet = bpf_map_lookup_elem(args->map_name, args->new_info);
 
 	if (!packet) {
-		// Costruisci un nuovo flow_id
 		flow_id = build_flowid(args->flow_type, __sync_fetch_and_add(args->counter, 1));
 
+		if (flow_id == -1) {
+			bpf_printk("Failed to build flow_id\n");
+			return -EFAULT;
+		}
+
 		/* ---- */
-		int ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &ifindex, &flow_id, BPF_ANY);
+		// Copy the original flow_id into a temporary variable
+		__u64 flow_id_temp = flow_id;
+		// Mask out the first byte of the temporary variable
+		flow_id_temp &= 0x00FFFFFFFFFFFFFF;
+		int ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &ifindex, &flow_id_temp, BPF_ANY);
 		if (ret) {
 			bpf_printk("Failed to update map for ifindex %u\n", ifindex);
 			return TC_ACT_OK;
@@ -310,19 +330,24 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		bpf_printk("Updated map for ifindex %u with new flowid: %llu\n", ifindex, flow_id);
 
+		__u64 *new_flow_event = bpf_ringbuf_reserve(&ringbuf_signaling_new_flow, sizeof(__u64), 0);
+		if (!new_flow_event) {
+			bpf_printk("Failed to reserve ring buffer space\n");
+			return -ENOMEM;
+		}
+
+
+		*new_flow_event = flow_id;
+		bpf_printk("Flow ID %llu sent to user-space\n", *new_flow_event);
+		bpf_ringbuf_submit(new_flow_event, 0);
+
 		/* ---- */
 
-
-		if (flow_id == -1) {
-			bpf_printk("Failed to build flow_id\n");
-			return -EFAULT;
-		}
-
-		ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &key, &counter, BPF_ANY);
-		if(ret){
-			bpf_printk("Failed to update flow_id\n");
-			return TC_ACT_OK;
-		}
+		// ret = bpf_map_update_elem(&last_flow_id_by_ifindex, &key, &counter, BPF_ANY);
+		// if(ret){
+		// 	bpf_printk("Failed to update flow_id\n");
+		// 	return TC_ACT_OK;
+		// }
 
 		// Crea un nuovo valore per il pacchetto
 		struct value_packet new_value = {
@@ -646,7 +671,7 @@ int tc_ingress(struct __sk_buff *ctx)
 	struct vlan_hdr *vlan;
 	int ret;
 
-	u32 key = 0; 
+	//u32 key = 0; 
 
 	if(flow_id == -1){
 		ifindex = ctx->ifindex;
@@ -720,6 +745,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.new_info = &new_info;
 		args.map_flow = &flow_id_info_ipv4;
 		args.flow_type = QUINTUPLA;
+		//ret = classify_packet_and_update_map(&args, ctx);
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {
 			return TC_ACT_OK;

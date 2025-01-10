@@ -38,16 +38,10 @@ struct {
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } last_flow_id_by_ifindex SEC(".maps");
 
-// struct {
-//     __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
-//     __uint(key_size, sizeof(__u32));
-//     __uint(value_size, sizeof(__u32));
-// 	__uint(pinning, LIBBPF_PIN_BY_NAME);
-// } signaling_new_flow SEC(".maps");
-
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
-    __uint(max_entries, 4096); // 4KB buffer
+    __uint(max_entries, 1 << 24);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } ringbuf_signaling_new_flow SEC(".maps");
 /* ---- */
 
@@ -119,6 +113,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct packet_info);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv4 SEC(".maps");
 #endif
 
@@ -128,6 +123,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_addr_ipv4);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv4 SEC(".maps");
 #endif
 
@@ -137,6 +133,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_dest_ipv4);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv4 SEC(".maps");
 #endif
 
@@ -146,6 +143,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct packet_info_ipv6);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv6 SEC(".maps");
 #endif
 
@@ -155,6 +153,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_addr_ipv6);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv6 SEC(".maps");
 #endif
 
@@ -164,6 +163,7 @@ struct {
 	__uint(max_entries, MAX_ENTRIES);
 	__type(key, __u64);
 	__type(value, struct only_dest_ipv6);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } flow_id_info_ipv6 SEC(".maps");
 #endif
 
@@ -179,7 +179,7 @@ static __always_inline __u64 build_flowid(__u8 first_byte, __u64 counter)
 	return ((__u64)first_byte << 56) | (counter & 0x00FFFFFFFFFFFFFF);
 }
 
-static __always_inline int update_window_start_timer(struct value_packet *packet, __u64 timeout)
+static __always_inline int update_window_start _timer(struct value_packet *packet, __u64 timeout)
 {
 	int rc;
 
@@ -330,23 +330,16 @@ static __always_inline int classify_packet_and_update_map(struct classify_packet
 
 		bpf_printk("Updated map for ifindex %u with new flowid: %llu\n", ifindex, flow_id);
 
-		// ret = bpf_perf_event_output(ctx, &signaling_new_flow, BPF_F_CURRENT_CPU, &flow_id, sizeof(flow_id));
-		// if (ret < 0) {
-		// 	bpf_printk("Failed to send flow_id event\n");
-		// 	return TC_ACT_OK;
-		// }
-
-		__u64 *new_flow_event;
-		new_flow_event = bpf_ringbuf_reserve(&ringbuf_signaling_new_flow, sizeof(__u64), 0);
+		__u64 *new_flow_event = bpf_ringbuf_reserve(&ringbuf_signaling_new_flow, sizeof(__u64), 0);
 		if (!new_flow_event) {
 			bpf_printk("Failed to reserve ring buffer space\n");
-			return TC_ACT_OK;
+			return -ENOMEM;
 		}
 
+
 		*new_flow_event = flow_id;
-		
-
-
+		bpf_printk("Flow ID %llu sent to user-space\n", *new_flow_event);
+		bpf_ringbuf_submit(new_flow_event, 0);
 
 		/* ---- */
 

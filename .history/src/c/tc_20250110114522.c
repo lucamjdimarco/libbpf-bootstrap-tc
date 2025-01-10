@@ -708,6 +708,22 @@ int main(int argc, char **argv)
 		return -1;
 	}
 	
+	if (mkdir(pin_path, 0755) && errno != EEXIST) {
+		perror("Failed to create BPF subdirectory");
+		return -1;
+	}
+
+	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+	bpf_map__set_pin_path(skel->maps.flow_info_ipv4, pin_path);
+	bpf_map__set_pin_path(skel->maps.flow_id_info_ipv4, pin_path);
+	#endif
+
+	#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+	bpf_map__set_pin_path(skel->maps.flow_info_ipv6, pin_path);
+	bpf_map__set_pin_path(skel->maps.flow_id_info_ipv6, pin_path);
+	#endif
 	
 	
 	if (tc_bpf__load(skel)) {
@@ -951,7 +967,6 @@ detach:
 
 	ring_buffer__free(rb);
     ring_buffer__free(rb2);
-	free(pin_path);
 
 // funzione per cleanup
 cleanup:

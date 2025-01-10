@@ -951,7 +951,6 @@ detach:
 
 	ring_buffer__free(rb);
     ring_buffer__free(rb2);
-	free(pin_path);
 
 // funzione per cleanup
 cleanup:

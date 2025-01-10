@@ -705,7 +705,7 @@ int main(int argc, char **argv)
 
 	} else {
 		perror("Failed to allocate memory for BPF pin path");
-		return -1;
+		return ERR;
 	}
 	
 	
@@ -951,7 +951,6 @@ detach:
 
 	ring_buffer__free(rb);
     ring_buffer__free(rb2);
-	free(pin_path);
 
 // funzione per cleanup
 cleanup:

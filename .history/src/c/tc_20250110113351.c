@@ -679,7 +679,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	char *pin_path = malloc(strlen("/sys/fs/bpf/") + 1); 
+	char *pin_path = malloc(strlen("/sys/fs/bpf") + 1); 
 	if (pin_path) {
 		strcpy(pin_path, "/sys/fs/bpf/");
 		strcat(pin_path, interface_name);
@@ -690,18 +690,13 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
-	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-	bpf_map__set_pin_path(skel->maps.flow_info_ipv4, pin_path);
-	bpf_map__set_pin_path(skel->maps.flow_id_info_ipv4, pin_path);
-	#endif
-
-	#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
-	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-	bpf_map__set_pin_path(skel->maps.flow_info_ipv6, pin_path);
-	bpf_map__set_pin_path(skel->maps.flow_id_info_ipv6, pin_path);
-	#endif
-	
+	if(strcmp(map_type, "ipv4") == 0){
+		bpf_map__set_pin_path(skel->maps.flow_info_ipv4, pin_path);
+		bpf_map__set_pin_path(skel->maps.flow_id_info_ipv4, pin_path);
+	} else if(strcmp(map_type, "ipv6") == 0){
+		bpf_map__set_pin_path(skel->maps.flow_info_ipv6, pin_path);
+		bpf_map__set_pin_path(skel->maps.flow_id_info_ipv6, pin_path);
+	}
 	
 	if (tc_bpf__load(skel)) {
 		fprintf(stderr, "Failed to load skeleton\n");

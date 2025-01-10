@@ -16,8 +16,8 @@
 #include "influxdb_wrapper_int.h"
 #include <sys/stat.h>
 
-#define REDIS_HOST "10.89.0.50"
-#define REDIS_PORT 6379
+#define REDIS_HOST  "10.89.0.50"
+#define REDIS_PORT  6379
 
 #define BATCH_SIZE  3
 #define TIMEOUT_SEC 40
@@ -27,23 +27,23 @@ int events_count = 0;
 int last_watched_event_time;
 int current_time;
 char machine_id[MAX_MACHINE_ID_SIZE];
-const char *interface_name;
+const char *interface_name; // keep the interface name
 const char *friendlyname;
 
 typedef struct {
-    char *measurement; 
-    char *machine_id;
+	char *measurement;
+	char *machine_id;
 	char *interface;
 	char *fname;
 	uint64_t flowid;
-    double counter;    
-    uint64_t timestamp;
+	double counter;
+	uint64_t timestamp;
 } InfluxDBPoint;
 
 /* Struttura per passare i dati al thread */
 struct thread_args {
-    struct ring_buffer *rb;
-    const char *ring_buffer_name;
+	struct ring_buffer *rb;
+	const char *ring_buffer_name;
 };
 
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
@@ -122,7 +122,15 @@ void print_flow_id_info_ipv4(int fd)
 	fflush(stderr);
 }
 
-//funzione principale per il processamento in caso di utilizzo del filtro in IPv4
+/**
+ * Processes the IPv4 map and prints information about each flow.
+ *
+ * - Depending on the classification type, it initializes keys and processes map entries.
+ * - For each key, it retrieves the associated value (flow information), printing source and destination IP addresses, counters, and bytes.
+ * - The loop continues until all map entries are processed.
+ * - After processing, it prints the total number of elements in the map.
+ */
+
 void process_ipv4_map(int fd, const char *map_type)
 {
 	int counter = 0;
@@ -362,8 +370,9 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va
 
 // --------------------------------------------
 //uint64_t flowid
-InfluxDBPoint *create_influxdb_point(const char *measurement, const char *machine_id, const char *interface, const char *fname,
-                                     uint64_t flowid , double counter, uint64_t timestamp)
+InfluxDBPoint *create_influxdb_point(const char *measurement, const char *machine_id,
+				     const char *interface, const char *fname, uint64_t flowid,
+				     double counter, uint64_t timestamp)
 {
 	InfluxDBPoint *point = (InfluxDBPoint *)malloc(sizeof(InfluxDBPoint));
 	if (!point) {
@@ -375,44 +384,44 @@ InfluxDBPoint *create_influxdb_point(const char *measurement, const char *machin
 
 	point->measurement = strdup(measurement);
 	if (!point->measurement) {
-        fprintf(stderr, "Memory allocation failed for measurement\n");
+		fprintf(stderr, "Memory allocation failed for measurement\n");
 		fflush(stdout);
 		fflush(stderr);
-        free(point);
-        return NULL;
-    }
+		free(point);
+		return NULL;
+	}
 
 	/* Gestione dei tag */
 	point->machine_id = strdup(machine_id);
-    if (!point->machine_id) {
-        fprintf(stderr, "Memory allocation failed for machine_id\n");
+	if (!point->machine_id) {
+		fprintf(stderr, "Memory allocation failed for machine_id\n");
 		fflush(stdout);
 		fflush(stderr);
-        free(point->measurement);
-        free(point);
-        return NULL;
-    }
+		free(point->measurement);
+		free(point);
+		return NULL;
+	}
 	point->interface = strdup(interface);
-    if (!point->interface) {
-        fprintf(stderr, "Memory allocation failed for interface\n");
+	if (!point->interface) {
+		fprintf(stderr, "Memory allocation failed for interface\n");
 		fflush(stdout);
 		fflush(stderr);
-        free(point->machine_id);
-        free(point->measurement);
-        free(point);
-        return NULL;
-    }
+		free(point->machine_id);
+		free(point->measurement);
+		free(point);
+		return NULL;
+	}
 	point->fname = strdup(fname);
-    if (!point->interface) {
-        fprintf(stderr, "Memory allocation failed for interface\n");
+	if (!point->interface) {
+		fprintf(stderr, "Memory allocation failed for interface\n");
 		fflush(stdout);
 		fflush(stderr);
-        free(point->machine_id);
+		free(point->machine_id);
 		free(point->interface);
-        free(point->measurement);
-        free(point);
-        return NULL;
-    }
+		free(point->measurement);
+		free(point);
+		return NULL;
+	}
 	point->flowid = flowid;
 	point->counter = counter;
 	point->timestamp = timestamp;
@@ -427,7 +436,7 @@ void free_influxdb_point(InfluxDBPoint *point)
 		/* -- Aggiunto --*/
 		//free(point->str_identifier);
 		free(point->machine_id);
-        free(point->interface);
+		free(point->interface);
 		free(point->fname);
 		/* -- Fine --*/
 		free(point);
@@ -446,29 +455,28 @@ InfluxDBPoint **create_points_batch(struct event_t_formatted *events_buffer, int
 	}
 
 	for (int i = 0; i < events_count; i++) {
-        points_batch[i] = create_influxdb_point(
-            "rate",                                  // Misurazione
-            events_buffer[i].machine_id,             // machine_id
-            events_buffer[i].interface,              // interface
-			events_buffer[i].fname,                  // friendlyname
-            events_buffer[i].flowid,                 // flowid
-            (double)events_buffer[i].counter,        // counter
-            events_buffer[i].ts                      // timestamp
-        );
+		points_batch[i] = create_influxdb_point("rate", // Misurazione
+							events_buffer[i].machine_id, // machine_id
+							events_buffer[i].interface, // interface
+							events_buffer[i].fname, // friendlyname
+							events_buffer[i].flowid, // flowid
+							(double)events_buffer[i].counter, // counter
+							events_buffer[i].ts // timestamp
+		);
 
-        // Verifica se la creazione del punto è riuscita
-        if (!points_batch[i]) {
-            fprintf(stderr, "Failed to create point for event %d\n", i);
-            // Libera i punti e le loro risorse allocate finora in caso di errore
-            for (int j = 0; j < i; j++) {
-                free_influxdb_point(points_batch[j]);
-            }
-            free(points_batch);
+		// Verifica se la creazione del punto è riuscita
+		if (!points_batch[i]) {
+			fprintf(stderr, "Failed to create point for event %d\n", i);
+			// Libera i punti e le loro risorse allocate finora in caso di errore
+			for (int j = 0; j < i; j++) {
+				free_influxdb_point(points_batch[j]);
+			}
+			free(points_batch);
 			fflush(stdout);
 			fflush(stderr);
-            return NULL;
-        }
-    }
+			return NULL;
+		}
+	}
 
 	return points_batch;
 }
@@ -522,7 +530,9 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 			counters[i] = events_buffer[i].counter;
 		}
 
-		int ret = write_data_influxdb_batch(influx_handler, timestamps, machine_ids, interfaces, fnames, flowids, counters, events_count);
+		int ret = write_data_influxdb_batch(influx_handler, timestamps, machine_ids,
+						    interfaces, fnames, flowids, counters,
+						    events_count);
 		if (ret != 0) {
 			fprintf(stderr, "Failed to write data to InfluxDB\n");
 		} else {
@@ -542,83 +552,84 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	return 0;
 }
 
-void publish_flow_id(uint64_t flow_id) {
-    redisContext *c;
-    redisReply *reply;
+void publish_flow_id(uint64_t flow_id)
+{
+	redisContext *c;
+	redisReply *reply;
 
-    c = redisConnect(REDIS_HOST, REDIS_PORT);
-    if (c == NULL || c->err) {
-        if (c) {
-            printf("Connection error: %s\n", c->errstr);
-            redisFree(c);
-        } else {
-            printf("Connection error: can't allocate redis context\n");
-        }
-        return;
-    }
+	c = redisConnect(REDIS_HOST, REDIS_PORT);
+	if (c == NULL || c->err) {
+		if (c) {
+			printf("Connection error: %s\n", c->errstr);
+			redisFree(c);
+		} else {
+			printf("Connection error: can't allocate redis context\n");
+		}
+		return;
+	}
 
-    char flow_id_str[32];
-    snprintf(flow_id_str, sizeof(flow_id_str), "%llu", (unsigned long long)flow_id);
+	char flow_id_str[32];
+	snprintf(flow_id_str, sizeof(flow_id_str), "%llu", (unsigned long long)flow_id);
 
-    // Pubblica il messaggio sul canale "flow_channel"
-    reply = redisCommand(c, "PUBLISH flow_channel %s", flow_id_str);
-    if (reply == NULL) {
-        printf("Failed to publish flow_id to Redis\n");
-        redisFree(c);
-        return;
-    }
+	// Pubblica il messaggio sul canale "flow_channel"
+	reply = redisCommand(c, "PUBLISH flow_channel %s", flow_id_str);
+	if (reply == NULL) {
+		printf("Failed to publish flow_id to Redis\n");
+		redisFree(c);
+		return;
+	}
 
-    printf("Published flow_id: %llu to Redis\n", (unsigned long long)flow_id);
+	printf("Published flow_id: %llu to Redis\n", (unsigned long long)flow_id);
 
-    freeReplyObject(reply);
-    redisFree(c);
+	freeReplyObject(reply);
+	redisFree(c);
 }
-
 
 /* Funzione per il polling del secondo thread */
 
-static int handle_event_rb2(void *ctx, void *data, size_t data_sz) {
-    if (data_sz != sizeof(__u64)) {
-        fprintf(stderr, "Unexpected data size: %zu\n", data_sz);
-        return -1;
-    }
+static int handle_event_rb2(void *ctx, void *data, size_t data_sz)
+{
+	if (data_sz != sizeof(__u64)) {
+		fprintf(stderr, "Unexpected data size: %zu\n", data_sz);
+		return -1;
+	}
 
-    __u64 flow_id = *(__u64 *)data; 
-    printf("[RB2] Received flow ID: %llu\n", flow_id);
-    fflush(stdout);
+	__u64 flow_id = *(__u64 *)data;
+	printf("[RB2] Received flow ID: %llu\n", flow_id);
+	fflush(stdout);
 
 	publish_flow_id(flow_id);
 
-    return 0;
+	return 0;
 }
 
+void *poll_second_ring_buffer(void *args)
+{
+	struct thread_args *targs = (struct thread_args *)args;
 
-void *poll_second_ring_buffer(void *args) {
-    struct thread_args *targs = (struct thread_args *)args;
+	printf("Starting polling on %s\n", targs->ring_buffer_name);
 
-    printf("Starting polling on %s\n", targs->ring_buffer_name);
+	while (!exiting) {
+		int err = ring_buffer__poll(targs->rb, 1000 /* timeout in ms */);
+		if (err < 0) {
+			fprintf(stderr, "Error polling %s: %d\n", targs->ring_buffer_name, err);
+			break;
+		}
+		// Se err == 0, nessun evento; continua il polling
+	}
 
-    while (!exiting) {
-        int err = ring_buffer__poll(targs->rb, 1000 /* timeout in ms */);
-        if (err < 0) {
-            fprintf(stderr, "Error polling %s: %d\n", targs->ring_buffer_name, err);
-            break;
-        }
-        // Se err == 0, nessun evento; continua il polling
-    }
-
-    printf("Stopped polling on %s\n", targs->ring_buffer_name);
-    return NULL;
+	printf("Stopped polling on %s\n", targs->ring_buffer_name);
+	return NULL;
 }
 
 /* ----- */
 
-
-void remove_newline(char *str) {
-    size_t len = strlen(str);
-    if (len > 0 && str[len - 1] == '\n') {
-        str[len - 1] = '\0'; 
-    }
+void remove_newline(char *str)
+{
+	size_t len = strlen(str);
+	if (len > 0 && str[len - 1] == '\n') {
+		str[len - 1] = '\0';
+	}
 }
 
 int main(int argc, char **argv)
@@ -636,6 +647,7 @@ int main(int argc, char **argv)
 
 	int map_fd;
 	int map_fd_flow;
+	int index; // ifindex of the interface
 
 	MHandler_t *h = create_influxdb(INFLUXDB_URL);
 	if (!h) {
@@ -647,17 +659,16 @@ int main(int argc, char **argv)
 
 	show_databases_influxdb(h);
 
-	
-	interface_name = argv[1];	
+	interface_name = argv[1];
 
 	// eth0 reserverd for control network
 	if (strcmp(interface_name, "eth0") == 0) {
-        fprintf(stderr, "Error: eBPF instance cannot be started on interface 'eth0'.\n");
-        return -EINVAL;
-    }
+		fprintf(stderr, "Error: eBPF instance cannot be started on interface 'eth0'.\n");
+		return -EINVAL;
+	}
 
 	const char *map_type = argv[2];
-	int index = if_nametoindex(interface_name);
+	index = if_nametoindex(interface_name);
 	if (index == 0) {
 		perror("if_nametoindex");
 		fflush(stdout);
@@ -673,12 +684,17 @@ int main(int argc, char **argv)
 
 	libbpf_set_print(libbpf_print_fn);
 
+	// with tc_bpf__open() the BPF object file is loaded and the skeleton is created
 	skel = tc_bpf__open();
 	if (!skel) {
 		fprintf(stderr, "Failed to open BPF skeleton\n");
 		return 1;
 	}
 
+	/* set the path of the subfolder specific to the interface in the BPF filesystem
+	*  this path is saved in pin_path
+	*  create the subfolder if it does not exist
+	*/
 	size_t pin_path_length = strlen("/sys/fs/bpf/") + strlen(interface_name) + 1;
 	char *pin_path = malloc(pin_path_length);
 	if (pin_path) {
@@ -687,38 +703,46 @@ int main(int argc, char **argv)
 
 		if (mkdir(pin_path, 0755) && errno != EEXIST) {
 			perror("Failed to create BPF subdirectory");
-			free(pin_path); 
+			free(pin_path);
 			return -1;
 		}
 
+		/* set the path of the two map for the specific interface in the BPF filesystem
+		*  this path is saved in pin_path_flow_info and pin_path_flow_id_info and will tale different 
+		*  values based on the type of protocol that we are filtering
+		*/
 		size_t map_path_flow_info = strlen(pin_path) + strlen("/flow_info_ipvX") + 1;
 		size_t map_path_flow_id_info = strlen(pin_path) + strlen("/flow_id_info_ipvX") + 1;
 		char *pin_path_flow_info = malloc(map_path_flow_info);
 		char *pin_path_flow_id_info = malloc(map_path_flow_id_info);
-		if(!pin_path_flow_info || !pin_path_flow_id_info) {
+		if (!pin_path_flow_info || !pin_path_flow_id_info) {
 			perror("Failed to allocate memory for BPF pin path");
 			return -1;
 		}
-			
-		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
-			defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+
+#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 		strcpy(pin_path_flow_info, pin_path);
 		strcpy(pin_path_flow_id_info, pin_path);
 		strcat(pin_path_flow_info, "/flow_info_ipv4");
 		strcat(pin_path_flow_id_info, "/flow_id_info_ipv4");
+
+		/* in this point the map is pinned into the filesystem at the path specified in 
+		*  pin_path_flow_info and pin_path_flow_id_info 
+		*/
 		bpf_map__set_pin_path(skel->maps.flow_info_ipv4, pin_path_flow_info);
 		bpf_map__set_pin_path(skel->maps.flow_id_info_ipv4, pin_path_flow_id_info);
-		#endif
+#endif
 
-		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
-			defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
 		strcpy(pin_path_flow_info, pin_path);
 		strcpy(pin_path_flow_id_info, pin_path);
 		strcat(pin_path_flow_info, "/flow_info_ipv6");
 		strcat(pin_path_flow_id_info, "/flow_id_info_ipv6");
 		bpf_map__set_pin_path(skel->maps.flow_info_ipv6, pin_path_flow_info);
 		bpf_map__set_pin_path(skel->maps.flow_id_info_ipv6, pin_path_flow_id_info);
-		#endif
+#endif
 
 		free(pin_path_flow_info);
 		free(pin_path_flow_id_info);
@@ -728,9 +752,10 @@ int main(int argc, char **argv)
 		perror("Failed to allocate memory for BPF pin path");
 		return -1;
 	}
-	
-	
-	
+
+	/* load the BPF object file and the skeleton
+	*  is no more used tc_bpf__open_and_load() because we need to set the pin path before loading the BPF object file
+	*/
 	if (tc_bpf__load(skel)) {
 		fprintf(stderr, "Failed to load skeleton\n");
 		tc_bpf__destroy(skel);
@@ -782,32 +807,50 @@ int main(int argc, char **argv)
 	       "to see output of the BPF program.\n");
 	fflush(stdout);
 	fflush(stderr);
-	
-    FILE *file = fopen("/etc/machine-id", "r");
-    if (!file) {
-        perror("Failed to open /etc/machine-id");
+
+	/* In this point the machine_id(UUID) is read from the file /etc/machine-id
+	*/
+	FILE *file = fopen("/etc/machine-id", "r");
+	if (!file) {
+		perror("Failed to open /etc/machine-id");
 		fflush(stdout);
 		fflush(stderr);
-        goto detach;
-    }
+		goto detach;
+	}
 
 	if (fgets(machine_id, sizeof(machine_id), file) == NULL) {
-        perror("Failed to read machine-id");
+		perror("Failed to read machine-id");
 		fflush(stdout);
 		fflush(stderr);
-        fclose(file);
-        goto detach;
-    }
-    fclose(file);
+		fclose(file);
+		goto detach;
+	}
+	fclose(file);
 
 	remove_newline(machine_id);
 
 	// --------------------------------
 
+	/**
+	 * Initializes the file descriptors for the BPF maps based on the provided `map_type`.
+	 *
+	 * @param map_type: Specifies the map type ("ipv4" or "ipv6").
+	 * @param skel: The BPF skeleton structure containing the loaded maps.
+	 * @param map_fd: Pointer to store the file descriptor of the main map.
+	 * @param map_fd_flow: Pointer to store the file descriptor of the flow map.
+	 *
+	 * The function selects the appropriate maps based on preprocessor macros
+	 * (e.g., `CLASSIFY_IPV4`, `CLASSIFY_IPV6`) and retrieves their file descriptors
+	 * using `bpf_map__fd`. Returns 0 on success, -1 on failure.
+	 */
 	if (initialize_map_fd(map_type, skel, &map_fd, &map_fd_flow) != 0) {
 		goto detach;
 	}
 
+	/**
+	 * Creates a ring buffer rb for the BPF program to send events to user space. 
+	 * It is used to receive events from the BPF program.
+	 */
 	struct ring_buffer *rb = NULL;
 	rb = ring_buffer__new(bpf_map__fd(skel->maps.rbuf_events), handle_event, h, NULL);
 	if (!rb) {
@@ -817,30 +860,44 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
-	/* Aggiunta di un nuovo ringbuffer per la gestione dei nuovi flows */
+	/**
+	 * Initializes a second ring buffer for handling events from `ringbuf_signaling_new_flow` 
+	 * and starts a dedicated thread to poll it.
+	 *
+	 * - Creates the ring buffer with `ring_buffer__new`.
+	 * - If creation fails, an error message is printed, and the program exits.
+	 * - Sets up a `pthread_t` thread, passing a `thread_args` structure for context.
+	 * - Starts the thread using `pthread_create` to poll events from the ring buffer.
+	 */
 	struct ring_buffer *rb2 = NULL;
-	rb2 = ring_buffer__new(bpf_map__fd(skel->maps.ringbuf_signaling_new_flow), handle_event_rb2, h, NULL);
-    if (!rb2) {
-        fprintf(stderr, "Failed to create second ring buffer\n");
-        return 1;
-    }
+	rb2 = ring_buffer__new(bpf_map__fd(skel->maps.ringbuf_signaling_new_flow), handle_event_rb2,
+			       h, NULL);
+	if (!rb2) {
+		fprintf(stderr, "Failed to create second ring buffer\n");
+		return 1;
+	}
 
 	pthread_t thread2;
 
 	struct thread_args args2 = { .rb = rb2, .ring_buffer_name = "rb for new flows" };
 
 	if (pthread_create(&thread2, NULL, poll_second_ring_buffer, &args2) != 0) {
-        perror("pthread_create for rb for new flows");
-        return 1;
-    }
-
+		perror("pthread_create for rb for new flows");
+		return 1;
+	}
 
 	/* ---- */
 
-
-
-
-	// Main loop per processare i dati
+	/**
+	 * Main polling loop for handling events from the ring buffer rb.
+	 *
+	 * - The loop runs until `exiting` is set to true.
+	 * - It checks the map type and handles events based on the classification type.
+	 * - Polls the ring buffer with a timeout of 5000ms. If polling is successful, processes the events.
+	 * - If no events are found within the timeout, the loop continues.
+	 * - If events are present, it writes them to InfluxDB every `TIMEOUT_SEC` seconds.
+	 * - The `process_ipv4_map` function is called to process additional map-related tasks.
+	 */
 	while (!exiting) {
 		if (strcmp(map_type, "ipv4") == 0) {
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
@@ -971,7 +1028,7 @@ detach:
 	}
 
 	ring_buffer__free(rb);
-    ring_buffer__free(rb2);
+	ring_buffer__free(rb2);
 
 // funzione per cleanup
 cleanup:

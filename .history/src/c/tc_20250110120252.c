@@ -703,7 +703,6 @@ int main(int argc, char **argv)
 		#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
 			defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
 		strcpy(pin_path_flow_info, pin_path);
-		strcpy(pin_path_flow_id_info, pin_path);
 		strcat(pin_path_flow_info, "/flow_info_ipv4");
 		strcat(pin_path_flow_id_info, "/flow_id_info_ipv4");
 		bpf_map__set_pin_path(skel->maps.flow_info_ipv4, pin_path_flow_info);
@@ -712,8 +711,6 @@ int main(int argc, char **argv)
 
 		#if defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
 			defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-		strcpy(pin_path_flow_info, pin_path);
-		strcpy(pin_path_flow_id_info, pin_path);
 		strcat(pin_path_flow_info, "/flow_info_ipv6");
 		strcat(pin_path_flow_id_info, "/flow_id_info_ipv6");
 		bpf_map__set_pin_path(skel->maps.flow_info_ipv6, pin_path_flow_info);

@@ -698,7 +698,9 @@ int main(int argc, char **argv)
 		bpf_map__set_pin_path(skel->maps.flow_info_ipv6, pin_path);
 		bpf_map__set_pin_path(skel->maps.flow_id_info_ipv6, pin_path);
 	}
-	
+	bpf_map__set_pin_path(skel->maps.flow_info_ipv4, pin_path);
+	bpf_map__set_pin_path(skel->maps.flow_id_info_ipv4, pin_path);
+
 	if (tc_bpf__load(skel)) {
 		fprintf(stderr, "Failed to load skeleton\n");
 		tc_bpf__destroy(skel);

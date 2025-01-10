@@ -691,14 +691,9 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	if(strcmp(map_type, "ipv4") == 0){
-		bpf_map__set_pin_path(skel->maps.flow_info_ipv4, pin_path);
-		bpf_map__set_pin_path(skel->maps.flow_id_info_ipv4, pin_path);
-	} else if(strcmp(map_type, "ipv6") == 0){
-		bpf_map__set_pin_path(skel->maps.flow_info_ipv6, pin_path);
-		bpf_map__set_pin_path(skel->maps.flow_id_info_ipv6, pin_path);
-	}
-	
+	bpf_map__set_pin_path(skel->maps.flow_info_ipv4, pin_path);
+	bpf_map__set_pin_path(skel->maps.flow_id_info_ipv4, pin_path);
+
 	if (tc_bpf__load(skel)) {
 		fprintf(stderr, "Failed to load skeleton\n");
 		tc_bpf__destroy(skel);

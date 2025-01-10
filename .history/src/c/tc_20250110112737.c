@@ -680,25 +680,17 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	char *pin_path = malloc(strlen("/sys/fs/bpf") + 1); 
-	if (pin_path) {
-		strcpy(pin_path, "/sys/fs/bpf/");
-		strcat(pin_path, interface_name);
-	}
+	char *pin_path = "/sys/fs/bpf/tc";
 	
-	if (mkdir(pin_path, 0755) && errno != EEXIST) {
+
+	if (mkdir("/sys/fs/bpf/eth1", 0755) && errno != EEXIST) {
 		perror("Failed to create BPF subdirectory");
 		return -1;
 	}
 
-	if(strcmp(map_type, "ipv4") == 0){
-		bpf_map__set_pin_path(skel->maps.flow_info_ipv4, pin_path);
-		bpf_map__set_pin_path(skel->maps.flow_id_info_ipv4, pin_path);
-	} else if(strcmp(map_type, "ipv6") == 0){
-		bpf_map__set_pin_path(skel->maps.flow_info_ipv6, pin_path);
-		bpf_map__set_pin_path(skel->maps.flow_id_info_ipv6, pin_path);
-	}
-	
+	bpf_map__set_pin_path(skel->maps.flow_info_ipv4, "/sys/fs/bpf/eth1/flow_info_ipv4");
+	bpf_map__set_pin_path(skel->maps.flow_id_info_ipv4, "/sys/fs/bpf/eth1/flow_id_info_ipv4");
+
 	if (tc_bpf__load(skel)) {
 		fprintf(stderr, "Failed to load skeleton\n");
 		tc_bpf__destroy(skel);

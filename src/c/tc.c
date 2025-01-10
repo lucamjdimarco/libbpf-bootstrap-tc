@@ -14,6 +14,7 @@
 #include <hiredis/hiredis.h>
 //#include "../../influxdb-connector/influxdb_wrapper_int.h"
 #include "influxdb_wrapper_int.h"
+#include <sys/stat.h>
 
 #define REDIS_HOST "10.89.0.50"
 #define REDIS_PORT 6379
@@ -673,13 +674,33 @@ int main(int argc, char **argv)
 
 	libbpf_set_print(libbpf_print_fn);
 
-	skel = tc_bpf__open_and_load();
+	skel = tc_bpf__open();
+	if (!skel) {
+		fprintf(stderr, "Failed to open BPF skeleton\n");
+		return 1;
+	}
+
+	if (mkdir("/sys/fs/bpf/eth1", 0755) && errno != EEXIST) {
+		perror("Failed to create BPF subdirectory");
+		return -1;
+	}
+
+	bpf_map__set_pin_path(skel->maps.flow_info_ipv4, "/sys/fs/bpf/eth1/flow_info_ipv4");
+	bpf_map__set_pin_path(skel->maps.flow_id_info_ipv4, "/sys/fs/bpf/eth1/flow_id_info_ipv4");
+
+	if (tc_bpf__load(skel)) {
+		fprintf(stderr, "Failed to load skeleton\n");
+		tc_bpf__destroy(skel);
+		return 1;
+	}
+
+	/*skel = tc_bpf__open_and_load();
 	if (!skel) {
 		fprintf(stderr, "Failed to open BPF skeleton\n");
 		fflush(stdout);
 		fflush(stderr);
 		return 1;
-	}
+	}*/
 
 	/* The hook (i.e. qdisc) may already exists because:
 	 *   1. it is created by other processes or users

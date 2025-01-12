@@ -56,7 +56,7 @@ struct event_t_formatted {
 	__u64 counter;
 };
 
-struct packet_info {
+struct key_5tuple_ipv4 {
 	__u32 src_ip; //IPv4 source address
 	__u32 dst_ip; //IPv4 destination address
 	__u16 src_port; //Source port
@@ -65,7 +65,7 @@ struct packet_info {
 	__u8 padding[3]; // padding to align the structure
 };
 
-struct packet_info_ipv6 {
+struct key_5tuple_ipv6 {
 	__u8 src_ip[16]; // IPv6 source address
 	__u8 dst_ip[16]; // IPv6 destination address
 	__u16 src_port; // Source port
@@ -74,21 +74,21 @@ struct packet_info_ipv6 {
 	__u8 padding[3]; // Padding to align the structure size to a multiple of 8 bytes
 };
 
-struct only_addr_ipv4 {
+struct key_only_addr_ipv4 {
 	__u32 src_ip; //IPv4 source address
 	__u32 dst_ip; //IPv4 destination address
 };
 
-struct only_addr_ipv6 {
+struct key_only_addr_ipv6 {
 	__u8 src_ip[16]; // IPv6 source address
 	__u8 dst_ip[16]; // IPv6 destination address
 };
 
-struct only_dest_ipv4 {
+struct key_only_dest_ipv4 {
 	__u32 dst_ip; //IPv4 destination address
 };
 
-struct only_dest_ipv6 {
+struct key_only_dest_ipv6 {
 	__u8 dst_ip[16]; // IPv6 destination address
 };
 

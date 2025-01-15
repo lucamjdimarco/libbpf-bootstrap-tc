@@ -31,19 +31,19 @@ def listen_to_redis():
             data = message['data']
             print(f"Received message: {data}")
             try:
-            data = str(message['data'])  # Conversione esplicita a stringa
-            print(f"Received message: {data}")
-            parts = data.split()
-            command = parts[0]
-            if command == "attach" and len(parts) == 4:
-                interface = parts[1]
-                protocol = parts[2]
-                classifier = int(parts[3])  # Converti a intero
-                main(interface, protocol, classifier)
-            else:
-                print(f"Invalid command format: {data}")
-        except Exception as e:
-            print(f"Error processing message: {e}")
+                parts = data.split()
+                command = parts[0]
+                if command == "attach" and len(parts) == 4:
+                    interface = parts[1]
+                    protocol = parts[2]
+                    classifier = int(parts[3])
+
+
+                    main(interface, protocol, classifier)
+                else:
+                    print(f"Invalid command format: {data}")
+            except Exception as e:
+                print(f"Error processing message: {e}")
 
 # Mount the bpf filesystem - Function passed from EFE-controller.py
 def mount_bpf(mount_point):

@@ -602,7 +602,61 @@ static int handle_event_rb2(void *ctx, void *data, size_t data_sz)
 	printf("[RB2] Received flow ID: %llu\n", flow_id);
 	fflush(stdout);
 
-	publish_flow_id(flow_id);
+	#if defined(CLASSIFY_IPV4)
+    struct value_ipv4 value_ipv4;
+    value_size = sizeof(value_ipv4);
+    flow_map_fd = bpf_map__fd(skel->maps.flow_info_ipv4);
+    memset(&value_ipv4, 0, value_size);
+    value_struct = &value_ipv4;
+
+	#elif defined(CLASSIFY_IPV6)
+    struct key_5tuple_ipv6 key_ipv6;
+    key_size = sizeof(key_ipv6);
+    flow_id_map_fd = bpf_map__fd(skel->maps.flow_id_info_ipv6);
+    memset(&key_ipv6, 0, key_size);
+    key_struct = &key_ipv6;
+
+	#elif defined(CLASSIFY_ONLY_ADDRESS_IPV4)
+    struct key_only_addr_ipv4 key_addr_ipv4;
+    key_size = sizeof(key_addr_ipv4);
+    flow_id_map_fd = bpf_map__fd(skel->maps.flow_id_info_ipv4);
+    memset(&key_addr_ipv4, 0, key_size);
+    key_struct = &key_addr_ipv4;
+
+	#elif defined(CLASSIFY_ONLY_ADDRESS_IPV6)
+    struct key_only_addr_ipv6 key_addr_ipv6;
+    key_size = sizeof(key_addr_ipv6);
+    flow_id_map_fd = bpf_map__fd(skel->maps.flow_id_info_ipv6);
+    memset(&key_addr_ipv6, 0, key_size);
+    key_struct = &key_addr_ipv6;
+
+	#elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+    struct key_only_dest_ipv4 key_dest_ipv4;
+    key_size = sizeof(key_dest_ipv4);
+    flow_id_map_fd = bpf_map__fd(skel->maps.flow_id_info_ipv4);
+    memset(&key_dest_ipv4, 0, key_size);
+    key_struct = &key_dest_ipv4;
+
+	#elif defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+    struct key_only_dest_ipv6 key_dest_ipv6;
+    key_size = sizeof(key_dest_ipv6);
+    flow_id_map_fd = bpf_map__fd(skel->maps.flow_id_info_ipv6);
+    memset(&key_dest_ipv6, 0, key_size);
+    key_struct = &key_dest_ipv6;
+
+	#else
+    fprintf(stderr, "Unsupported map type or classifier\n");
+    return -1;
+	#endif	
+
+
+
+	
+
+
+
+	//publish_flow_id(flow_id);
+	
 
 	return 0;
 }

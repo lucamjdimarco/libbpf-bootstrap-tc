@@ -603,6 +603,7 @@ static int handle_event_rb2(void *ctx, void *data, size_t data_sz)
 	fflush(stdout);
 
 	publish_flow_id(flow_id);
+	
 
 	return 0;
 }

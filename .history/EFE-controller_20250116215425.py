@@ -357,7 +357,6 @@ def get_map_path(type_of_classifier):
     Determine the map path based on the classifier type.
     IPv4 classifiers are odd, IPv6 classifiers are even.
     """
-    global interface_name
     try:
         classifier = int(type_of_classifier)
         ##classifier_enum = MapType(int(type_of_classifier))
@@ -379,7 +378,6 @@ def get_map_path(type_of_classifier):
 def main():
 
     global map_path
-    global interface_name
 
     if len(sys.argv) != 4:
         print("Usage: python3 script.py <interface> <protocol> <type_of_classifier>") 

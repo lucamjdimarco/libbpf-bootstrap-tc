@@ -48,29 +48,30 @@ def listen_to_redis():
 
     print("Listening for messages on channel 'command_channel'...")
 
-    try:
-        while not stop_threads:
+    while not stop_threads:
+        message = pubsub.get_message(ignore_subscribe_messages=True, timeout=1)
+        if message and message['type'] == 'message':
             try:
-                message = pubsub.get_message(ignore_subscribe_messages=True, timeout=1)
-                if message and message["type"] == "message":
-                    data = str(message["data"])
-                    print(f"Received message: {data}")
-                    parts = data.split()
-                    if len(parts) == 4 and parts[0] == "attach":
-                        interface, protocol, classifier = parts[1], parts[2], int(parts[3])
-                        thread = Thread(target=handle_command, args=(interface, protocol, classifier))
-                        thread.start()
-                        with thread_lock:
-                            threads.append(thread)
-                    else:
-                        print(f"Invalid command format: {data}")
+                data = str(message['data'])
+                print(f"Received message: {data}")
+                parts = data.split()
+                command = parts[0]
+                if command == "attach" and len(parts) == 4:
+                    interface = parts[1]
+                    protocol = parts[2]
+                    classifier = int(parts[3])
+                    
+                    thread = Thread(target=handle_command, args=(interface, protocol, classifier))
+                    thread.start()
+                    with thread_lock:
+                        threads.append(thread)
+                else:
+                    print(f"Invalid command format: {data}")
             except Exception as e:
                 print(f"Error processing message: {e}")
-    except KeyboardInterrupt:
-        print("Redis listener interrupted by KeyboardInterrupt.")
-    finally:
-        pubsub.close()
-        print("Exiting Redis listener.")
+    
+    print("Exiting Redis listener.")
+    pubsub.close()
 
 
 # Mount the bpf filesystem - Function passed from EFE-controller.py

@@ -18,7 +18,7 @@ python_process = None
 
 stop_threads = False
 
-threads = []
+threads = []  # Lista per tenere traccia dei thread attivi
 thread_lock = Lock() 
 
 def signal_handler(sig, frame):
@@ -57,6 +57,7 @@ def handle_command(interface, protocol, classifier):
     global stop_threads
     try:
         if not stop_threads:
+            #execute_make(classifier)
             main(interface, protocol, classifier)
     except Exception as e:
         print(f"Error handling command for {interface}, {protocol}, {classifier}: {e}")

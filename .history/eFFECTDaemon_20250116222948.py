@@ -18,7 +18,7 @@ python_process = None
 
 stop_threads = False
 
-threads = []
+threads = []  # Lista per tenere traccia dei thread attivi
 thread_lock = Lock() 
 
 def signal_handler(sig, frame):

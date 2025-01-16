@@ -18,7 +18,7 @@ python_process = None
 
 stop_threads = False
 
-threads = []
+threads = []  # Lista per tenere traccia dei thread attivi
 thread_lock = Lock() 
 
 def signal_handler(sig, frame):
@@ -57,6 +57,7 @@ def handle_command(interface, protocol, classifier):
     global stop_threads
     try:
         if not stop_threads:
+            #execute_make(classifier)
             main(interface, protocol, classifier)
     except Exception as e:
         print(f"Error handling command for {interface}, {protocol}, {classifier}: {e}")
@@ -112,6 +113,23 @@ def mount_bpf(mount_point):
     if ret:
         raise OSError(f"Can not mount BPF fs on {mount_point}")
 
+# def set_friendlyname():
+#     global friendlyname
+#     try:
+#         # Check if a value exists for the machine_id
+#         existing_value = r.get(machine_id)
+#         if existing_value:
+        
+#             friendlyname = existing_value.decode('utf-8')
+#             print(f"Friendlyname already exists for Machine ID '{machine_id}': {friendlyname}")
+#         else:
+        
+#             friendlyname = input("Enter a friendlyname for the machine: ")
+#             r.set(machine_id, friendlyname)
+#             print(f"Friendlyname '{friendlyname}' saved for Machine ID '{machine_id}'!")
+
+#     except Exception as e:
+#         print(f"An error occurred: {e}")
 
 def retrieve_friendlyname():
     global friendlyname
@@ -189,6 +207,10 @@ def execute_make(type_of_classifier):
         os.chdir(current_dir)
 
 
+
+
+
+
 def main(interface, protocol, type_of_classifier):
 
     global c_process, python_process
@@ -215,6 +237,8 @@ def main(interface, protocol, type_of_classifier):
     python_program = "EFE-controller.py"
 
     execute_make(type_of_classifier)
+
+    #os.chdir("../..") 
 
     if not os.path.isfile(c_program_path):
         print(f"C program '{c_program_path}' does not exist.")

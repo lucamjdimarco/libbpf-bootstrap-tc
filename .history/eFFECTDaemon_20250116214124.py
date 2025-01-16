@@ -16,18 +16,8 @@ machine_id = os.popen("cat /etc/machine-id").read().strip()
 c_process = None
 python_process = None
 
-threads = []  # Lista per tenere traccia dei thread attivi
-thread_lock = Lock() # Lock per la lista dei thread
-
-def handle_command(interface, protocol, classifier):
-    """Gestisce la compilazione ed esecuzione del programma per un comando specifico."""
-    try:
-        execute_make(classifier)
-        main(interface, protocol, classifier)
-    except Exception as e:
-        print(f"Error handling command for {interface}, {protocol}, {classifier}: {e}")
-
 def listen_to_redis():
+    global type_of_classifier, map_path
     client = redis.StrictRedis(host='10.89.0.50', port=6379, decode_responses=True)
 
     # Sottoscrizione al canale "command_channel"
@@ -39,20 +29,15 @@ def listen_to_redis():
     for message in pubsub.listen():
         if message['type'] == 'message':
             try:
-                data = str(message['data'])
+                data = str(message['data'])  # Conversione esplicita a stringa
                 print(f"Received message: {data}")
                 parts = data.split()
                 command = parts[0]
                 if command == "attach" and len(parts) == 4:
                     interface = parts[1]
                     protocol = parts[2]
-                    classifier = int(parts[3])
-                    
-                    
-                    thread = Thread(target=handle_command, args=(interface, protocol, classifier))
-                    thread.start()
-                    with thread_lock:
-                        threads.append(thread)
+                    classifier = int(parts[3])  # Converti a intero
+                    main(interface, protocol, classifier)
                 else:
                     print(f"Invalid command format: {data}")
             except Exception as e:
@@ -173,36 +158,22 @@ def execute_make(type_of_classifier):
         # Return to the original directory
         os.chdir(current_dir)
 
-def terminate_threads():
-    """Termina tutti i thread e processi in esecuzione."""
-    global threads
-    print("Terminating all threads...")
-    with thread_lock:
-        for thread in threads:
-            thread.join()
-        threads.clear()
-
 def terminate_processes(signum, frame):
-    """Handler per la terminazione dei processi e dei thread."""
-    terminate_threads()
+    """Terminate both the C and Python processes gracefully."""
+    global c_process, python_process
+
+    print("\nGraceful termination initiated.")
+    if c_process:
+        c_process.terminate()
+        c_process.wait()
+        print("C program terminated.")
+
+    if python_process:
+        python_process.terminate()
+        python_process.wait()
+        print("Python program terminated.")
+
     sys.exit(0)
-
-# def terminate_processes(signum, frame):
-#     """Terminate both the C and Python processes gracefully."""
-#     global c_process, python_process
-
-#     print("\nGraceful termination initiated.")
-#     if c_process:
-#         c_process.terminate()
-#         c_process.wait()
-#         print("C program terminated.")
-
-#     if python_process:
-#         python_process.terminate()
-#         python_process.wait()
-#         print("Python program terminated.")
-
-#     sys.exit(0)
 
 
 def main(interface, protocol, type_of_classifier):

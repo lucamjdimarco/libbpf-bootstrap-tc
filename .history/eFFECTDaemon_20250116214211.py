@@ -173,36 +173,22 @@ def execute_make(type_of_classifier):
         # Return to the original directory
         os.chdir(current_dir)
 
-def terminate_threads():
-    """Termina tutti i thread e processi in esecuzione."""
-    global threads
-    print("Terminating all threads...")
-    with thread_lock:
-        for thread in threads:
-            thread.join()
-        threads.clear()
-
 def terminate_processes(signum, frame):
-    """Handler per la terminazione dei processi e dei thread."""
-    terminate_threads()
+    """Terminate both the C and Python processes gracefully."""
+    global c_process, python_process
+
+    print("\nGraceful termination initiated.")
+    if c_process:
+        c_process.terminate()
+        c_process.wait()
+        print("C program terminated.")
+
+    if python_process:
+        python_process.terminate()
+        python_process.wait()
+        print("Python program terminated.")
+
     sys.exit(0)
-
-# def terminate_processes(signum, frame):
-#     """Terminate both the C and Python processes gracefully."""
-#     global c_process, python_process
-
-#     print("\nGraceful termination initiated.")
-#     if c_process:
-#         c_process.terminate()
-#         c_process.wait()
-#         print("C program terminated.")
-
-#     if python_process:
-#         python_process.terminate()
-#         python_process.wait()
-#         print("Python program terminated.")
-
-#     sys.exit(0)
 
 
 def main(interface, protocol, type_of_classifier):

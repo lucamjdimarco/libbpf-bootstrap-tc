@@ -89,7 +89,7 @@ def listen_to_redis():
                     global stop_threads
                     stop_threads = True
                     terminate_threads()
-                    break  
+                    break  # Exit the listener loop
                 else:
                     print(f"Unknown command received: {data}")
     except KeyboardInterrupt:

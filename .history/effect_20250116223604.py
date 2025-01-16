@@ -120,8 +120,6 @@ def main():
     elif args.command == "attach":
         print("Attaching probe...")
         send_command(args.interface, args.protocol, args.type_of_classifier)
-    elif args.command == "stop":
-        send_stop_command()
 
 if __name__ == "__main__":
     main()

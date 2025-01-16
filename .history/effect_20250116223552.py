@@ -109,9 +109,6 @@ def main():
     attach_parser.add_argument("protocol", choices=["ipv4", "ipv6"], help="Specify the protocol (ipv4 or ipv6).")
     attach_parser.add_argument("type_of_classifier", choices=["1","2","3","4","5","6"], help="Specify the classifier to use.")
 
-    # Parser per "stop"
-    stop_parser = subparsers.add_parser("stop", help="Interrompe tutte le probe attive.")
-
 
     args = parser.parse_args()
 
@@ -120,8 +117,6 @@ def main():
     elif args.command == "attach":
         print("Attaching probe...")
         send_command(args.interface, args.protocol, args.type_of_classifier)
-    elif args.command == "stop":
-        send_stop_command()
 
 if __name__ == "__main__":
     main()

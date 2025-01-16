@@ -123,13 +123,18 @@ def retrieve_friendlyname():
         print(f"An error occurred: {e}")
         sys.exit(1)
 
-def reader(pipe, source_name):
-    """Reads output from a pipe and prints it."""
+def reader(pipe, queue, source_name):
+    """Legge l'output da una pipe e lo mette in una coda."""
     try:
-        for line in iter(pipe.readline, b""):
-            print(f"{source_name}: {line.decode('utf-8').strip()}")
+        for line in iter(pipe.readline, b''): 
+            if line:
+                decoded_line = line.decode("utf-8", errors="replace").strip()  
+                print(f"Debug {source_name}: {decoded_line}") 
+                queue.put((source_name, decoded_line))
     except Exception as e:
-        print(f"Error reading from {source_name}: {e}")
+        print(f"Errore durante la lettura da {source_name}: {e}")
+    finally:
+        queue.put(None)
 
 def execute_make(type_of_classifier):
     try:
@@ -367,15 +372,4 @@ def main(interface, protocol, type_of_classifier):
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-
-    redis_thread = Thread(target=listen_to_redis, daemon=True)
-    redis_thread.start()
-
-    try:
-        while not stop_threads:
-            pass  # Keeps the main thread alive
-    except KeyboardInterrupt:
-        signal_handler(None, None)
-
-    redis_thread.join()
-    print("Main program terminated.")
+    listen_to_redis()

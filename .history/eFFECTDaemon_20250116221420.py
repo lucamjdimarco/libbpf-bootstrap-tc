@@ -123,13 +123,18 @@ def retrieve_friendlyname():
         print(f"An error occurred: {e}")
         sys.exit(1)
 
-def reader(pipe, source_name):
-    """Reads output from a pipe and prints it."""
+def reader(pipe, queue, source_name):
+    """Legge l'output da una pipe e lo mette in una coda."""
     try:
-        for line in iter(pipe.readline, b""):
-            print(f"{source_name}: {line.decode('utf-8').strip()}")
+        for line in iter(pipe.readline, b''): 
+            if line:
+                decoded_line = line.decode("utf-8", errors="replace").strip()  
+                print(f"Debug {source_name}: {decoded_line}") 
+                queue.put((source_name, decoded_line))
     except Exception as e:
-        print(f"Error reading from {source_name}: {e}")
+        print(f"Errore durante la lettura da {source_name}: {e}")
+    finally:
+        queue.put(None)
 
 def execute_make(type_of_classifier):
     try:
@@ -193,20 +198,6 @@ def terminate_threads():
                 thread.join()
         threads.clear()
     print("All threads terminated.")
-
-
-
-def terminate_processes():
-    """Terminates the C and Python processes if they are running."""
-    global c_process, python_process
-    if c_process:
-        c_process.terminate()
-        c_process.wait()
-        print("C program terminated.")
-    if python_process:
-        python_process.terminate()
-        python_process.wait()
-        print("Python program terminated.")
 
 
 # def terminate_processes(signum, frame):
@@ -300,82 +291,51 @@ def main(interface, protocol, type_of_classifier):
     
 
 
-    # c_stdout_queue = Queue()
-    # c_stderr_queue = Queue()
-    # py_stdout_queue = Queue()
-    # py_stderr_queue = Queue()
+    c_stdout_queue = Queue()
+    c_stderr_queue = Queue()
+    py_stdout_queue = Queue()
+    py_stderr_queue = Queue()
 
-    # # Thread per leggere i flussi
-    # Thread(target=reader, args=[c_process.stdout, c_stdout_queue, "C stdout"]).start()
-    # Thread(target=reader, args=[c_process.stderr, c_stderr_queue, "C stderr"]).start()
-    # Thread(target=reader, args=[python_process.stdout, py_stdout_queue, "Py stdout"]).start()
-    # Thread(target=reader, args=[python_process.stderr, py_stderr_queue, "Py stderr"]).start()
-
-    # try:
-        
-    #     while True:
-    #         c_stdout = c_stdout_queue.get()
-    #         c_stderr = c_stderr_queue.get()
-    #         py_stdout = py_stdout_queue.get()
-    #         py_stderr = py_stderr_queue.get()
-
-
-    #         if c_stdout is None and c_stderr is None and py_stdout is None and py_stderr is None:
-    #             break
-
-    #         if c_stdout is not None:
-    #             print(f"{c_stdout[0]}: {c_stdout[1]}")
-    #         if c_stderr is not None:
-    #             print(f"{c_stderr[0]}: {c_stderr[1]}")
-    #         if py_stdout is not None:
-    #             print(f"{py_stdout[0]}: {py_stdout[1]}")
-    #         if py_stderr is not None:
-    #             print(f"{py_stderr[0]}: {py_stderr[1]}")
-
-    # except KeyboardInterrupt:
-    #     terminate_processes(None, None)
-
-
-    # c_exit_code = c_process.wait()
-    # python_exit_code = python_process.wait()
-
-    # if c_exit_code != 0:
-    #     print(f"C program finished with error code {c_exit_code}")
-    # if python_exit_code != 0:
-    #     print(f"Python program finished with error code {python_exit_code}")
+    # Thread per leggere i flussi
+    Thread(target=reader, args=[c_process.stdout, c_stdout_queue, "C stdout"]).start()
+    Thread(target=reader, args=[c_process.stderr, c_stderr_queue, "C stderr"]).start()
+    Thread(target=reader, args=[python_process.stdout, py_stdout_queue, "Py stdout"]).start()
+    Thread(target=reader, args=[python_process.stderr, py_stderr_queue, "Py stderr"]).start()
 
     try:
-        c_stdout_thread = Thread(target=reader, args=(c_process.stdout, "C stdout"))
-        c_stderr_thread = Thread(target=reader, args=(c_process.stderr, "C stderr"))
-        py_stdout_thread = Thread(target=reader, args=(python_process.stdout, "Python stdout"))
-        py_stderr_thread = Thread(target=reader, args=(python_process.stderr, "Python stderr"))
+        
+        while True:
+            c_stdout = c_stdout_queue.get()
+            c_stderr = c_stderr_queue.get()
+            py_stdout = py_stdout_queue.get()
+            py_stderr = py_stderr_queue.get()
 
-        c_stdout_thread.start()
-        c_stderr_thread.start()
-        py_stdout_thread.start()
-        py_stderr_thread.start()
 
-        c_stdout_thread.join()
-        c_stderr_thread.join()
-        py_stdout_thread.join()
-        py_stderr_thread.join()
+            if c_stdout is None and c_stderr is None and py_stdout is None and py_stderr is None:
+                break
 
-    finally:
-        terminate_processes()
+            if c_stdout is not None:
+                print(f"{c_stdout[0]}: {c_stdout[1]}")
+            if c_stderr is not None:
+                print(f"{c_stderr[0]}: {c_stderr[1]}")
+            if py_stdout is not None:
+                print(f"{py_stdout[0]}: {py_stdout[1]}")
+            if py_stderr is not None:
+                print(f"{py_stderr[0]}: {py_stderr[1]}")
 
+    except KeyboardInterrupt:
+        terminate_processes(None, None)
+
+
+    c_exit_code = c_process.wait()
+    python_exit_code = python_process.wait()
+
+    if c_exit_code != 0:
+        print(f"C program finished with error code {c_exit_code}")
+    if python_exit_code != 0:
+        print(f"Python program finished with error code {python_exit_code}")
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-
-    redis_thread = Thread(target=listen_to_redis, daemon=True)
-    redis_thread.start()
-
-    try:
-        while not stop_threads:
-            pass  # Keeps the main thread alive
-    except KeyboardInterrupt:
-        signal_handler(None, None)
-
-    redis_thread.join()
-    print("Main program terminated.")
+    listen_to_redis()

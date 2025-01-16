@@ -367,15 +367,4 @@ def main(interface, protocol, type_of_classifier):
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-
-    redis_thread = Thread(target=listen_to_redis, daemon=True)
-    redis_thread.start()
-
-    try:
-        while not stop_threads:
-            pass  # Keeps the main thread alive
-    except KeyboardInterrupt:
-        signal_handler(None, None)
-
-    redis_thread.join()
-    print("Main program terminated.")
+    listen_to_redis()

@@ -184,7 +184,7 @@ def execute_make(type_of_classifier):
     finally:
         # Return to the original directory
         os.chdir(current_dir)
-        
+
 def terminate_threads():
     """Terminates all threads and waits for them to finish."""
     global threads
@@ -195,6 +195,10 @@ def terminate_threads():
         threads.clear()
     print("All threads terminated.")
 
+def terminate_processes(signum, frame):
+    """Handler per la terminazione dei processi e dei thread."""
+    terminate_threads()
+    sys.exit(0)
 
 # def terminate_processes(signum, frame):
 #     """Terminate both the C and Python processes gracefully."""
@@ -219,9 +223,6 @@ def main(interface, protocol, type_of_classifier):
     global c_process, python_process
 
     global stop_threads
-
-    if stop_threads:
-        return
     
     #signal.signal(signal.SIGINT, terminate_processes)  # Handle Ctrl+C
     #signal.signal(signal.SIGTERM, terminate_processes)  # Handle termination signals
@@ -332,6 +333,6 @@ def main(interface, protocol, type_of_classifier):
         print(f"Python program finished with error code {python_exit_code}")
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, terminate_processes)
+    signal.signal(signal.SIGTERM, terminate_processes)
     listen_to_redis()

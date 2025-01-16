@@ -32,9 +32,10 @@ def handle_command(interface, protocol, classifier):
     """Handles the execution of a command for a specific interface, protocol, and classifier."""
     global stop_threads
     try:
-        if not stop_threads:
+        while not stop_threads:
             execute_make(classifier)
             main(interface, protocol, classifier)
+            break
     except Exception as e:
         print(f"Error handling command for {interface}, {protocol}, {classifier}: {e}")
 
@@ -47,9 +48,8 @@ def listen_to_redis():
 
     print("Listening for messages on channel 'command_channel'...")
 
-    while not stop_threads:
-        message = pubsub.get_message(ignore_subscribe_messages=True, timeout=1)
-        if message and message['type'] == 'message':
+    for message in pubsub.listen():
+        if message['type'] == 'message':
             try:
                 data = str(message['data'])
                 print(f"Received message: {data}")
@@ -60,6 +60,7 @@ def listen_to_redis():
                     protocol = parts[2]
                     classifier = int(parts[3])
                     
+                    
                     thread = Thread(target=handle_command, args=(interface, protocol, classifier))
                     thread.start()
                     with thread_lock:
@@ -68,7 +69,6 @@ def listen_to_redis():
                     print(f"Invalid command format: {data}")
             except Exception as e:
                 print(f"Error processing message: {e}")
-
 
 # Mount the bpf filesystem - Function passed from EFE-controller.py
 def mount_bpf(mount_point):
@@ -184,7 +184,7 @@ def execute_make(type_of_classifier):
     finally:
         # Return to the original directory
         os.chdir(current_dir)
-        
+
 def terminate_threads():
     """Terminates all threads and waits for them to finish."""
     global threads
@@ -195,6 +195,10 @@ def terminate_threads():
         threads.clear()
     print("All threads terminated.")
 
+def terminate_processes(signum, frame):
+    """Handler per la terminazione dei processi e dei thread."""
+    terminate_threads()
+    sys.exit(0)
 
 # def terminate_processes(signum, frame):
 #     """Terminate both the C and Python processes gracefully."""
@@ -219,9 +223,6 @@ def main(interface, protocol, type_of_classifier):
     global c_process, python_process
 
     global stop_threads
-
-    if stop_threads:
-        return
     
     #signal.signal(signal.SIGINT, terminate_processes)  # Handle Ctrl+C
     #signal.signal(signal.SIGTERM, terminate_processes)  # Handle termination signals
@@ -332,6 +333,6 @@ def main(interface, protocol, type_of_classifier):
         print(f"Python program finished with error code {python_exit_code}")
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, terminate_processes)
+    signal.signal(signal.SIGTERM, terminate_processes)
     listen_to_redis()

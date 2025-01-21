@@ -202,7 +202,9 @@ def execute_make(type_of_classifier):
 
 def main(interface, protocol, type_of_classifier):
 
-    global c_process, python_process, stop_threads
+    global c_process, python_process
+
+    global stop_threads
 
     if stop_threads:
         return

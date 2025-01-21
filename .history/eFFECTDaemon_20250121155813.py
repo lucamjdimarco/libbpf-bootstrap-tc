@@ -101,8 +101,7 @@ def listen_to_redis():
         print("Redis listener interrupted by KeyboardInterrupt.")
     finally:
         print("Closing Redis PubSub...")
-        if pubsub:
-            pubsub.close()
+        pubsub.close()
         print("Redis listener exited.")
 
 
@@ -202,7 +201,9 @@ def execute_make(type_of_classifier):
 
 def main(interface, protocol, type_of_classifier):
 
-    global c_process, python_process, stop_threads
+    global c_process, python_process
+
+    global stop_threads
 
     if stop_threads:
         return

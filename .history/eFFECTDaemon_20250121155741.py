@@ -25,14 +25,12 @@ pubsub = None
 
 def signal_handler(sig, frame):
     """Handles signals to terminate the program."""
-    global stop_threads, pubsub
+    global stop_threads
     print("Terminating all threads...")
     stop_threads = True
     terminate_threads()
     terminate_processes()
-    if pubsub:
-        pubsub.close()
-        print("Redis PubSub connection closed.")
+
 
 def terminate_processes():
     """Terminates the C and Python processes if they are running."""
@@ -66,7 +64,7 @@ def handle_command(interface, protocol, classifier):
         print(f"Error handling command for {interface}, {protocol}, {classifier}: {e}")
 
 def listen_to_redis():
-    global stop_threads, pubsub
+    global stop_threads
     client = redis.StrictRedis(host='10.89.0.50', port=6379, decode_responses=True)
 
     # Sottoscrizione al canale "command_channel"
@@ -101,8 +99,7 @@ def listen_to_redis():
         print("Redis listener interrupted by KeyboardInterrupt.")
     finally:
         print("Closing Redis PubSub...")
-        if pubsub:
-            pubsub.close()
+        pubsub.close()
         print("Redis listener exited.")
 
 
@@ -202,7 +199,9 @@ def execute_make(type_of_classifier):
 
 def main(interface, protocol, type_of_classifier):
 
-    global c_process, python_process, stop_threads
+    global c_process, python_process
+
+    global stop_threads
 
     if stop_threads:
         return

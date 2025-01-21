@@ -268,9 +268,7 @@ def main(interface, protocol, type_of_classifier):
         py_stderr_thread.join()
 
     finally:
-        terminate_threads()
         terminate_processes()
-        print("Main program terminated.")
 
 
 if __name__ == "__main__":

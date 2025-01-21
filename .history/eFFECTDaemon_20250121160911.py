@@ -47,7 +47,7 @@ def terminate_threads():
     with thread_lock:
         for thread in threads:
             if thread.is_alive():
-                thread.join(timeout=1)
+                thread.join()
         threads.clear()
     print("All threads terminated.")
 
@@ -268,9 +268,7 @@ def main(interface, protocol, type_of_classifier):
         py_stderr_thread.join()
 
     finally:
-        terminate_threads()
         terminate_processes()
-        print("Main program terminated.")
 
 
 if __name__ == "__main__":

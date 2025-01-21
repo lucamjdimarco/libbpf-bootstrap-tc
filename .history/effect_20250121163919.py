@@ -85,6 +85,7 @@ def send_command(interface, protocol, classifier_name):
     
     classifier = CLASSIFIER_MAP[classifier_name]
 
+
     command = f"attach {interface} {protocol} {classifier}"
     print(f"Inviando comando: {command} al canale Redis...")
 

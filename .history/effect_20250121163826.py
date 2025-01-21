@@ -69,7 +69,7 @@ def check_hfn(hfn=None):
         print(f"Si è verificato un errore: {e}")
         sys.exit(1)
 
-def send_command(interface, protocol, classifier_name):
+def send_command(interface, protocol, classifier):
     """
     Valida i parametri passati, costruisce il comando e lo invia su Redis.
 
@@ -79,11 +79,6 @@ def send_command(interface, protocol, classifier_name):
         classifier (int): Numero del classificatore (1-6).
     """
 
-    if classifier_name not in CLASSIFIER_MAP:
-        print(f"Errore: Classificatore '{classifier_name}' non valido.")
-        sys.exit(1)
-    
-    classifier = CLASSIFIER_MAP[classifier_name]
 
     command = f"attach {interface} {protocol} {classifier}"
     print(f"Inviando comando: {command} al canale Redis...")

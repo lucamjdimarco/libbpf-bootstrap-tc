@@ -82,8 +82,7 @@ def send_command(interface, protocol, classifier_name):
     if classifier_name not in CLASSIFIER_MAP:
         print(f"Errore: Classificatore '{classifier_name}' non valido.")
         sys.exit(1)
-    
-    classifier = CLASSIFIER_MAP[classifier_name]
+
 
     command = f"attach {interface} {protocol} {classifier}"
     print(f"Inviando comando: {command} al canale Redis...")

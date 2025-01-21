@@ -207,7 +207,5 @@ if __name__ == "__main__":
         signal_handler(None, None)
 
     redis_thread.join()
-    terminate_threads()
-    terminate_processes()
-    print("Program terminated.")
+    print("Main program terminated.")
     

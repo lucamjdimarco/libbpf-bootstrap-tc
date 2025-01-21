@@ -52,11 +52,13 @@ def terminate_threads():
     print("All threads terminated.")
 
 def handle_command(interface, protocol, classifier):
-    """Executes the main command for a specific interface, protocol, and classifier."""
+    """Handles the execution of a command for a specific interface, protocol, and classifier."""
+    global stop_threads
     try:
-        main(interface, protocol, classifier)
+        if not stop_threads:
+            main(interface, protocol, classifier)
     except Exception as e:
-        print(f"Error handling command: {e}")
+        print(f"Error handling command for {interface}, {protocol}, {classifier}: {e}")
 
 def listen_to_redis():
     """Listens to Redis for incoming commands."""
@@ -76,34 +78,6 @@ def listen_to_redis():
         print(f"Error in Redis listener: {e}")
     finally:
         close_redis()
-
-def handle_redis_message(data):
-    """Processes a Redis message."""
-    global stop_threads
-    print(f"Received message: {data}")
-    parts = data.split()
-
-    if parts[0] == "attach" and len(parts) == 4:
-        interface, protocol, classifier = parts[1], parts[2], int(parts[3])
-        thread = Thread(target=handle_command, args=(interface, protocol, classifier))
-        thread.start()
-        with thread_lock:
-            threads.append(thread)
-    elif parts[0] == "stop":
-        print("Stop command received. Terminating all threads and processes...")
-        stop_threads = True
-    else:
-        print(f"Unknown command received: {data}")
-    
-def close_redis():
-    """Closes the Redis PubSub connection."""
-    global pubsub
-    if pubsub:
-        try:
-            pubsub.close()
-            print("Redis PubSub connection closed.")
-        except Exception as e:
-            print(f"Error closing Redis PubSub: {e}")
 
 
 # Mount the bpf filesystem - Function passed from EFE-controller.py
@@ -147,50 +121,134 @@ def reader(pipe, source_name):
         print(f"Error reading from {source_name}: {e}")
 
 def execute_make(type_of_classifier):
-    """Builds the BPF program with the specified classifier."""
     try:
+        # Save the current directory
+        current_dir = os.getcwd()
+        
+        # Change to the target directory
         os.chdir("src/c")
-        subprocess.run(["make", "clean"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.run(["make", "-j6", f"CFLAGS_EXTRA=-DCLASS={type_of_classifier}"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(f"Build completed for classifier {type_of_classifier}.")
-    except subprocess.CalledProcessError as e:
-        print(f"Build error: {e.stderr.decode('utf-8')}")
+
+        # Clean build artifacts
+        print("Running 'make clean'...")
+        clean_result = subprocess.run(
+            ["make", "clean"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        if clean_result.returncode == 0:
+            print("'make clean' completed successfully.")
+        else:
+            print("'make clean' failed.")
+            print("Error:")
+            print(clean_result.stderr)
+            sys.exit(1)
+
+        # Compile the program with the provided classifier
+        cflags_extra = f"CFLAGS_EXTRA=-DCLASS={type_of_classifier}"
+        command = ["make", "-j6", cflags_extra]
+        
+        print(f"Running command: {' '.join(command)}")
+        result = subprocess.run(
+            command, 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE, 
+            text=True
+        )
+        
+        if result.returncode == 0:
+            print("Command executed successfully.")
+            print("Output:")
+            print(result.stdout)
+        else:
+            print("Command failed.")
+            print("Error:")
+            print(result.stderr)
+            sys.exit(1)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
     finally:
-        os.chdir("../../")
+        # Return to the original directory
+        os.chdir(current_dir)
 
 
-def main(interface, protocol, classifier):
-    """Main function to start the BPF program and related processes."""
+def main(interface, protocol, type_of_classifier):
+
     global c_process, python_process, stop_threads
 
     if stop_threads:
         return
 
     if interface == "eth0":
-        print("Error: eBPF cannot be started on 'eth0'.")
+        print("Error: eBPF instance cannot be started on interface 'eth0'.")
         sys.exit(1)
 
-    mount_bpf(BPF_FS_PATH)
+    try:
+        mount_bpf(BPF_FS_PATH)
+        print(f"BPF filesystem mounted on {BPF_FS_PATH}")
+    except OSError as e:
+        print(f"Error mounting BPF filesystem: {e}")
+        exit(1)
+
     retrieve_friendlyname()
-    execute_make(classifier)
+
+    c_program_path = os.path.abspath(os.path.join("src", "c", "tc"))
+    python_program = "EFE-controller.py"
+
+    execute_make(type_of_classifier)
+
+    if not os.path.isfile(c_program_path):
+        print(f"C program '{c_program_path}' does not exist.")
+        sys.exit(1)
 
     try:
-        c_program_path = os.path.abspath("src/c/tc")
-        python_program = "EFE-controller.py"
+        c_process = subprocess.Popen(
+            [c_program_path, interface, protocol, friendlyname],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1, 
+            #text=True,
+        )
+    except FileNotFoundError:
+        print("C program not found.")
+        sys.exit(1)
+    
+    try:
+        python_process = subprocess.Popen(
+            ["python3", "-u", python_program, interface, protocol, str(type_of_classifier)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1, 
+            #text=True,
+        )
+    except FileNotFoundError:
+        print("EFE-controller.py not found.")
+        sys.exit(1)
 
-        if not os.path.isfile(c_program_path):
-            raise FileNotFoundError(f"C program '{c_program_path}' not found.")
 
-        c_process = subprocess.Popen([c_program_path, interface, protocol, friendlyname], stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1)
-        python_process = subprocess.Popen(["python3", "-u", python_program, interface, protocol, str(classifier)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1)
 
-        Thread(target=reader, args=(c_process.stdout, "C stdout")).start()
-        Thread(target=reader, args=(c_process.stderr, "C stderr")).start()
-        Thread(target=reader, args=(python_process.stdout, "Python stdout")).start()
-        Thread(target=reader, args=(python_process.stderr, "Python stderr")).start()
-    except Exception as e:
-        print(f"Error starting processes: {e}")
+    try:
+        c_stdout_thread = Thread(target=reader, args=(c_process.stdout, "C stdout"))
+        c_stderr_thread = Thread(target=reader, args=(c_process.stderr, "C stderr"))
+        py_stdout_thread = Thread(target=reader, args=(python_process.stdout, "Python stdout"))
+        py_stderr_thread = Thread(target=reader, args=(python_process.stderr, "Python stderr"))
+
+        c_stdout_thread.start()
+        c_stderr_thread.start()
+        py_stdout_thread.start()
+        py_stderr_thread.start()
+
+        c_stdout_thread.join()
+        c_stderr_thread.join()
+        py_stdout_thread.join()
+        py_stderr_thread.join()
+
+    finally:
+        terminate_threads()
         terminate_processes()
+        print("Main program terminated.")
 
 
 if __name__ == "__main__":
@@ -207,7 +265,5 @@ if __name__ == "__main__":
         signal_handler(None, None)
 
     redis_thread.join()
-    terminate_threads()
-    terminate_processes()
-    print("Program terminated.")
+    print("Main program terminated.")
     

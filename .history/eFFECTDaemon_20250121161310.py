@@ -159,38 +159,81 @@ def execute_make(type_of_classifier):
         os.chdir("../../")
 
 
-def main(interface, protocol, classifier):
-    """Main function to start the BPF program and related processes."""
+def main(interface, protocol, type_of_classifier):
+
     global c_process, python_process, stop_threads
 
     if stop_threads:
         return
 
     if interface == "eth0":
-        print("Error: eBPF cannot be started on 'eth0'.")
+        print("Error: eBPF instance cannot be started on interface 'eth0'.")
         sys.exit(1)
 
-    mount_bpf(BPF_FS_PATH)
+    try:
+        mount_bpf(BPF_FS_PATH)
+        print(f"BPF filesystem mounted on {BPF_FS_PATH}")
+    except OSError as e:
+        print(f"Error mounting BPF filesystem: {e}")
+        exit(1)
+
     retrieve_friendlyname()
-    execute_make(classifier)
+
+    c_program_path = os.path.abspath(os.path.join("src", "c", "tc"))
+    python_program = "EFE-controller.py"
+
+    execute_make(type_of_classifier)
+
+    if not os.path.isfile(c_program_path):
+        print(f"C program '{c_program_path}' does not exist.")
+        sys.exit(1)
 
     try:
-        c_program_path = os.path.abspath("src/c/tc")
-        python_program = "EFE-controller.py"
+        c_process = subprocess.Popen(
+            [c_program_path, interface, protocol, friendlyname],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1, 
+            #text=True,
+        )
+    except FileNotFoundError:
+        print("C program not found.")
+        sys.exit(1)
+    
+    try:
+        python_process = subprocess.Popen(
+            ["python3", "-u", python_program, interface, protocol, str(type_of_classifier)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1, 
+            #text=True,
+        )
+    except FileNotFoundError:
+        print("EFE-controller.py not found.")
+        sys.exit(1)
 
-        if not os.path.isfile(c_program_path):
-            raise FileNotFoundError(f"C program '{c_program_path}' not found.")
 
-        c_process = subprocess.Popen([c_program_path, interface, protocol, friendlyname], stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1)
-        python_process = subprocess.Popen(["python3", "-u", python_program, interface, protocol, str(classifier)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1)
 
-        Thread(target=reader, args=(c_process.stdout, "C stdout")).start()
-        Thread(target=reader, args=(c_process.stderr, "C stderr")).start()
-        Thread(target=reader, args=(python_process.stdout, "Python stdout")).start()
-        Thread(target=reader, args=(python_process.stderr, "Python stderr")).start()
-    except Exception as e:
-        print(f"Error starting processes: {e}")
+    try:
+        c_stdout_thread = Thread(target=reader, args=(c_process.stdout, "C stdout"))
+        c_stderr_thread = Thread(target=reader, args=(c_process.stderr, "C stderr"))
+        py_stdout_thread = Thread(target=reader, args=(python_process.stdout, "Python stdout"))
+        py_stderr_thread = Thread(target=reader, args=(python_process.stderr, "Python stderr"))
+
+        c_stdout_thread.start()
+        c_stderr_thread.start()
+        py_stdout_thread.start()
+        py_stderr_thread.start()
+
+        c_stdout_thread.join()
+        c_stderr_thread.join()
+        py_stdout_thread.join()
+        py_stderr_thread.join()
+
+    finally:
+        terminate_threads()
         terminate_processes()
+        print("Main program terminated.")
 
 
 if __name__ == "__main__":
@@ -207,7 +250,5 @@ if __name__ == "__main__":
         signal_handler(None, None)
 
     redis_thread.join()
-    terminate_threads()
-    terminate_processes()
-    print("Program terminated.")
+    print("Main program terminated.")
     

@@ -497,10 +497,8 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 		.counter = event->counter,
 	};
 
-	printf("##########################");
 	printf("BIT RATE: %llu Mb/s\n", (((event->bytes_counter * 8) / 10) * 0.000001));
-	printf("##########################");
-	
+
 	MHandler_t *influx_handler = (MHandler_t *)ctx;
 
 	if (!influx_handler) {

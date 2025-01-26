@@ -43,7 +43,6 @@ struct event_t {
 	__u64 flowid;
 	__u64 counter;
 
-	//BITRATE
 	__u64 bytes_counter;
 };
 

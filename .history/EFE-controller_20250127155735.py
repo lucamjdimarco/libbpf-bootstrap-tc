@@ -32,6 +32,9 @@ map_path = ""
 interface_name = ""
 
 
+# INFLUXDB #
+INFLUXDB_URL_IPV6 = "http://influxdb:8086/query?db=tc_db"
+INFLUXDB_URL_IPV4 = "http://10.89.0.30:8086/query?db=tc_db"
 
 FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/last_flow_id_by_ifindex"
 

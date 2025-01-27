@@ -20,7 +20,7 @@ from select import epoll, EPOLLIN
 
 
 # REDIS #
-r = redis.Redis(host=REDIS_HOST_IPV6, port=REDIS_PORT, db=0)
+r = redis.Redis(host='redis', port=6379, db=0)
 machine_id = os.popen("cat /etc/machine-id").read().strip()
 
 DB_NAME = "tc_db"
@@ -32,6 +32,9 @@ map_path = ""
 interface_name = ""
 
 
+# INFLUXDB #
+INFLUXDB_URL_IPV6 = "http://influxdb:8086/query?db=tc_db"
+INFLUXDB_URL_IPV4 = "http://10.89.0.30:8086/query?db=tc_db"
 
 FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/last_flow_id_by_ifindex"
 

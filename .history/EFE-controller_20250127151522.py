@@ -20,7 +20,7 @@ from select import epoll, EPOLLIN
 
 
 # REDIS #
-r = redis.Redis(host=REDIS_HOST_IPV6, port=REDIS_PORT, db=0)
+r = redis.Redis(host=REDIS_HOST_IPV6, port=6379, db=0)
 machine_id = os.popen("cat /etc/machine-id").read().strip()
 
 DB_NAME = "tc_db"

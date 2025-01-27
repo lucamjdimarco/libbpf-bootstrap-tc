@@ -4,7 +4,7 @@ import subprocess
 import os
 import json
 from hex_types import u64, u32, u16, u8, s8, to_hex
-from settings import BPF_FS_PATH, INFLUXDB_URL_IPV6, INFLUXDB_URL_IPV4, REDIS_HOST_IPV4, REDIS_HOST_IPV6, REDIS_PORT
+from settings import BPF_FS_PATH, INFLUXDB_URL_IPV6, INFLUXDB_URL_IPV4
 from enum import Enum
 
 import socket
@@ -20,7 +20,7 @@ from select import epoll, EPOLLIN
 
 
 # REDIS #
-r = redis.Redis(host=REDIS_HOST_IPV6, port=REDIS_PORT, db=0)
+r = redis.Redis(host='redis', port=6379, db=0)
 machine_id = os.popen("cat /etc/machine-id").read().strip()
 
 DB_NAME = "tc_db"
@@ -32,11 +32,15 @@ map_path = ""
 interface_name = ""
 
 
+# INFLUXDB #
+INFLUXDB_URL_IPV6 = "http://influxdb:8086/query?db=tc_db"
+INFLUXDB_URL_IPV4 = "http://10.89.0.30:8086/query?db=tc_db"
+
 FLOWPY_MAP_PATH = f"{BPF_FS_PATH}/last_flow_id_by_ifindex"
 
 def listen_to_redis():
     global type_of_classifier, map_path
-    client = redis.StrictRedis(host=REDIS_HOST_IPV6, port=REDIS_PORT, decode_responses=True)
+    client = redis.StrictRedis(host='redis', port=6379, decode_responses=True)
 
     pubsub = client.pubsub()
     pubsub.subscribe("flow_channel")

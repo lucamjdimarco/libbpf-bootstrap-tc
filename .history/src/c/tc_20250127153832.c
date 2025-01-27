@@ -42,13 +42,13 @@ struct thread_args {
 	const char *ring_buffer_name;
 };
 
-// #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
-// 	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
-// #define INFLUXDB_URL "http://influxdb:8086?db=tc_db"
-// #elif defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
-// 	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
-// #define INFLUXDB_URL "http://10.89.0.30:8086?db=tc_db"
-// #endif
+#if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)
+#define INFLUXDB_URL "http://influxdb:8086?db=tc_db"
+#elif defined(CLASSIFY_IPV6) || defined(CLASSIFY_ONLY_ADDRESS_IPV6) || \
+	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV6)
+#define INFLUXDB_URL "http://10.89.0.30:8086?db=tc_db"
+#endif
 
 #if defined(CLASSIFY_IPV4) || defined(CLASSIFY_ONLY_ADDRESS_IPV4) || \
 	defined(CLASSIFY_ONLY_DEST_ADDRESS_IPV4)

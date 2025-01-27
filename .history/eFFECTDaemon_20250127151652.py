@@ -11,7 +11,7 @@ from settings import BPF_FS_PATH, REDIS_PORT, REDIS_HOST_IPV6, REDIS_HOST_IPV4
 
 
 friendlyname = ""
-r = redis.Redis(host=REDIS_HOST_IPV6, port=REDIS_PORT, db=0)
+r = redis.Redis(host='redis', port=6379, db=0)
 machine_id = os.popen("cat /etc/machine-id").read().strip()
 c_process = None
 python_process = None

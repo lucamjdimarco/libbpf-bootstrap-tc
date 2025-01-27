@@ -4,7 +4,7 @@ import os
 import argparse
 from settings import REDIS_HOST_IPV4, REDIS_HOST_IPV6, REDIS_PORT
 
-r = redis.Redis(host=REDIS_HOST_IPV6, port=REDIS_PORT, db=0)
+r = redis.Redis(host='redis', port=6379, db=0)
 machine_id = os.popen("cat /etc/machine-id").read().strip()
 
 CLASSIFIER_MAP = {

@@ -21,7 +21,7 @@
 #define REDIS_PORT  6379
 
 #define INFLUXDB_IPV6 "http://influxdb:8086?db=tc_db"
-#define INFLUXDB_IPV4 "http://10.89.0.30:8086?db=tc_db"
+#define INFLUXDB_IPV4 "http://
 
 #define MAX_FORMATTED_STRING_SIZE 128
 #define MAX_MACHINE_ID_SIZE 64

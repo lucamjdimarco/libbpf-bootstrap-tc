@@ -252,8 +252,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	event->ts = ts;
 	event->flowid = packet->flow_id;
-	//event->counter = counter_val;
-	event->counter = packet->counter;
+	event->counter = counter_val;
 
 
 	packet->tsw = cur_tsw;

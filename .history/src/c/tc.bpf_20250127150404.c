@@ -223,25 +223,17 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 		packet->bytes_counter += packet_length;
 	}
 
-	// __u64 tsw = packet->tsw;
-	// __u32 *counter = &packet->counter; 
+	__u64 tsw = packet->tsw;
+	__u32 *counter = &packet->counter; 
 
-	// if (cur_tsw <= tsw) {
-	// 	bpf_spin_unlock(&packet->lock);
-	// 	bpf_ringbuf_discard(event, 0);
-	// 	bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
-	// 	return 0;
-	// }
+	if (cur_tsw <= tsw) {
+		bpf_spin_unlock(&packet->lock);
+		bpf_ringbuf_discard(event, 0);
+		bpf_printk("skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, tsw);
+		return 0;
+	}
 
-	if (cur_tsw <= packet->tsw) {
-        bpf_spin_unlock(&packet->lock);
-        bpf_ringbuf_discard(event, 0);
-        bpf_printk("Skipping event, cur_tsw: %llu, tsw: %llu\n", cur_tsw, packet->tsw);
-        return 0;
-    }
-
-
-	//counter_val = *counter;
+	counter_val = *counter;
 
 	if (!event) {
 		bpf_spin_unlock(&packet->lock);
@@ -252,8 +244,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	event->ts = ts;
 	event->flowid = packet->flow_id;
-	//event->counter = counter_val;
-	event->counter = packet->counter;
+	event->counter = counter_val;
 
 
 	packet->tsw = cur_tsw;

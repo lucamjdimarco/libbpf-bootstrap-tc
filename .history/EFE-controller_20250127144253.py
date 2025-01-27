@@ -113,6 +113,7 @@ def bpftool_map_update(map_reference, key, value, map_reference_type="pinned", v
 def bpftool_map_dump(map_reference, map_reference_type="pinned"):
     """Call bpftool map dump and return the result
     """
+    # bpftool map dump pinned /sys/fs/bpf/maps/system/hvm_chain_map
 
     if map_reference_type == "pinned":
 
@@ -345,12 +346,14 @@ def get_map_path(type_of_classifier):
     global interface_name
     try:
         classifier = int(type_of_classifier)
+        ##classifier_enum = MapType(int(type_of_classifier))
         if classifier % 2 == 1:  # Odd -> IPv4
             map_name = "flow_id_info_ipv4"
         elif classifier % 2 == 0:  # Even -> IPv6
             map_name = "flow_id_info_ipv6"
         else:
             raise ValueError("Invalid classifier value")
+        #map_name = classifier_enum.name  
         map_path = f"{BPF_FS_PATH}/{interface_name}/{map_name}" 
         return map_path
     except ValueError:

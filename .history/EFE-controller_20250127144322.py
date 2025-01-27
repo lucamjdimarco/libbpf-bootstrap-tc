@@ -351,6 +351,7 @@ def get_map_path(type_of_classifier):
             map_name = "flow_id_info_ipv6"
         else:
             raise ValueError("Invalid classifier value")
+        #map_name = classifier_enum.name  
         map_path = f"{BPF_FS_PATH}/{interface_name}/{map_name}" 
         return map_path
     except ValueError:

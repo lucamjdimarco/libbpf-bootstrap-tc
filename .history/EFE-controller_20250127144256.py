@@ -345,12 +345,14 @@ def get_map_path(type_of_classifier):
     global interface_name
     try:
         classifier = int(type_of_classifier)
+        ##classifier_enum = MapType(int(type_of_classifier))
         if classifier % 2 == 1:  # Odd -> IPv4
             map_name = "flow_id_info_ipv4"
         elif classifier % 2 == 0:  # Even -> IPv6
             map_name = "flow_id_info_ipv6"
         else:
             raise ValueError("Invalid classifier value")
+        #map_name = classifier_enum.name  
         map_path = f"{BPF_FS_PATH}/{interface_name}/{map_name}" 
         return map_path
     except ValueError:

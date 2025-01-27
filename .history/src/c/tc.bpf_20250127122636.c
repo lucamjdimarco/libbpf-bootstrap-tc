@@ -532,6 +532,7 @@ static __always_inline int classify_ipv6_packet(struct key_5tuple_ipv6 *info, vo
 }
 #endif
 
+// classificazione dei pacchetti IPv4 con solo gli indirizzi
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV4
 static __always_inline int classify_ONLY_ADDRESS_ipv4_packet(struct key_only_addr_ipv4 *info,
 							     void *data_end, void *data)
@@ -549,6 +550,7 @@ static __always_inline int classify_ONLY_ADDRESS_ipv4_packet(struct key_only_add
 }
 #endif
 
+// classificazione dei pacchetti IPv6 con solo gli indirizzi
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV6
 static __always_inline int classify_ONLY_ADDRESS_ipv6_packet(struct key_only_addr_ipv6 *info,
 							     void *data_end, void *data)
@@ -565,8 +567,9 @@ static __always_inline int classify_ONLY_ADDRESS_ipv6_packet(struct key_only_add
 	memcpy(temp_src_ip, ip6->saddr.in6_u.u6_addr8, 16);
 	memcpy(temp_dst_ip, ip6->daddr.in6_u.u6_addr8, 16);
 
+	// Controllo se l'indirizzo sorgente o destinazione è link-local (fe80::/10)
 	if (temp_src_ip[0] == 0xfe &&
-	    (temp_src_ip[1] & 192) == 0x80) { 
+	    (temp_src_ip[1] & 192) == 0x80) { //corretto bug altrimenti controllava una /12
 		bpf_printk("Packet with link-local source address fe80::/10\n");
 		return -EFAULT;
 	}
@@ -583,6 +586,7 @@ static __always_inline int classify_ONLY_ADDRESS_ipv6_packet(struct key_only_add
 }
 #endif
 
+// classificazione dei pacchetti IPv4 con solo l'indirizzo di destinazione
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV4
 static __always_inline int classify_ONLY_DEST_ADDRESS_ipv4_packet(struct key_only_dest_ipv4 *info,
 								  void *data_end, void *data)
@@ -599,6 +603,7 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv4_packet(struct key_onl
 }
 #endif
 
+// classificazione dei pacchetti IPv6 con solo l'indirizzo di destinazione
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 static __always_inline int classify_ONLY_DEST_ADDRESS_ipv6_packet(struct key_only_dest_ipv6 *info,
 								  void *data_end, void *data)
@@ -637,12 +642,13 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv6_packet(struct key_onl
 SEC("tc")
 int tc_ingress(struct __sk_buff *ctx)
 {
-	void *data_end = (void *)(__u64)ctx->data_end; 
-	void *data = (void *)(__u64)ctx->data;		   
+	void *data_end = (void *)(__u64)ctx->data_end; // set the pointer to the end of the packet
+	void *data = (void *)(__u64)ctx->data;		   // set the pointer to the beginning of the packet
 	struct ethhdr *eth;
 	struct vlan_hdr *vlan;
 	int ret;
 
+	//u32 key = 0; 
 
 	/** Check if the flow_id is uninitialized (set to -1). If so, retrieve the flow_id 
 	*   from the BPF map using the interface index (ifindex) from the packet context.
@@ -672,7 +678,9 @@ int tc_ingress(struct __sk_buff *ctx)
 					     .flow_type = 0,
 					     .packet_length = packet_length };
 
-	
+	/**
+	 * Check if the packet is an IP packet (IPv4 or IPv6).
+	 */
 	if (ctx->protocol != bpf_htons(ETH_P_IP) && ctx->protocol != bpf_htons(ETH_P_IPV6)) {
 		bpf_printk("Not an IP packet\n");
 		return TC_ACT_OK;
@@ -736,6 +744,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.new_info = &new_info;
 		args.map_flow = &flow_id_info_ipv4;
 		args.flow_type = QUINTUPLA;
+		//ret = classify_packet_and_update_map(&args, ctx);
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {
 			return TC_ACT_OK;

@@ -672,7 +672,9 @@ int tc_ingress(struct __sk_buff *ctx)
 					     .flow_type = 0,
 					     .packet_length = packet_length };
 
-	
+	/**
+	 * Check if the packet is an IP packet (IPv4 or IPv6).
+	 */
 	if (ctx->protocol != bpf_htons(ETH_P_IP) && ctx->protocol != bpf_htons(ETH_P_IPV6)) {
 		bpf_printk("Not an IP packet\n");
 		return TC_ACT_OK;
@@ -736,6 +738,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.new_info = &new_info;
 		args.map_flow = &flow_id_info_ipv4;
 		args.flow_type = QUINTUPLA;
+		//ret = classify_packet_and_update_map(&args, ctx);
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {
 			return TC_ACT_OK;

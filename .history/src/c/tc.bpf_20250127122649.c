@@ -599,6 +599,7 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv4_packet(struct key_onl
 }
 #endif
 
+// classificazione dei pacchetti IPv6 con solo l'indirizzo di destinazione
 #ifdef CLASSIFY_ONLY_DEST_ADDRESS_IPV6
 static __always_inline int classify_ONLY_DEST_ADDRESS_ipv6_packet(struct key_only_dest_ipv6 *info,
 								  void *data_end, void *data)
@@ -637,12 +638,13 @@ static __always_inline int classify_ONLY_DEST_ADDRESS_ipv6_packet(struct key_onl
 SEC("tc")
 int tc_ingress(struct __sk_buff *ctx)
 {
-	void *data_end = (void *)(__u64)ctx->data_end; 
-	void *data = (void *)(__u64)ctx->data;		   
+	void *data_end = (void *)(__u64)ctx->data_end; // set the pointer to the end of the packet
+	void *data = (void *)(__u64)ctx->data;		   // set the pointer to the beginning of the packet
 	struct ethhdr *eth;
 	struct vlan_hdr *vlan;
 	int ret;
 
+	//u32 key = 0; 
 
 	/** Check if the flow_id is uninitialized (set to -1). If so, retrieve the flow_id 
 	*   from the BPF map using the interface index (ifindex) from the packet context.
@@ -672,7 +674,9 @@ int tc_ingress(struct __sk_buff *ctx)
 					     .flow_type = 0,
 					     .packet_length = packet_length };
 
-	
+	/**
+	 * Check if the packet is an IP packet (IPv4 or IPv6).
+	 */
 	if (ctx->protocol != bpf_htons(ETH_P_IP) && ctx->protocol != bpf_htons(ETH_P_IPV6)) {
 		bpf_printk("Not an IP packet\n");
 		return TC_ACT_OK;
@@ -736,6 +740,7 @@ int tc_ingress(struct __sk_buff *ctx)
 		args.new_info = &new_info;
 		args.map_flow = &flow_id_info_ipv4;
 		args.flow_type = QUINTUPLA;
+		//ret = classify_packet_and_update_map(&args, ctx);
 		ret = classify_packet_and_update_map(&args);
 		if (ret < 0) {
 			return TC_ACT_OK;

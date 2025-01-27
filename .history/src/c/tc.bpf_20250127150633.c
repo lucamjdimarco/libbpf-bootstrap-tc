@@ -203,7 +203,8 @@ static __always_inline int prepare_ring_buffer_write(void *map, struct event_t *
 	return 0;
 }
 
-static __always_inline int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts)
+static __always_inline int update_window(struct value_packet *packet, __u64 packet_length, __u64 ts,
+					 bool start_timer)
 {
 	const __u64 cur_tsw = ts / SWIN_SCALER;
 	struct event_t *event = NULL;
@@ -257,6 +258,9 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 
 	packet->tsw = cur_tsw;
 	bpf_spin_unlock(&packet->lock);
+
+	if (!start_timer)
+		return 0;
 
 	rc = update_window_start_timer(packet, SWIN_TIMER_TIMEOUT);
 	if (rc) {
@@ -690,7 +694,26 @@ int tc_ingress(struct __sk_buff *ctx)
 	}
 
 	__u16 eth_proto = eth->h_proto;
-	data = (void *)(eth + 1);
+	if (eth_proto == bpf_htons(ETH_P_8021Q) || eth_proto == bpf_htons(ETH_P_8021AD)) {
+		vlan = (struct vlan_hdr *)(eth + 1);
+		if ((void *)(vlan + 1) > data_end) {
+			bpf_printk("VLAN header is not complete\n");
+			return TC_ACT_OK;
+		}
+
+		eth_proto = vlan->h_vlan_encapsulated_proto;
+		data = (void *)vlan + 1;
+
+		if ((void *)(data + 1) > data_end) {
+			bpf_printk("Packet data is not complete after VLAN header\n");
+			return TC_ACT_OK;
+		}
+
+		bpf_printk("VLAN tag detected, running in access mode\n");
+	} else {
+		data = (void *)(eth + 1);
+	}
+
 
 	/**
 	 * This section of the code processes IPv4 packets based on the Ethernet protocol type (eth_proto).

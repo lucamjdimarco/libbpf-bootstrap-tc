@@ -690,7 +690,26 @@ int tc_ingress(struct __sk_buff *ctx)
 	}
 
 	__u16 eth_proto = eth->h_proto;
-	data = (void *)(eth + 1);
+	if (eth_proto == bpf_htons(ETH_P_8021Q) || eth_proto == bpf_htons(ETH_P_8021AD)) {
+		vlan = (struct vlan_hdr *)(eth + 1);
+		if ((void *)(vlan + 1) > data_end) {
+			bpf_printk("VLAN header is not complete\n");
+			return TC_ACT_OK;
+		}
+
+		eth_proto = vlan->h_vlan_encapsulated_proto;
+		data = (void *)vlan + 1;
+
+		if ((void *)(data + 1) > data_end) {
+			bpf_printk("Packet data is not complete after VLAN header\n");
+			return TC_ACT_OK;
+		}
+
+		bpf_printk("VLAN tag detected, running in access mode\n");
+	} else {
+		data = (void *)(eth + 1);
+	}
+
 
 	/**
 	 * This section of the code processes IPv4 packets based on the Ethernet protocol type (eth_proto).

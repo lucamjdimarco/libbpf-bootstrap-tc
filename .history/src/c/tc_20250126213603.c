@@ -208,12 +208,12 @@ void print_flow_id_info_ipv6(int map_fd)
 {
 	__u64 *key, *prev_key;
 
-	struct key_5tuple_ipv6 *value;
+	struct key_5tuple_ipv4_ipv6 *value;
 	int err;
 
 	key = malloc(sizeof(__u64));
 	prev_key = NULL;
-	value = malloc(sizeof(struct key_5tuple_ipv6));
+	value = malloc(sizeof(struct key_5tuple_ipv4_ipv6));
 
 	printf("IPv6 Flow Map:\n");
 
@@ -262,8 +262,8 @@ void process_ipv6_map(int map_fd, const char *map_type)
 	int err;
 
 #ifdef CLASSIFY_IPV6
-	struct key_5tuple_ipv6 *key, *prev_key;
-	key = malloc(sizeof(struct key_5tuple_ipv6));
+	struct key_5tuple_ipv4_ipv6 *key, *prev_key;
+	key = malloc(sizeof(struct key_5tuple_ipv4_ipv6));
 #endif
 
 #ifdef CLASSIFY_ONLY_ADDRESS_IPV6

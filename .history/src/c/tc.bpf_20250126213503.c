@@ -276,7 +276,7 @@ static __always_inline int update_window(struct value_packet *packet, __u64 pack
 	event->counter = counter_val;
 
 	//BITRATE
-	//event->bytes_counter = packet->bytes_counter;
+	event->bytes_counter = packet->bytes_counter;
 
 
 	packet->tsw = cur_tsw;

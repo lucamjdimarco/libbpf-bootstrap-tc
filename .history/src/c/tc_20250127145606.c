@@ -15,8 +15,7 @@
 #include "influxdb_wrapper_int.h"
 #include <sys/stat.h>
 
-#define BATCH_SIZE  3
-#define TIMEOUT_SEC 40
+
 
 struct event_t_formatted events_buffer[BATCH_SIZE];
 int events_count = 0;

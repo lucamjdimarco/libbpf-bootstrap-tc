@@ -235,6 +235,7 @@ def parse_map_dump_to_json(dump_data, classifier):
     """
     print(dump_data)
     try:
+        # Check if dump_data is already a Python list
         if isinstance(dump_data, str):
             entry = json.loads(dump_data)
         elif isinstance(dump_data, dict):

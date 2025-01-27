@@ -15,6 +15,8 @@
 #include "influxdb_wrapper_int.h"
 #include <sys/stat.h>
 
+
+
 #define BATCH_SIZE  3
 #define TIMEOUT_SEC 40
 

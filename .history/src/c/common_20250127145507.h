@@ -17,9 +17,6 @@
 
 #define BLOCKED_PORT "eth0"
 
-#define REDIS_HOST  "10.89.0.50"
-#define REDIS_PORT  6379
-
 #define MAX_FORMATTED_STRING_SIZE 128
 #define MAX_MACHINE_ID_SIZE 64
 

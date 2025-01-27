@@ -235,6 +235,7 @@ def parse_map_dump_to_json(dump_data, classifier):
     """
     print(dump_data)
     try:
+        # Check if dump_data is already a Python list
         if isinstance(dump_data, str):
             entry = json.loads(dump_data)
         elif isinstance(dump_data, dict):
@@ -245,6 +246,7 @@ def parse_map_dump_to_json(dump_data, classifier):
         flow_id = entry.get("key", 0)
         value = entry.get("value", {})
 
+        # Call specific function based on the classifier
         if classifier == 1:
             return handle_ipv4_quintuple(flow_id, value)
         elif classifier == 2:
@@ -265,7 +267,7 @@ def parse_map_dump_to_json(dump_data, classifier):
         return {"error": str(e)}
 
 
-
+# Subfunctions for each classifier
 def handle_ipv4_quintuple(flow_id, value):
     src_ip = socket.inet_ntoa(struct.pack('<I', value.get("src_ip", 0)))
     dst_ip = socket.inet_ntoa(struct.pack('<I', value.get("dst_ip", 0)))

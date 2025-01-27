@@ -150,8 +150,6 @@ def reader(pipe, source_name, queue):
             queue.put(f"{source_name}: {line.decode('utf-8').strip()}")
     except Exception as e:
         print(f"Error reading from {source_name}: {e}")
-    finally:
-        pipe.close()
 
 
 #######
@@ -203,28 +201,14 @@ def main(interface, protocol, classifier):
 
         if not os.path.isfile(c_program_path):
             raise FileNotFoundError(f"C program '{c_program_path}' not found.")
-        if not os.path.isfile(python_program):
-            raise FileNotFoundError(f"Python program '{python_program}' not found.")
 
-        c_process = subprocess.Popen(
-            [c_program_path, interface, protocol, friendlyname],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=1,
-        )
-        python_process = subprocess.Popen(
-            ["python3", "-u", python_program, interface, protocol, str(classifier)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=1,
-        )
+        c_process = subprocess.Popen([c_program_path, interface, protocol, friendlyname], stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1)
+        python_process = subprocess.Popen(["python3", "-u", python_program, interface, protocol, str(classifier)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1)
 
-        Thread(target=reader, args=(c_process.stdout, "C stdout", output_queue), daemon=True).start()
-        Thread(target=reader, args=(c_process.stderr, "C stderr", output_queue), daemon=True).start()
-        Thread(target=reader, args=(python_process.stdout, "Python stdout", output_queue), daemon=True).start()
-        Thread(target=reader, args=(python_process.stderr, "Python stderr", output_queue), daemon=True).start()
-        Thread(target=process_output, args=(output_queue,), daemon=True).start()
-
+        Thread(target=reader, args=(c_process.stdout, "C stdout")).start()
+        Thread(target=reader, args=(c_process.stderr, "C stderr")).start()
+        Thread(target=reader, args=(python_process.stdout, "Python stdout")).start()
+        Thread(target=reader, args=(python_process.stderr, "Python stderr")).start()
     except Exception as e:
         print(f"Error starting processes: {e}")
         terminate_processes()

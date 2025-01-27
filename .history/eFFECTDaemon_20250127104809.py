@@ -138,7 +138,7 @@ def retrieve_friendlyname():
         print(f"An error occurred: {e}")
         sys.exit(1)
 
-def reader(pipe, source_name, queue):
+def reader(pipe, source_name):
     """Reads output from a pipe and prints it."""
     # try:
     #     for line in iter(pipe.readline, b""):
@@ -150,21 +150,6 @@ def reader(pipe, source_name, queue):
             queue.put(f"{source_name}: {line.decode('utf-8').strip()}")
     except Exception as e:
         print(f"Error reading from {source_name}: {e}")
-    finally:
-        pipe.close()
-
-
-#######
-def process_output(queue):
-    """Processes the output from the queue."""
-    while not stop_threads or not queue.empty():
-        try:
-            message = queue.get(timeout=1)
-            print(message)
-        except Exception:
-            continue
-
-#######
 
 def execute_make(type_of_classifier):
     """Builds the BPF program with the specified classifier."""
@@ -182,9 +167,6 @@ def execute_make(type_of_classifier):
 def main(interface, protocol, classifier):
     """Main function to start the BPF program and related processes."""
     global c_process, python_process, stop_threads
-    #####
-    output_queue = Queue()
-    ######
 
     if stop_threads:
         return
@@ -199,32 +181,18 @@ def main(interface, protocol, classifier):
 
     try:
         c_program_path = os.path.abspath("src/c/tc")
-        python_program = os.path.abspath("EFE-controller.py")
+        python_program = "EFE-controller.py"
 
         if not os.path.isfile(c_program_path):
             raise FileNotFoundError(f"C program '{c_program_path}' not found.")
-        if not os.path.isfile(python_program):
-            raise FileNotFoundError(f"Python program '{python_program}' not found.")
 
-        c_process = subprocess.Popen(
-            [c_program_path, interface, protocol, friendlyname],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=1,
-        )
-        python_process = subprocess.Popen(
-            ["python3", "-u", python_program, interface, protocol, str(classifier)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=1,
-        )
+        c_process = subprocess.Popen([c_program_path, interface, protocol, friendlyname], stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1)
+        python_process = subprocess.Popen(["python3", "-u", python_program, interface, protocol, str(classifier)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1)
 
-        Thread(target=reader, args=(c_process.stdout, "C stdout", output_queue), daemon=True).start()
-        Thread(target=reader, args=(c_process.stderr, "C stderr", output_queue), daemon=True).start()
-        Thread(target=reader, args=(python_process.stdout, "Python stdout", output_queue), daemon=True).start()
-        Thread(target=reader, args=(python_process.stderr, "Python stderr", output_queue), daemon=True).start()
-        Thread(target=process_output, args=(output_queue,), daemon=True).start()
-
+        Thread(target=reader, args=(c_process.stdout, "C stdout")).start()
+        Thread(target=reader, args=(c_process.stderr, "C stderr")).start()
+        Thread(target=reader, args=(python_process.stdout, "Python stdout")).start()
+        Thread(target=reader, args=(python_process.stderr, "Python stderr")).start()
     except Exception as e:
         print(f"Error starting processes: {e}")
         terminate_processes()

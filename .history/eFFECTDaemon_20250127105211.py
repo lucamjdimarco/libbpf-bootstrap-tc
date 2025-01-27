@@ -150,8 +150,6 @@ def reader(pipe, source_name, queue):
             queue.put(f"{source_name}: {line.decode('utf-8').strip()}")
     except Exception as e:
         print(f"Error reading from {source_name}: {e}")
-    finally:
-        pipe.close()
 
 
 #######
@@ -223,8 +221,6 @@ def main(interface, protocol, classifier):
         Thread(target=reader, args=(c_process.stderr, "C stderr", output_queue), daemon=True).start()
         Thread(target=reader, args=(python_process.stdout, "Python stdout", output_queue), daemon=True).start()
         Thread(target=reader, args=(python_process.stderr, "Python stderr", output_queue), daemon=True).start()
-        Thread(target=process_output, args=(output_queue,), daemon=True).start()
-
     except Exception as e:
         print(f"Error starting processes: {e}")
         terminate_processes()
